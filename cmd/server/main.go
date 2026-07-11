@@ -2,7 +2,7 @@
 //
 // 启动流程：
 //   1. 打开 SQLite 数据库
-//   2. 初始化 config / iplibrary / scanner / proxy / fofa 客户端 / webui
+//   2. 初始化 config / iplibrary / scanner / proxy / webui
 //   3. 同步代理监听（读取 regions 配置启动监听器）
 //   4. 启动 WebUI HTTP 服务（默认 :1234）
 //   5. 启动扫描器后台循环（若配置启用）
@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"cfnat-aio/internal/config"
-	"cfnat-aio/internal/fofa"
 	"cfnat-aio/internal/iplibrary"
+	"cfnat-aio/internal/logging"
 	"cfnat-aio/internal/proxy"
 	"cfnat-aio/internal/scanner"
 	"cfnat-aio/internal/webui"
@@ -79,7 +79,6 @@ func main() {
 
 	lib := iplibrary.New(store)
 	sc := scanner.New(store, lib, cfgMgr)
-	fc := fofa.New(store, cfgMgr)
 	pm := proxy.New(store, lib, cfgMgr)
 
 	// 同步代理监听
@@ -88,14 +87,13 @@ func main() {
 	}
 
 	// 启动 WebUI
-	handlers := webui.New(store, cfgMgr, lib, sc, fc, pm)
+	handlers := webui.New(store, cfgMgr, lib, sc, pm)
 	mux := http.NewServeMux()
 	registerRoutes(mux, handlers)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", g.WebUIPort),
-		Handler: mux,
-		// 读取超时设长一点，方便 FOFA 搜索响应
+		Addr:         fmt.Sprintf(":%d", g.WebUIPort),
+		Handler:      mux,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
@@ -153,19 +151,13 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 	mux.HandleFunc("/api/ips", h.HandleAPIIPs)
 	mux.HandleFunc("/api/ips/add", h.HandleAPIIPAdd)
 	mux.HandleFunc("/api/ips/remove", h.HandleAPIIPRemove)
+	mux.HandleFunc("/api/ips/import-probe", h.HandleAPIIPImportProbe)
 
 	// 扫描器
 	mux.HandleFunc("/api/scanner", h.HandleAPIScanner)
 	mux.HandleFunc("/api/scanner/run", h.HandleAPIScannerRun)
 	mux.HandleFunc("/api/scanner/stop", h.HandleAPIScannerStop)
 	mux.HandleFunc("/api/scanner/history", h.HandleAPIScannerHistory)
-
-	// FOFA
-	mux.HandleFunc("/api/fofa/keys", h.HandleAPIFOFAKeys)
-	mux.HandleFunc("/api/fofa/keys/", h.RouteFOFAKeysSubpath)
-	mux.HandleFunc("/api/fofa/search", h.HandleAPIFOFASearch)
-	mux.HandleFunc("/api/fofa/log", h.HandleAPIFOFALog)
-	mux.HandleFunc("/api/fofa/presets", h.HandleAPIFOFAPresets)
 
 	// 通用
 	mux.HandleFunc("/api/settings", h.HandleAPISettings)

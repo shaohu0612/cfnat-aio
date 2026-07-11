@@ -63,7 +63,7 @@ func (l *Library) reload() {
 	}
 }
 
-// AddIP 添加 IP（来源：auto/manual/fofa）
+// AddIP 添加 IP（来源：auto/manual/import）
 func (l *Library) AddIP(ip, region, source, colo string, speed, latency float64, note string) error {
 	err := l.store.UpsertIP(config.IPEntry{
 		IP:        ip,

@@ -8,14 +8,11 @@
 //   /api/ips                     IP 库查询 (GET)
 //   /api/ips/add                 手动加 IP (POST)
 //   /api/ips/remove              手动删 IP (POST)
+//   /api/ips/import-probe        导入探测 CMIN2 (POST)
 //   /api/scanner                 扫描器配置 (GET/PUT)
 //   /api/scanner/run             立即扫描 (POST)
 //   /api/scanner/stop            停止扫描 (POST)
 //   /api/scanner/history         扫描历史 (GET)
-//   /api/fofa/keys               FOFA key 列表 (GET/POST)
-//   /api/fofa/keys/{id}          单个 key (PUT/DELETE)
-//   /api/fofa/search             手动触发 FOFA 搜索 (POST)
-//   /api/fofa/log                FOFA 使用日志 (GET)
 //   /api/settings                通用设置 (GET/PUT)
 //   /api/proxy/status            代理状态 (GET)
 //   /api/proxy/sync              同步代理配置 (POST)
@@ -33,7 +30,6 @@ import (
 	"time"
 
 	"cfnat-aio/internal/config"
-	"cfnat-aio/internal/fofa"
 	"cfnat-aio/internal/iplibrary"
 	"cfnat-aio/internal/logging"
 	"cfnat-aio/internal/proxy"
@@ -46,7 +42,6 @@ type Handlers struct {
 	CfgMgr  *config.Manager
 	Lib     *iplibrary.Library
 	Scanner *scanner.Scanner
-	FOFA    *fofa.Client
 	Proxy   *proxy.Manager
 
 	tpl *template.Template
@@ -57,11 +52,11 @@ var templatesFS embed.FS
 
 // New 创建 Handlers
 func New(store *config.SQLiteStore, cfgMgr *config.Manager, lib *iplibrary.Library,
-	sc *scanner.Scanner, fc *fofa.Client, pm *proxy.Manager) *Handlers {
+	sc *scanner.Scanner, pm *proxy.Manager) *Handlers {
 	tpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
 	return &Handlers{
 		Store: store, CfgMgr: cfgMgr, Lib: lib,
-		Scanner: sc, FOFA: fc, Proxy: pm,
+		Scanner: sc, Proxy: pm,
 		tpl: tpl,
 	}
 }
@@ -323,144 +318,128 @@ func (h *Handlers) HandleAPIScannerHistory(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, 200, h.Scanner.History())
 }
 
-// === FOFA ===
+// === IP 导入探测 ===
 
-func (h *Handlers) HandleAPIFOFAKeys(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		keys, _ := h.Store.ListFOFAKeys()
-		// 隐藏真实 key
-		type SafeKey struct {
-			ID         int64  `json:"id"`
-			Name       string `json:"name"`
-			Email      string `json:"email"`
-			KeyMasked  string `json:"key_masked"`
-			QuotaUsed  int    `json:"quota_used"`
-			QuotaTotal int    `json:"quota_total"`
-			Enabled    bool   `json:"enabled"`
-			Note       string `json:"note"`
-			CreatedAt  string `json:"created_at"`
-		}
-		out := make([]SafeKey, 0, len(keys))
-		for _, k := range keys {
-			masked := k.Key
-			if len(masked) > 8 {
-				masked = masked[:4] + "****" + masked[len(masked)-4:]
-			} else {
-				masked = "****"
-			}
-			out = append(out, SafeKey{
-				ID: k.ID, Name: k.Name, Email: k.Email, KeyMasked: masked,
-				QuotaUsed: k.QuotaUsed, QuotaTotal: k.QuotaTotal,
-				Enabled: k.Enabled, Note: k.Note, CreatedAt: k.CreatedAt,
-			})
-		}
-		writeJSON(w, 200, out)
-	case http.MethodPost:
-		var k config.FOFAKey
-		if err := readJSON(r, &k); err != nil {
-			writeError(w, 400, err.Error())
-			return
-		}
-		if k.QuotaTotal == 0 {
-			k.QuotaTotal = 10000
-		}
-		id, err := h.Store.AddFOFAKey(k)
-		if err != nil {
-			writeError(w, 500, err.Error())
-			return
-		}
-		writeJSON(w, 200, map[string]int64{"id": id})
-	default:
+// HandleAPIIPImportProbe 批量导入 IP 并探测 CMIN2
+// POST /api/ips/import-probe
+// body: {"ips": ["ip:port", ...], "auto_import": true}
+// 响应: 探测结果 + 入库统计
+func (h *Handlers) HandleAPIIPImportProbe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
 		writeError(w, 405, "method not allowed")
-	}
-}
-
-func (h *Handlers) HandleAPIFOFAKeyOne(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) < 3 {
-		writeError(w, 400, "invalid path")
 		return
 	}
-	id, err := strconv.ParseInt(parts[2], 10, 64)
-	if err != nil {
-		writeError(w, 400, "invalid id")
-		return
-	}
-	switch r.Method {
-	case http.MethodPut:
-		var k config.FOFAKey
-		if err := readJSON(r, &k); err != nil {
-			writeError(w, 400, err.Error())
-			return
-		}
-		k.ID = id
-		if err := h.Store.UpdateFOFAKey(k); err != nil {
-			writeError(w, 500, err.Error())
-			return
-		}
-		writeJSON(w, 200, map[string]string{"status": "ok"})
-	case http.MethodDelete:
-		if err := h.Store.DeleteFOFAKey(id); err != nil {
-			writeError(w, 500, err.Error())
-			return
-		}
-		writeJSON(w, 200, map[string]string{"status": "deleted"})
-	default:
-		writeError(w, 405, "method not allowed")
-	}
-}
-
-func (h *Handlers) HandleAPIFOFASearch(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Query   string `json:"query"`
-		Region  string `json:"region"`
-		Preset  string `json:"preset"`
-		AutoAdd bool   `json:"auto_add"` // 是否自动入库（未测速，建议 false）
+		IPs        []string `json:"ips"`
+		AutoImport bool     `json:"auto_import"`
 	}
 	if err := readJSON(r, &req); err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
-	q := req.Query
-	if req.Preset != "" {
-		if v, ok := fofa.PresetQueries[req.Preset]; ok {
-			q = v
+	if len(req.IPs) == 0 {
+		writeError(w, 400, "IP 列表为空")
+		return
+	}
+
+	// 解析 IP（支持 ip:port 和纯 ip 格式）
+	var targetIPs []string
+	for _, raw := range req.IPs {
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
+			continue
+		}
+		// 去掉 # 后的注释部分（如 #HK Hong Kong AS906）
+		if idx := strings.Index(raw, "#"); idx >= 0 {
+			raw = raw[:idx]
+		}
+		raw = strings.TrimSpace(raw)
+		// 提取纯 IP（去掉 :port 部分）
+		if idx := strings.LastIndex(raw, ":"); idx > 0 {
+			raw = raw[:idx]
+		}
+		targetIPs = append(targetIPs, raw)
+	}
+
+	if len(targetIPs) == 0 {
+		writeError(w, 400, "解析后无有效 IP")
+		return
+	}
+
+	logging.InfoTo("webui", "批量导入探测: %d 个 IP", len(targetIPs))
+
+	// 去重
+	seen := make(map[string]bool)
+	var deduped []string
+	for _, ip := range targetIPs {
+		if !seen[ip] {
+			seen[ip] = true
+			deduped = append(deduped, ip)
 		}
 	}
-	if q == "" {
-		writeError(w, 400, "query 或 preset 不能为空")
-		return
+
+	// 并发探活
+	sc := h.CfgMgr.Scanner()
+	// 导入模式：放松延迟阈值，不限速
+	importCfg := sc
+	importCfg.MaxDelayMs = 5000 // 导入时延迟要求放松
+	results := scanner.ProbeBatch(deduped, importCfg)
+
+	// 统计
+	type ProbeItem struct {
+		IP      string  `json:"ip"`
+		Colo    string  `json:"colo"`
+		IsCMIN2 bool    `json:"is_cmin2"`
+		OK      bool    `json:"ok"`
+		Error   string  `json:"error"`
+		Latency float64 `json:"latency_ms"`
+		Imported bool   `json:"imported"`
 	}
-	resp, err := h.FOFA.Search(q, "ip,port,protocol")
-	if err != nil {
-		writeError(w, 500, err.Error())
-		return
-	}
-	entries := h.FOFA.ExtractIPs(resp, req.Region)
-	autoAdded := 0
-	if req.AutoAdd {
-		for _, e := range entries {
-			if err := h.Lib.AddIP(e.IP, e.Region, "fofa", e.Region, 0, 0, "FOFA候选"); err == nil {
-				autoAdded++
+
+	items := make([]ProbeItem, 0, len(results))
+	imported := 0
+	cmin2Count := 0
+	totalOK := 0
+
+	for _, r := range results {
+		isCMIN2 := r.OK && scanner.IsCMIN2Colo(r.Colo)
+		item := ProbeItem{
+			IP:      r.IP,
+			Colo:    r.Colo,
+			IsCMIN2: isCMIN2,
+			OK:      r.OK,
+			Error:   r.Error,
+			Latency: r.Latency,
+		}
+		if r.OK {
+			totalOK++
+			if isCMIN2 {
+				cmin2Count++
+				if req.AutoImport {
+					region := r.Colo
+					err := h.Lib.AddIP(r.IP, region, "import", r.Colo, 0, r.Latency, "批量导入")
+					if err == nil {
+						item.Imported = true
+						imported++
+					}
+				}
 			}
 		}
+		items = append(items, item)
 	}
+
+	logging.InfoTo("webui", "导入探测完成: 去重后 %d 个, 探活成功 %d, CMIN2 %d, 已入库 %d",
+		len(deduped), totalOK, cmin2Count, imported)
+
 	writeJSON(w, 200, map[string]interface{}{
-		"query":      q,
-		"total":      resp.Total,
-		"results":    entries,
-		"auto_added": autoAdded,
+		"total":       len(deduped),
+		"probed":      len(results),
+		"ok":          totalOK,
+		"cmin2":       cmin2Count,
+		"imported":    imported,
+		"auto_import": req.AutoImport,
+		"results":     items,
 	})
-}
-
-func (h *Handlers) HandleAPIFOFALog(w http.ResponseWriter, r *http.Request) {
-	logs, _ := h.Store.ListFOFALog(100)
-	writeJSON(w, 200, logs)
-}
-
-func (h *Handlers) HandleAPIFOFAPresets(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, fofa.PresetQueries)
 }
 
 // === 通用设置 ===
@@ -510,11 +489,4 @@ func (h *Handlers) RouteRegionsSubpath(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-func (h *Handlers) RouteFOFAKeysSubpath(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(parts) >= 3 && parts[0] == "api" && parts[1] == "fofa" && parts[2] == "keys" {
-		h.HandleAPIFOFAKeyOne(w, r)
-		return
-	}
-	http.NotFound(w, r)
-}
+

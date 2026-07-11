@@ -117,7 +117,6 @@ tr:hover { background: #1c2128; }
     <button class="tab" data-tab="regions">地区管理</button>
     <button class="tab" data-tab="ips">IP 库</button>
     <button class="tab" data-tab="scanner">扫描器</button>
-    <button class="tab" data-tab="fofa">FOFA</button>
     <button class="tab" data-tab="logs">📜 日志</button>
     <button class="tab" data-tab="settings">设置</button>
   </div>
@@ -178,7 +177,7 @@ tr:hover { background: #1c2128; }
             <option value="">全部</option>
             <option value="manual">手动</option>
             <option value="auto">自动扫描</option>
-            <option value="fofa">FOFA</option>
+            <option value="import">批量导入</option>
           </select>
         </div>
         <div><button onclick="loadIPs()">刷新</button></div>
@@ -193,6 +192,17 @@ tr:hover { background: #1c2128; }
         <div><label>备注</label><input id="add-note"></div>
       </div>
       <button class="primary" onclick="addIPManual()">添加</button>
+    </div>
+    <div class="card">
+      <div class="card-title">批量导入探测 CMIN2</div>
+      <p class="muted" style="margin-bottom:8px">粘贴 IP 列表（格式: <code>IP:端口#地区 AS编号 ISP</code> 或纯 IP），自动探测 colo 并识别 CMIN2 节点入库</p>
+      <textarea id="import-ips" rows="8" placeholder="154.3.37.172:443#HK Kwai Chung AS906 DMIT&#10;45.78.28.37:443#HK Hong Kong AS25820 IT7&#10;208.75.132.214:443#TW Taipei AS46829&#10;..." style="font-family:monospace;font-size:12px"></textarea>
+      <div class="card-row" style="margin-top:8px">
+        <label><input type="checkbox" id="import-auto-add" checked> 自动将 CMIN2 节点入库</label>
+        <button class="primary" onclick="runImportProbe()" id="btn-import-probe">🔍 开始探测</button>
+      </div>
+      <div id="import-progress" class="muted" style="margin-top:8px;display:none">探测中...</div>
+      <div id="import-results" style="margin-top:8px"></div>
     </div>
     <h2>IP 列表</h2>
     <table>
@@ -237,62 +247,6 @@ tr:hover { background: #1c2128; }
     </table>
   </div>
 
-  <!-- FOFA -->
-  <div id="tab-fofa" class="tab-content">
-    <div class="card">
-      <div class="card-title">FOFA Key 管理</div>
-      <div class="field-row cols-3">
-        <div><label>备注</label><input id="k-name" placeholder="账号1"></div>
-        <div><label>Email</label><input id="k-email" placeholder="xxx@xxx.com"></div>
-        <div><label>Key</label><input id="k-key" type="password" placeholder=""></div>
-      </div>
-      <div class="field-row">
-        <div><label>配额 (默认 10000)</label><input id="k-quota" type="number" value="10000"></div>
-        <div><label>启用</label><select id="k-enabled"><option value="true">是</option><option value="false">否</option></select></div>
-      </div>
-      <button class="primary" style="margin-top:8px" onclick="addFOFAKey()">添加 Key</button>
-    </div>
-    <h2>已添加的 Key</h2>
-    <table>
-      <thead><tr><th>ID</th><th>备注</th><th>邮箱</th><th>Key</th><th>已用/总数</th><th>启用</th><th>操作</th></tr></thead>
-      <tbody id="fofa-keys"></tbody>
-    </table>
-    <h2>手动搜索（使用 FOFA API）</h2>
-    <div class="card">
-      <div class="field-row">
-        <div>
-          <label>使用预设</label>
-          <select id="fofa-preset" onchange="usePreset()">
-            <option value="">自定义</option>
-            <option value="CMIN2_HKG">CMIN2 HKG</option>
-            <option value="CMIN2_SIN">CMIN2 SIN</option>
-            <option value="CMIN2_LAX">CMIN2 LAX</option>
-            <option value="CMIN2_NRT">CMIN2 NRT</option>
-            <option value="CMIN2_KIX">CMIN2 KIX</option>
-            <option value="CMIN2_FRA">CMIN2 FRA</option>
-            <option value="CF_HKG">普通 CF HKG</option>
-            <option value="CF_SIN">普通 CF SIN</option>
-            <option value="CF_LAX">普通 CF LAX</option>
-          </select>
-        </div>
-        <div><label>地区（自动入库用）</label><input id="fofa-region" placeholder="HKG"></div>
-      </div>
-      <label>FOFA 查询语法</label>
-      <input id="fofa-query" placeholder='asn="63150" && server="cloudflare" && country="HK"'>
-      <div class="card-row" style="margin-top:8px">
-        <label><input type="checkbox" id="fofa-autoadd"> 自动入库（建议先关闭，由扫描器验证）</label>
-      </div>
-      <button class="primary" onclick="runFOFASearch()">搜索</button>
-    </div>
-    <h2>搜索结果</h2>
-    <div id="fofa-results"></div>
-    <h2>使用日志</h2>
-    <table>
-      <thead><tr><th>时间</th><th>Key ID</th><th>查询</th><th>结果数</th><th>状态</th></tr></thead>
-      <tbody id="fofa-log"></tbody>
-    </table>
-  </div>
-
   <!-- 日志 -->
   <div id="tab-logs" class="tab-content">
     <div class="card">
@@ -306,7 +260,6 @@ tr:hover { background: #1c2128; }
             <option value="proxy">proxy</option>
             <option value="scanner">scanner</option>
             <option value="iplibrary">iplibrary</option>
-            <option value="fofa">fofa</option>
             <option value="webui">webui</option>
           </select>
         </div>
@@ -363,7 +316,6 @@ $$('.tab').forEach(t => t.addEventListener('click', () => {
   if (t.dataset.tab === 'regions') loadRegions();
   if (t.dataset.tab === 'ips') loadIPs();
   if (t.dataset.tab === 'scanner') loadScanner();
-  if (t.dataset.tab === 'fofa') loadFOFA();
   if (t.dataset.tab === 'settings') loadSettings();
   if (t.dataset.tab === 'logs') { loadLogs(); connectLogStream(); }
 }));
@@ -589,7 +541,7 @@ async function loadIPs() {
       <td>${e.colo || '-'}</td>
       <td class="mono">${e.speed_mbps ? e.speed_mbps.toFixed(2) : '-'} MB/s</td>
       <td class="mono">${e.latency_ms ? e.latency_ms.toFixed(0) : '-'} ms</td>
-      <td><span class="badge ${e.source==='manual'?'blue':e.source==='fofa'?'green':'gray'}">${e.source || '-'}</span></td>
+      <td><span class="badge ${e.source==='manual'?'blue':e.source==='import'?'green':'gray'}">${e.source || '-'}</span></td>
       <td>${e.fail_count || 0}</td>
       <td><button class="danger" onclick="removeIP('${e.ip}','${e.region}')">删除</button></td>
     </tr>`;
@@ -673,88 +625,85 @@ async function stopScan() {
   toast('已请求停止', 'success');
 }
 
-// === FOFA ===
-async function loadFOFA() {
-  const keys = await api('GET', '/api/fofa/keys');
-  const tbody = $('#fofa-keys');
-  tbody.innerHTML = '';
-  keys.forEach(k => {
-    tbody.innerHTML += `<tr>
-      <td>${k.id}</td>
-      <td>${k.name||'-'}</td>
-      <td class="mono">${k.email}</td>
-      <td class="mono">${k.key_masked}</td>
-      <td class="mono">${k.quota_used} / ${k.quota_total}</td>
-      <td><span class="badge ${k.enabled?'green':'gray'}">${k.enabled?'是':'否'}</span></td>
-      <td><button class="danger" onclick="deleteFOFAKey(${k.id})">删除</button></td>
-    </tr>`;
-  });
-  const log = await api('GET', '/api/fofa/log');
-  const ltbody = $('#fofa-log');
-  ltbody.innerHTML = '';
-  log.slice(0, 20).forEach(l => {
-    ltbody.innerHTML += `<tr>
-      <td class="mono">${l.used_at}</td>
-      <td>${l.key_id}</td>
-      <td class="mono">${(l.query || '').slice(0, 60)}</td>
-      <td>${l.result_count}</td>
-      <td><span class="badge ${l.status==='ok'?'green':'red'}">${l.status}</span></td>
-    </tr>`;
-  });
-}
-async function addFOFAKey() {
+// === IP 导入探测 ===
+async function runImportProbe() {
+  const raw = $('#import-ips').value.trim();
+  if (!raw) { toast('请粘贴 IP 列表', 'error'); return; }
+  const lines = raw.split('\n').filter(s => s.trim());
+  const btn = $('#btn-import-probe');
+  btn.disabled = true;
+  btn.textContent = '探测中...';
+  $('#import-progress').style.display = 'block';
+  $('#import-progress').textContent = `正在探测 ${lines.length} 个 IP...`;
+  $('#import-results').innerHTML = '';
+
   const body = {
-    name: $('#k-name').value,
-    email: $('#k-email').value,
-    key: $('#k-key').value,
-    quota_total: parseInt($('#k-quota').value),
-    enabled: $('#k-enabled').value === 'true',
+    ips: lines,
+    auto_import: $('#import-auto-add').checked,
   };
-  if (!body.email || !body.key) { toast('邮箱和 Key 必填', 'error'); return; }
-  await api('POST', '/api/fofa/keys', body);
-  toast('已添加', 'success');
-  loadFOFA();
-}
-async function deleteFOFAKey(id) {
-  if (!confirm('删除 Key #' + id + ' ?')) return;
-  await api('DELETE', '/api/fofa/keys/' + id);
-  toast('已删除', 'success');
-  loadFOFA();
-}
-function usePreset() {
-  const v = $('#fofa-preset').value;
-  if (!v) return;
-  fetch('/api/fofa/presets').then(r=>r.json()).then(all => {
-    $('#fofa-query').value = all[v] || '';
-  });
-}
-async function runFOFASearch() {
-  const body = {
-    query: $('#fofa-query').value,
-    preset: $('#fofa-preset').value,
-    region: $('#fofa-region').value,
-    auto_add: $('#fofa-autoadd').checked,
-  };
-  const res = await api('POST', '/api/fofa/search', body);
-  toast('命中 ' + res.total + ' 条', 'success');
-  const out = $('#fofa-results');
-  if (res.results.length === 0) {
-    out.innerHTML = '<p class="muted">无结果</p>';
-    return;
+
+  try {
+    const res = await api('POST', '/api/ips/import-probe', body);
+    $('#import-progress').textContent = `完成！去重后 ${res.total} 个，探活成功 ${res.ok}，CMIN2 ${res.cmin2}，已入库 ${res.imported}`;
+    $('#import-progress').style.color = '#3fb950';
+
+    // 按 CMIN2 状态分组展示
+    const cmin2IPs = res.results.filter(r => r.is_cmin2);
+    const otherIPs = res.results.filter(r => r.ok && !r.is_cmin2);
+    const failIPs = res.results.filter(r => !r.ok);
+
+    let html = '';
+    if (cmin2IPs.length > 0) {
+      html += `<p class="status-ok" style="margin-top:8px">✅ CMIN2 节点 (${cmin2IPs.length}):</p>`;
+      html += '<table><thead><tr><th>IP</th><th>Colo</th><th>延迟</th><th>已入库</th></tr></thead><tbody>';
+      cmin2IPs.forEach(r => {
+        html += `<tr>
+          <td class="mono">${r.ip}</td>
+          <td><span class="badge green">${r.colo}</span></td>
+          <td class="mono">${r.latency_ms.toFixed(0)} ms</td>
+          <td>${r.imported ? '<span class="status-ok">✓</span>' : '<span class="muted">-</span>'}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+    }
+    if (otherIPs.length > 0 && otherIPs.length <= 50) {
+      html += `<p class="status-warn" style="margin-top:8px">⚠ 非 CMIN2 节点 (${otherIPs.length}):</p>`;
+      html += '<table><thead><tr><th>IP</th><th>Colo</th><th>延迟</th></tr></thead><tbody>';
+      otherIPs.forEach(r => {
+        html += `<tr><td class="mono">${r.ip}</td><td>${r.colo}</td><td class="mono">${r.latency_ms.toFixed(0)} ms</td></tr>`;
+      });
+      html += '</tbody></table>';
+    } else if (otherIPs.length > 50) {
+      html += `<p class="status-warn" style="margin-top:8px">⚠ 非 CMIN2 节点: ${otherIPs.length} 个（仅显示前 50）</p>`;
+      html += '<table><thead><tr><th>IP</th><th>Colo</th><th>延迟</th></tr></thead><tbody>';
+      otherIPs.slice(0, 50).forEach(r => {
+        html += `<tr><td class="mono">${r.ip}</td><td>${r.colo}</td><td class="mono">${r.latency_ms.toFixed(0)} ms</td></tr>`;
+      });
+      html += '</tbody></table>';
+    }
+    if (failIPs.length > 0) {
+      html += `<p class="status-err" style="margin-top:8px">❌ 失败 (${failIPs.length}) <button onclick="toggleFailDetails()" style="font-size:11px">展开/折叠</button></p>`;
+      html += '<div id="fail-details" style="display:none">';
+      html += '<table><thead><tr><th style="width:140px">IP</th><th>错误</th></tr></thead><tbody>';
+      failIPs.forEach(r => {
+        html += `<tr><td class="mono">${r.ip}</td><td class="muted" style="font-size:11px">${r.error||'-'}</td></tr>`;
+      });
+      html += '</tbody></table></div>';
+    }
+    $('#import-results').innerHTML = html;
+    if (res.imported > 0) loadIPs();
+  } catch (e) {
+    $('#import-progress').textContent = '探测失败: ' + (e.error || '未知错误');
+    $('#import-progress').style.color = '#f85149';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 开始探测';
   }
-  let html = '<table><thead><tr><th>IP</th><th>端口</th><th>协议</th></tr></thead><tbody>';
-  res.results.slice(0, 100).forEach(e => {
-    html += `<tr><td class="mono">${e.ip}</td><td>${e.port}</td><td>${e.protocol}</td></tr>`;
-  });
-  html += '</tbody></table>';
-  if (res.results.length > 100) {
-    html += '<p class="muted">仅显示前 100 条，共 ' + res.results.length + ' 条</p>';
-  }
-  if (res.auto_added) {
-    html += '<p class="status-ok">已自动入库 ' + res.auto_added + ' 条</p>';
-  }
-  out.innerHTML = html;
-  loadFOFA();
+}
+
+function toggleFailDetails() {
+  const el = $('#fail-details');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 // === 设置 ===

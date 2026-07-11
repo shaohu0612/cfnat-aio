@@ -44,27 +44,6 @@ type ScannerConfig struct {
 	LastRunStats  string  `json:"last_run_stats"`  // 上次扫描统计 JSON
 }
 
-// FOFAConfig FOFA 配置
-type FOFAConfig struct {
-	Enabled       bool   `json:"enabled"`        // 是否启用 FOFA 功能
-	ActiveKeyID   int64  `json:"active_key_id"`  // 当前使用的 key ID
-	AutoRotate    bool   `json:"auto_rotate"`    // 配额耗尽时是否自动切换
-	Keys          []FOFAKey `json:"keys"`        // 多 key 列表
-}
-
-// FOFAKey FOFA 账户密钥
-type FOFAKey struct {
-	ID         int64  `json:"id"`
-	Name       string `json:"name"`        // 备注名
-	Email      string `json:"email"`
-	Key        string `json:"key"`
-	QuotaUsed  int    `json:"quota_used"`  // 已使用（本地记录）
-	QuotaTotal int    `json:"quota_total"` // 总配额
-	Enabled    bool   `json:"enabled"`
-	Note       string `json:"note"`
-	CreatedAt  string `json:"created_at"`  // 创建时间
-}
-
 // GeneralConfig 通用配置
 type GeneralConfig struct {
 	WebUIPort    int    `json:"webui_port"`     // WebUI 监听端口
@@ -76,12 +55,11 @@ type GeneralConfig struct {
 
 // Manager 全局配置管理器（线程安全）
 type Manager struct {
-	mu       sync.RWMutex
-	general  GeneralConfig
-	scanner  ScannerConfig
-	fofa     FOFAConfig
-	regions  []ProxyRegion
-	db       ConfigStore
+	mu      sync.RWMutex
+	general GeneralConfig
+	scanner ScannerConfig
+	regions []ProxyRegion
+	db      ConfigStore
 }
 
 // ConfigStore 配置持久化接口（解耦 DB 依赖）
@@ -90,8 +68,6 @@ type ConfigStore interface {
 	SaveGeneral(g GeneralConfig) error
 	LoadScanner() (ScannerConfig, error)
 	SaveScanner(s ScannerConfig) error
-	LoadFOFA() (FOFAConfig, error)
-	SaveFOFA(f FOFAConfig) error
 	LoadRegions() ([]ProxyRegion, error)
 	SaveRegions(regions []ProxyRegion) error
 }
@@ -127,10 +103,6 @@ func (m *Manager) loadAll() error {
 	} else {
 		m.scanner = defaultScannerConfig()
 		_ = m.db.SaveScanner(m.scanner)
-	}
-
-	if f, err := m.db.LoadFOFA(); err == nil {
-		m.fofa = f
 	}
 
 	if rs, err := m.db.LoadRegions(); err == nil && len(rs) > 0 {
@@ -178,12 +150,6 @@ func (m *Manager) Scanner() ScannerConfig {
 	return m.scanner
 }
 
-func (m *Manager) FOFA() FOFAConfig {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.fofa
-}
-
 func (m *Manager) Regions() []ProxyRegion {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -211,16 +177,6 @@ func (m *Manager) UpdateScanner(s ScannerConfig) error {
 		return err
 	}
 	m.scanner = s
-	return nil
-}
-
-func (m *Manager) UpdateFOFA(f FOFAConfig) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if err := m.db.SaveFOFA(f); err != nil {
-		return err
-	}
-	m.fofa = f
 	return nil
 }
 
@@ -258,7 +214,6 @@ func (m *Manager) DumpJSON() string {
 	all := map[string]interface{}{
 		"general": m.general,
 		"scanner": m.scanner,
-		"fofa":    m.fofa,
 		"regions": m.regions,
 	}
 	b, _ := json.MarshalIndent(all, "", "  ")

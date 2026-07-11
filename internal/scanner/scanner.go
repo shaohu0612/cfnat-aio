@@ -261,17 +261,124 @@ func addIPOffset(base net.IP, offset int64) net.IP {
 
 // === 探活 + trace ===
 
-type probeResult struct {
-	ip     string
-	colo   string
-	ok     bool
-	err    string
-	latency float64
+// ProbeResult 单 IP 探活结果（导出供 webui 导入探测使用）
+type ProbeResult struct {
+	IP      string  `json:"ip"`
+	Colo    string  `json:"colo"`
+	OK      bool    `json:"ok"`
+	Error   string  `json:"error"`
+	Latency float64 `json:"latency"`
+}
+
+// IsCMIN2Colo 判断 colo 是否在 CMIN2 节点白名单中
+var cmin2Colos = map[string]bool{}
+
+func init() {
+	// CMIN2 节点列表（与 cfnat-fofa-filter.py 保持一致）
+	for _, c := range []string{"HKG", "SIN", "NRT", "KIX", "LAX", "SJC", "SEA", "FRA", "AMS", "LHR", "TPE", "ICN", "MNL", "BKK", "MFM"} {
+		cmin2Colos[c] = true
+	}
+}
+
+// IsCMIN2Colo 判断 colo 是否为 CMIN2 节点
+func IsCMIN2Colo(colo string) bool {
+	// 也支持用户配置的自定义 CMIN2 colo 列表
+	return cmin2Colos[colo]
+}
+
+// ProbeOne 单 IP 探活（导出供外部批量导入使用）
+func ProbeOne(ip string, sc config.ScannerConfig) ProbeResult {
+	r := ProbeResult{IP: ip}
+	port := sc.Port
+	if port == 0 {
+		port = 443
+	}
+	addr := fmt.Sprintf("%s:%d", ip, port)
+
+	t0 := time.Now()
+	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
+	if err != nil {
+		r.Error = "TCP: " + err.Error()
+		return r
+	}
+	r.Latency = float64(time.Since(t0).Microseconds()) / 1000.0
+	if sc.MaxDelayMs > 0 && r.Latency > float64(sc.MaxDelayMs) {
+		conn.Close()
+		r.Error = fmt.Sprintf("延迟%.0fms超阈值", r.Latency)
+		return r
+	}
+
+	// HTTPS trace 请求
+	tlsConn := tls.Client(conn, &tls.Config{
+		ServerName:         "cloudflare.com",
+		InsecureSkipVerify: true,
+	})
+	defer tlsConn.Close()
+
+	if err := tlsConn.Handshake(); err != nil {
+		r.Error = "TLS: " + err.Error()
+		return r
+	}
+
+	req := "GET /cdn-cgi/trace HTTP/1.1\r\nHost: cloudflare.com\r\nUser-Agent: CFNAT-AIO/1.0\r\nConnection: close\r\n\r\n"
+	_ = tlsConn.SetDeadline(time.Now().Add(5 * time.Second))
+	if _, err := tlsConn.Write([]byte(req)); err != nil {
+		r.Error = "Write: " + err.Error()
+		return r
+	}
+
+	buf := make([]byte, 2048)
+	n, _ := tlsConn.Read(buf)
+	if n == 0 {
+		r.Error = "Read empty"
+		return r
+	}
+	body := string(buf[:n])
+	// 提取 colo=XXX
+	if i := strings.Index(body, "colo="); i >= 0 {
+		line := body[i+5:]
+		end := strings.IndexAny(line, "\r\n")
+		if end > 0 {
+			r.Colo = strings.TrimSpace(line[:end])
+		} else {
+			r.Colo = strings.TrimSpace(line)
+		}
+	}
+	if r.Colo == "" {
+		r.Error = "未识别colo"
+		return r
+	}
+	r.OK = true
+	return r
+}
+
+// ProbeBatch 批量探活（使用并发）
+func ProbeBatch(ips []string, sc config.ScannerConfig) []ProbeResult {
+	results := make([]ProbeResult, len(ips))
+	threads := sc.Threads
+	if threads <= 0 {
+		threads = 100
+	}
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, threads)
+
+	for i := range ips {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int, ip string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			r := ProbeOne(ip, sc)
+			results[idx] = r
+		}(i, ips[i])
+	}
+	wg.Wait()
+	return results
 }
 
 // probeAndTrace TCP 探活 + /cdn-cgi/trace 获取数据中心
-func (s *Scanner) probeAndTrace(ctx context.Context, ips []string, sc config.ScannerConfig) []probeResult {
-	results := make([]probeResult, len(ips))
+func (s *Scanner) probeAndTrace(ctx context.Context, ips []string, sc config.ScannerConfig) []ProbeResult {
+	results := make([]ProbeResult, len(ips))
 	threads := sc.Threads
 	if threads <= 0 {
 		threads = 100
@@ -305,69 +412,8 @@ func (s *Scanner) probeAndTrace(ctx context.Context, ips []string, sc config.Sca
 	return results
 }
 
-func (s *Scanner) probeOne(ip string, sc config.ScannerConfig) probeResult {
-	r := probeResult{ip: ip}
-	port := sc.Port
-	if port == 0 {
-		port = 443
-	}
-	addr := fmt.Sprintf("%s:%d", ip, port)
-
-	t0 := time.Now()
-	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
-	if err != nil {
-		r.err = "TCP: " + err.Error()
-		return r
-	}
-	r.latency = float64(time.Since(t0).Microseconds()) / 1000.0
-	if r.latency > float64(sc.MaxDelayMs) {
-		conn.Close()
-		r.err = fmt.Sprintf("延迟%.0fms超阈值", r.latency)
-		return r
-	}
-
-	// HTTPS trace 请求
-	tlsConn := tls.Client(conn, &tls.Config{
-		ServerName:         "cloudflare.com",
-		InsecureSkipVerify: true,
-	})
-	defer tlsConn.Close()
-
-	if err := tlsConn.Handshake(); err != nil {
-		r.err = "TLS: " + err.Error()
-		return r
-	}
-
-	req := "GET /cdn-cgi/trace HTTP/1.1\r\nHost: cloudflare.com\r\nUser-Agent: CFNAT-AIO/1.0\r\nConnection: close\r\n\r\n"
-	_ = tlsConn.SetDeadline(time.Now().Add(5 * time.Second))
-	if _, err := tlsConn.Write([]byte(req)); err != nil {
-		r.err = "Write: " + err.Error()
-		return r
-	}
-
-	buf := make([]byte, 2048)
-	n, _ := tlsConn.Read(buf)
-	if n == 0 {
-		r.err = "Read empty"
-		return r
-	}
-	body := string(buf[:n])
-	// 提取 colo=XXX
-	if i := strings.Index(body, "colo="); i >= 0 {
-		line := body[i+5:]
-		end := strings.IndexAny(line, "\r\n")
-		if end > 0 {
-			r.colo = strings.TrimSpace(line[:end])
-		} else {
-			r.colo = strings.TrimSpace(line)
-		}
-	}
-	if r.colo == "" {
-		r.err = "未识别colo"
-		return r
-	}
-	r.ok = true
-	return r
+func (s *Scanner) probeOne(ip string, sc config.ScannerConfig) ProbeResult {
+	return ProbeOne(ip, sc)
 }
 
 // === 测速 ===
@@ -381,11 +427,11 @@ type speedResult struct {
 	err       string
 }
 
-func (s *Scanner) speedTest(ctx context.Context, probes []probeResult, sc config.ScannerConfig) []speedResult {
+func (s *Scanner) speedTest(ctx context.Context, probes []ProbeResult, sc config.ScannerConfig) []speedResult {
 	// 只测通过探活的
-	var targets []probeResult
+	var targets []ProbeResult
 	for _, p := range probes {
-		if p.ok {
+		if p.OK {
 			targets = append(targets, p)
 		}
 	}
@@ -419,7 +465,7 @@ func (s *Scanner) speedTest(ctx context.Context, probes []probeResult, sc config
 				r.err = fmt.Sprintf("测速失败/%.2fMbps", speed)
 			}
 			results[i] = r
-		}(i, t.ip, t.colo, t.latency)
+		}(i, t.IP, t.Colo, t.Latency)
 	}
 	wg.Wait()
 	return results
@@ -520,22 +566,13 @@ func (s *Scanner) measureSpeed(ip, speedURL string, port int) (float64, bool) {
 
 // === 入库 ===
 
-// cmin2Colos CMIN2 节点列表（与 cfnat-fofa-filter.py 保持一致）
-var cmin2Colos = map[string]bool{
-	"HKG": true, "SIN": true, "NRT": true, "KIX": true,
-	"LAX": true, "SJC": true, "SEA": true,
-	"FRA": true, "AMS": true, "LHR": true,
-	"TPE": true, "ICN": true, "MNL": true, "BKK": true,
-	"MFM": true,
-}
-
 func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig) map[string]int {
 	out := make(map[string]int)
 	for _, r := range passed {
 		if !r.ok || r.speedMbps < sc.MinSpeedMBps {
 			continue
 		}
-		if !cmin2Colos[r.colo] {
+		if !IsCMIN2Colo(r.colo) {
 			continue
 		}
 		// colo -> region 映射（默认 colo 名即 region 名）

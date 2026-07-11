@@ -62,25 +62,6 @@ func (s *SQLiteStore) init() error {
 		passed INTEGER,
 		stats_json TEXT
 	);
-	CREATE TABLE IF NOT EXISTS fofa_keys (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT,
-		email TEXT NOT NULL,
-		key TEXT NOT NULL,
-		quota_used INTEGER DEFAULT 0,
-		quota_total INTEGER DEFAULT 10000,
-		enabled INTEGER DEFAULT 1,
-		note TEXT,
-		created_at TEXT
-	);
-	CREATE TABLE IF NOT EXISTS fofa_log (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		key_id INTEGER,
-		query TEXT,
-		result_count INTEGER,
-		status TEXT,
-		used_at TEXT
-	);
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -129,21 +110,6 @@ func (s *SQLiteStore) LoadScanner() (ScannerConfig, error) {
 func (s *SQLiteStore) SaveScanner(sc ScannerConfig) error {
 	b, _ := json.Marshal(sc)
 	return s.setKV("scanner", string(b))
-}
-
-func (s *SQLiteStore) LoadFOFA() (FOFAConfig, error) {
-	v, err := s.getKV("fofa")
-	if err != nil {
-		return FOFAConfig{}, err
-	}
-	var f FOFAConfig
-	err = json.Unmarshal([]byte(v), &f)
-	return f, err
-}
-
-func (s *SQLiteStore) SaveFOFA(f FOFAConfig) error {
-	b, _ := json.Marshal(f)
-	return s.setKV("fofa", string(b))
 }
 
 func (s *SQLiteStore) LoadRegions() ([]ProxyRegion, error) {
@@ -322,89 +288,6 @@ func (s *SQLiteStore) ListScanHistory(limit int) ([]ScanHistory, error) {
 			return nil, err
 		}
 		out = append(out, h)
-	}
-	return out, nil
-}
-
-func (s *SQLiteStore) AddFOFAKey(k FOFAKey) (int64, error) {
-	if k.CreatedAt == "" {
-		k.CreatedAt = NowISO()
-	}
-	res, err := s.db.Exec(`INSERT INTO fofa_keys(name,email,key,quota_used,quota_total,enabled,note,created_at)
-		VALUES(?,?,?,?,?,?,?,?)`,
-		k.Name, k.Email, k.Key, k.QuotaUsed, k.QuotaTotal, k.Enabled, k.Note, k.CreatedAt)
-	if err != nil {
-		return 0, err
-	}
-	return res.LastInsertId()
-}
-
-func (s *SQLiteStore) UpdateFOFAKey(k FOFAKey) error {
-	_, err := s.db.Exec(`UPDATE fofa_keys SET name=?,email=?,key=?,quota_total=?,enabled=?,note=? WHERE id=?`,
-		k.Name, k.Email, k.Key, k.QuotaTotal, k.Enabled, k.Note, k.ID)
-	return err
-}
-
-func (s *SQLiteStore) DeleteFOFAKey(id int64) error {
-	_, err := s.db.Exec(`DELETE FROM fofa_keys WHERE id=?`, id)
-	return err
-}
-
-func (s *SQLiteStore) ListFOFAKeys() ([]FOFAKey, error) {
-	rows, err := s.db.Query(`SELECT id,COALESCE(name,''),email,key,COALESCE(quota_used,0),
-		COALESCE(quota_total,0),COALESCE(enabled,1),COALESCE(note,''),COALESCE(created_at,'')
-		FROM fofa_keys ORDER BY id`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []FOFAKey
-	for rows.Next() {
-		var k FOFAKey
-		if err := rows.Scan(&k.ID, &k.Name, &k.Email, &k.Key, &k.QuotaUsed,
-			&k.QuotaTotal, &k.Enabled, &k.Note, &k.CreatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, k)
-	}
-	return out, nil
-}
-
-func (s *SQLiteStore) IncrementFOFAUsage(id int64, n int) error {
-	_, err := s.db.Exec(`UPDATE fofa_keys SET quota_used = quota_used + ? WHERE id=?`, n, id)
-	return err
-}
-
-func (s *SQLiteStore) LogFOFA(keyID int64, query, status string, count int) error {
-	_, err := s.db.Exec(`INSERT INTO fofa_log(key_id,query,result_count,status,used_at) VALUES(?,?,?,?,?)`,
-		keyID, query, count, status, NowISO())
-	return err
-}
-
-func (s *SQLiteStore) ListFOFALog(limit int) ([]map[string]interface{}, error) {
-	if limit <= 0 {
-		limit = 100
-	}
-	rows, err := s.db.Query(`SELECT key_id,query,result_count,status,used_at FROM fofa_log ORDER BY id DESC LIMIT ?`, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []map[string]interface{}
-	for rows.Next() {
-		var kID int64
-		var q, status, usedAt string
-		var count int
-		if err := rows.Scan(&kID, &q, &count, &status, &usedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, map[string]interface{}{
-			"key_id":       kID,
-			"query":        q,
-			"result_count": count,
-			"status":       status,
-			"used_at":      usedAt,
-		})
 	}
 	return out, nil
 }

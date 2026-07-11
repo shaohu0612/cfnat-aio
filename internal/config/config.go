@@ -44,6 +44,16 @@ type ScannerConfig struct {
 	LastRunStats  string  `json:"last_run_stats"`  // 上次扫描统计 JSON
 }
 
+// CfnatConfig 代理转发配置（对应原 cfnat-docker-compose 环境变量）
+type CfnatConfig struct {
+	TLSMode    bool   `json:"tls_mode"`    // TLS 连接模式 (tls)
+	RandomPick bool   `json:"random_pick"` // 随机选取 IP (random)
+	IPPoolSize int    `json:"ip_pool_size"` // IP 池大小 (ipnum)
+	ForwardNum int    `json:"forward_num"` // 转发 IP 轮换数 (num)
+	SpeedTime  int    `json:"speed_time"`  // 测速时长秒 (speedtime)
+	ExpectCode int    `json:"expect_code"` // 期望 HTTP 状态码 (code)
+}
+
 // GeneralConfig 通用配置
 type GeneralConfig struct {
 	WebUIPort    int    `json:"webui_port"`     // WebUI 监听端口
@@ -58,6 +68,7 @@ type Manager struct {
 	mu      sync.RWMutex
 	general GeneralConfig
 	scanner ScannerConfig
+	cfnat   CfnatConfig
 	regions []ProxyRegion
 	db      ConfigStore
 }
@@ -68,6 +79,8 @@ type ConfigStore interface {
 	SaveGeneral(g GeneralConfig) error
 	LoadScanner() (ScannerConfig, error)
 	SaveScanner(s ScannerConfig) error
+	LoadCfnat() (CfnatConfig, error)
+	SaveCfnat(c CfnatConfig) error
 	LoadRegions() ([]ProxyRegion, error)
 	SaveRegions(regions []ProxyRegion) error
 }
@@ -108,13 +121,20 @@ func (m *Manager) loadAll() error {
 	if rs, err := m.db.LoadRegions(); err == nil && len(rs) > 0 {
 		m.regions = rs
 	} else {
-		// 默认地区列表
+		// 默认地区列表：HKG、LAX 开启，JP 默认关闭
 		m.regions = []ProxyRegion{
 			{Name: "HKG", Code: "HKG", Port: 1001, Enabled: true, Fallback: true},
 			{Name: "LAX", Code: "LAX", Port: 1002, Enabled: true, Fallback: true},
-			{Name: "JP",  Code: "NRT", Port: 1003, Enabled: true, Fallback: true},
+			{Name: "JP",  Code: "NRT", Port: 1003, Enabled: false, Fallback: true},
 		}
 		_ = m.db.SaveRegions(m.regions)
+	}
+
+	if c, err := m.db.LoadCfnat(); err == nil {
+		m.cfnat = c
+	} else {
+		m.cfnat = defaultCfnatConfig()
+		_ = m.db.SaveCfnat(m.cfnat)
 	}
 	return nil
 }
@@ -136,6 +156,17 @@ func defaultScannerConfig() ScannerConfig {
 	}
 }
 
+func defaultCfnatConfig() CfnatConfig {
+	return CfnatConfig{
+		TLSMode:    true,
+		RandomPick: true,
+		IPPoolSize: 10,
+		ForwardNum: 5,
+		SpeedTime:  3,
+		ExpectCode: 200,
+	}
+}
+
 // === 访问器 ===
 
 func (m *Manager) General() GeneralConfig {
@@ -148,6 +179,12 @@ func (m *Manager) Scanner() ScannerConfig {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.scanner
+}
+
+func (m *Manager) Cfnat() CfnatConfig {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.cfnat
 }
 
 func (m *Manager) Regions() []ProxyRegion {
@@ -177,6 +214,16 @@ func (m *Manager) UpdateScanner(s ScannerConfig) error {
 		return err
 	}
 	m.scanner = s
+	return nil
+}
+
+func (m *Manager) UpdateCfnat(c CfnatConfig) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if err := m.db.SaveCfnat(c); err != nil {
+		return err
+	}
+	m.cfnat = c
 	return nil
 }
 

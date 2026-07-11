@@ -541,6 +541,48 @@ func (h *Handlers) HandleAPISettings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// === cfnat 代理配置 ===
+
+// HandleAPICfnatConfig cfnat 配置 GET/PUT
+func (h *Handlers) HandleAPICfnatConfig(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, 200, h.CfgMgr.Cfnat())
+	case http.MethodPut, http.MethodPost:
+		var c config.CfnatConfig
+		if err := readJSON(r, &c); err != nil {
+			writeError(w, 400, err.Error())
+			return
+		}
+		// 校验
+		if c.IPPoolSize < 1 {
+			c.IPPoolSize = 1
+		}
+		if c.ForwardNum < 1 {
+			c.ForwardNum = 1
+		}
+		if c.SpeedTime < 1 {
+			c.SpeedTime = 1
+		}
+		if c.ExpectCode < 100 || c.ExpectCode > 599 {
+			c.ExpectCode = 200
+		}
+		if err := h.CfgMgr.UpdateCfnat(c); err != nil {
+			writeError(w, 500, err.Error())
+			return
+		}
+		writeJSON(w, 200, c)
+	default:
+		writeError(w, 405, "method not allowed")
+	}
+}
+
+// === 扫描进度 ===
+
+func (h *Handlers) HandleAPIScannerProgress(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, 200, h.Scanner.Progress())
+}
+
 // === 代理状态 ===
 
 func (h *Handlers) HandleAPIProxyStatus(w http.ResponseWriter, r *http.Request) {

@@ -33,6 +33,18 @@ import (
 	"cfnat-aio/internal/logging"
 )
 
+// ScanProgress 扫描进度（暴露给 WebUI）
+type ScanProgress struct {
+	Running     bool   `json:"running"`
+	Stage       string `json:"stage"`       // 1/5 CIDR加载, 2/5 抽样, 3/5 探活, 4/5 测速, 5/5 入库
+	StageDone   int64  `json:"stage_done"`  // 当前阶段已完成数
+	StageTotal  int64  `json:"stage_total"` // 当前阶段总数
+	CurrentIP   string `json:"current_ip"`  // 当前正在测试的 IP
+	Percent     int    `json:"percent"`     // 当前阶段百分比
+	TotalScanned int64 `json:"total_scanned"` // 总已扫描
+	TotalPassed  int64 `json:"total_passed"`  // 总已通过
+}
+
 // Scanner 扫描器
 type Scanner struct {
 	store  *config.SQLiteStore
@@ -40,10 +52,11 @@ type Scanner struct {
 	cfgMgr *config.Manager
 
 	// 运行控制
-	mu      sync.Mutex
-	running bool
-	stop    context.CancelFunc
-	history []config.ScanHistory
+	mu       sync.Mutex
+	running  bool
+	stop     context.CancelFunc
+	history  []config.ScanHistory
+	progress ScanProgress
 }
 
 // New 创建扫描器
@@ -65,6 +78,13 @@ func (s *Scanner) IsRunning() bool {
 	return s.running
 }
 
+// Progress 获取当前扫描进度
+func (s *Scanner) Progress() ScanProgress {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.progress
+}
+
 // History 获取历史
 func (s *Scanner) History() []config.ScanHistory {
 	return s.history
@@ -83,6 +103,7 @@ func (s *Scanner) RunOnce() {
 		return
 	}
 	s.running = true
+	s.progress = ScanProgress{Running: true}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.stop = cancel
 	s.mu.Unlock()
@@ -90,6 +111,7 @@ func (s *Scanner) RunOnce() {
 	defer func() {
 		s.mu.Lock()
 		s.running = false
+		s.progress.Running = false
 		s.stop = nil
 		s.mu.Unlock()
 	}()
@@ -109,6 +131,7 @@ func (s *Scanner) RunOnce() {
 		histID, sc.IPType, sc.SamplesPer24, sc.MinSpeedMBps)
 
 	// 阶段 1: 加载 CIDR 列表
+	s.setProgress("1/5 加载CIDR", 0, 0, "")
 	cidrs, err := s.loadCIDRs(sc.IPType)
 	if err != nil || len(cidrs) == 0 {
 		logging.ErrorTo("scanner", "✗ 加载 CIDR 列表失败: %v", err)
@@ -118,6 +141,7 @@ func (s *Scanner) RunOnce() {
 	logging.InfoTo("scanner", "  [1/5] 加载 CIDR: %d 段", len(cidrs))
 
 	// 阶段 2: 按 /24 抽样
+	s.setProgress("2/5 抽样中", 0, 0, "")
 	candidates := s.sampleCIDRs(cidrs, sc.SamplesPer24, sc.IPType)
 	if len(candidates) == 0 {
 		logging.ErrorTo("scanner", "✗ 抽样后无候选 IP")
@@ -127,6 +151,7 @@ func (s *Scanner) RunOnce() {
 	logging.InfoTo("scanner", "  [2/5] /24 抽样: %d 个候选 IP", len(candidates))
 
 	// 阶段 3: TCP + TLS 探活 + /cdn-cgi/trace
+	s.setProgress("3/5 探活中", 0, int64(len(candidates)), "")
 	stats := s.probeAndTrace(ctx, candidates, sc)
 	if stats == nil {
 		logging.ErrorTo("scanner", "✗ 探活阶段异常")
@@ -136,10 +161,12 @@ func (s *Scanner) RunOnce() {
 	logging.InfoTo("scanner", "  [3/5] TCP+TLS 探活: %d 个通过", len(stats))
 
 	// 阶段 4: 测速（针对通过探活的 IP）
+	s.setProgress("4/5 测速中", 0, int64(len(stats)), "")
 	passed := s.speedTest(ctx, stats, sc)
 	logging.InfoTo("scanner", "  [4/5] 速度测试: %d 个达到 %.1fMB/s 阈值", len(passed), sc.MinSpeedMBps)
 
 	// 阶段 5: 按地区入库（只入速度达标的）
+	s.setProgress("5/5 入库中", 0, int64(len(passed)), "")
 	var savedByRegion map[string]int
 	if sc.OnlyCMIN2 {
 		savedByRegion = s.saveByCMIN2Colo(passed, sc)
@@ -402,9 +429,10 @@ func (s *Scanner) probeAndTrace(ctx context.Context, ips []string, sc config.Sca
 			r := s.probeOne(ip, sc)
 			results[idx] = r
 			n := atomic.AddInt64(&probed, 1)
-			// 每 500 个汇报一次进度
+			// 每 500 个汇报一次进度到日志和 UI
 			if n%500 == 0 || n == total {
 				logging.InfoTo("scanner", "    探活进度: %d/%d (%.0f%%)", n, total, float64(n)/float64(total)*100)
+				s.setProgress("3/5 探活中", n, total, ip)
 			}
 		}(i, ips[i])
 	}
@@ -452,7 +480,7 @@ func (s *Scanner) speedTest(ctx context.Context, probes []ProbeResult, sc config
 
 	logging.InfoTo("scanner", "    开始测速: %d 个 IP，并发 %d，阈值 %.1fMB/s", total, threads, sc.MinSpeedMBps)
 
-	for i, t := range targets {
+		for i, t := range targets {
 		select {
 		case <-ctx.Done():
 			return results[:i]
@@ -472,6 +500,7 @@ func (s *Scanner) speedTest(ctx context.Context, probes []ProbeResult, sc config
 			n := atomic.AddInt64(&tested, 1)
 			if n%50 == 0 || n == total {
 				logging.InfoTo("scanner", "    测速进度: %d/%d (%.0f%%)", n, total, float64(n)/float64(total)*100)
+				s.setProgress("4/5 测速中", n, total, ip)
 			}
 		}(i, t.IP, t.Colo, t.Latency)
 	}
@@ -638,6 +667,19 @@ func (s *Scanner) Stop() {
 	if s.stop != nil {
 		s.stop()
 	}
+}
+
+// setProgress 更新扫描进度
+func (s *Scanner) setProgress(stage string, done, total int64, currentIP string) {
+	s.mu.Lock()
+	s.progress.Stage = stage
+	s.progress.StageDone = done
+	s.progress.StageTotal = total
+	s.progress.CurrentIP = currentIP
+	if total > 0 {
+		s.progress.Percent = int(done * 100 / total)
+	}
+	s.mu.Unlock()
 }
 
 // sortedEntriesByRegion 工具：按地区分组 + 按速度排序

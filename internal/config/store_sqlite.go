@@ -112,6 +112,21 @@ func (s *SQLiteStore) SaveScanner(sc ScannerConfig) error {
 	return s.setKV("scanner", string(b))
 }
 
+func (s *SQLiteStore) LoadCfnat() (CfnatConfig, error) {
+	v, err := s.getKV("cfnat")
+	if err != nil {
+		return CfnatConfig{}, err
+	}
+	var c CfnatConfig
+	err = json.Unmarshal([]byte(v), &c)
+	return c, err
+}
+
+func (s *SQLiteStore) SaveCfnat(c CfnatConfig) error {
+	b, _ := json.Marshal(c)
+	return s.setKV("cfnat", string(b))
+}
+
 func (s *SQLiteStore) LoadRegions() ([]ProxyRegion, error) {
 	v, err := s.getKV("regions")
 	if err != nil {

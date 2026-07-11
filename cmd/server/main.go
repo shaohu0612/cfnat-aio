@@ -158,6 +158,10 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 	mux.HandleFunc("/api/scanner/run", h.HandleAPIScannerRun)
 	mux.HandleFunc("/api/scanner/stop", h.HandleAPIScannerStop)
 	mux.HandleFunc("/api/scanner/history", h.HandleAPIScannerHistory)
+	mux.HandleFunc("/api/scanner/progress", h.HandleAPIScannerProgress)
+
+	// cfnat 代理配置
+	mux.HandleFunc("/api/cfnat", h.HandleAPICfnatConfig)
 
 	// 通用
 	mux.HandleFunc("/api/settings", h.HandleAPISettings)

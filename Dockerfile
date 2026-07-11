@@ -10,12 +10,10 @@ WORKDIR /src
 # 复制全部源码
 COPY . .
 
-# 下载依赖（先单独下载，失败时能看到具体原因）
+# 整理依赖（生成 go.sum）+ 编译
 RUN go env -w GOPROXY=https://proxy.golang.org,direct && \
-    go mod download
-
-# 编译
-RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o /out/cfnat-aio ./cmd/server
+    go mod tidy && \
+    CGO_ENABLED=1 go build -ldflags="-s -w" -o /out/cfnat-aio ./cmd/server
 
 # 第二阶段：最小运行时镜像
 FROM alpine:3.19

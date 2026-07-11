@@ -23,6 +23,17 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
+      - name: 设置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: 本地编译测试（不打包到镜像）
+        run: |
+          go version
+          go mod download
+          go build -v -o /tmp/cfnat-aio ./cmd/server 2>&1 || (echo "=== BUILD FAILED, showing all errors ===" && go build ./cmd/server 2>&1; exit 1)
+
       - name: 设置 Buildx
         uses: docker/setup-buildx-action@v3
 

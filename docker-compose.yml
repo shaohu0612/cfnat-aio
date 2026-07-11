@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  cfnat-aio:
+    build: .
+    image: cfnat-aio:latest
+    container_name: cfnat-aio
+    restart: unless-stopped
+    ports:
+      - "1234:1234"   # WebUI
+      - "1001:1001"   # HKG proxy
+      - "1002:1002"   # LAX proxy
+      - "1003:1003"   # JP proxy
+      # 后续新增地区只需在 WebUI 操作，端口会按需添加
+      # 需要对外暴露时，在这里加 "1004:1004" 之类
+    volumes:
+      # 数据库持久化到 /vol1/1000/docker/cfnat-aio
+      - /vol1/1000/docker/cfnat-aio:/data
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      static_net:
+        ipv4_address: 192.168.7.4
+
+networks:
+  static_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.7.0/24
+          gateway: 192.168.7.1

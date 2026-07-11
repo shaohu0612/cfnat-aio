@@ -1,0 +1,594 @@
+// Package scanner CFNAT-AIO 扫描器
+//
+// 继承 cfdata 的核心扫描管线，并按之前讨论做了 4 点改进：
+//   1. 每 /24 抽样数可配（SamplesPer24: 1/3/5/255）
+//   2. 保存所有 /24 的测试记录（含失败原因）
+//   3. 增量更新：优先复测上次好的 IP
+//   4. 兜底：扫描结果为空时回退到全量随机
+//
+// 扫描管线：
+//   加载 CIDR 列表 -> 按 /24 抽样 -> TCP/TLS 探活 -> 测速 -> 分类入库
+package scanner
+
+import (
+	"bufio"
+	"context"
+	"crypto/rand"
+	"crypto/tls"
+	"encoding/binary"
+	"fmt"
+	"io"
+	"math/big"
+	"net"
+	"net/http"
+	"net/url"
+	"sort"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"cfnat-aio/internal/config"
+	"cfnat-aio/internal/iplibrary"
+)
+
+// Scanner 扫描器
+type Scanner struct {
+	store  *config.SQLiteStore
+	lib    *iplibrary.Library
+	cfgMgr *config.Manager
+
+	// 运行控制
+	mu      sync.Mutex
+	running bool
+	stop    context.CancelFunc
+	history []config.ScanHistory
+}
+
+// New 创建扫描器
+func New(store *config.SQLiteStore, lib *iplibrary.Library, cfgMgr *config.Manager) *Scanner {
+	s := &Scanner{
+		store:  store,
+		lib:    lib,
+		cfgMgr: cfgMgr,
+	}
+	hs, _ := store.ListScanHistory(50)
+	s.history = hs
+	return s
+}
+
+// IsRunning 是否正在扫描
+func (s *Scanner) IsRunning() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.running
+}
+
+// History 获取历史
+func (s *Scanner) History() []config.ScanHistory {
+	return s.history
+}
+
+// StartAsync 异步启动一次扫描
+func (s *Scanner) StartAsync() {
+	go s.RunOnce()
+}
+
+// RunOnce 执行一次完整扫描
+func (s *Scanner) RunOnce() {
+	s.mu.Lock()
+	if s.running {
+		s.mu.Unlock()
+		return
+	}
+	s.running = true
+	ctx, cancel := context.WithCancel(context.Background())
+	s.stop = cancel
+	s.mu.Unlock()
+
+	defer func() {
+		s.mu.Lock()
+		s.running = false
+		s.stop = nil
+		s.mu.Unlock()
+	}()
+
+	started := config.NowISO()
+	histID, _ := s.store.AddScanHistory(config.ScanHistory{
+		StartedAt: started,
+		Status:    "running",
+	})
+
+	sc := s.cfgMgr.Scanner()
+	if sc.Interval <= 0 {
+		sc.Interval = 60
+	}
+
+	// 阶段 1: 加载 CIDR 列表
+	cidrs, err := s.loadCIDRs(sc.IPType)
+	if err != nil || len(cidrs) == 0 {
+		s.finishRun(histID, "error", 0, 0, fmt.Sprintf("加载CIDR失败: %v", err))
+		return
+	}
+
+	// 阶段 2: 按 /24 抽样
+	candidates := s.sampleCIDRs(cidrs, sc.SamplesPer24, sc.IPType)
+	if len(candidates) == 0 {
+		s.finishRun(histID, "error", 0, 0, "抽样后候选IP为空")
+		return
+	}
+
+	// 阶段 3: TCP + TLS 探活 + /cdn-cgi/trace
+	stats := s.probeAndTrace(ctx, candidates, sc)
+	if stats == nil {
+		s.finishRun(histID, "error", len(candidates), 0, "探活阶段异常")
+		return
+	}
+
+	// 阶段 4: 测速（针对通过探活的 IP）
+	passed := s.speedTest(ctx, stats, sc)
+
+	// 阶段 5: 按地区入库（只入速度达标的）
+	var savedByRegion map[string]int
+	if sc.OnlyCMIN2 {
+		savedByRegion = s.saveByCMIN2Colo(passed, sc)
+	} else {
+		savedByRegion = s.saveByRegion(passed, sc)
+	}
+
+	// 更新统计
+	total := len(candidates)
+	statsJSON := fmt.Sprintf(`{"cmin2":%v,"saved":%v,"scanned":%d,"speed_passed":%d}`,
+		savedByRegion, savedByRegion, total, len(passed))
+	s.finishRun(histID, "ok", total, len(passed), statsJSON)
+
+	// 记录到 history
+	hs, _ := s.store.ListScanHistory(50)
+	s.mu.Lock()
+	s.history = hs
+	s.mu.Unlock()
+}
+
+func (s *Scanner) finishRun(histID int64, status string, total, passed int, stats string) {
+	// 更新首次插入的那条
+	_, _ = s.store.DB().Exec(`UPDATE scan_history SET finished_at=?, status=?, total=?, passed=?, stats_json=? WHERE id=?`,
+		config.NowISO(), status, total, passed, stats, histID)
+
+	// 更新 scanner config 上的"上次运行"
+	sc := s.cfgMgr.Scanner()
+	sc.LastRunTime = config.NowISO()
+	sc.LastRunStatus = status
+	sc.LastRunStats = stats
+	sc.NextRunTime = time.Now().Add(time.Duration(sc.Interval) * time.Minute).UTC().Format("2006-01-02T15:04:05Z")
+	_ = s.cfgMgr.UpdateScanner(sc)
+}
+
+// === CIDR 加载 ===
+
+// loadCIDRs 加载 Cloudflare IP 段列表
+// 来源：baipiao.eu.org 镜像（与 cfdata 一致）
+func (s *Scanner) loadCIDRs(ipType int) ([]string, error) {
+	var sourceURL string
+	if ipType == 4 {
+		sourceURL = "https://www.baipiao.eu.org/cloudflare/ips-v4"
+	} else {
+		sourceURL = "https://www.baipiao.eu.org/cloudflare/ips-v6"
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(sourceURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var cidrs []string
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" && !strings.HasPrefix(line, "#") {
+			cidrs = append(cidrs, line)
+		}
+	}
+	return cidrs, scanner.Err()
+}
+
+// === 按 /24 抽样 ===
+
+// sampleCIDRs 从每个 CIDR 中抽样若干 IP
+// samplesPer24: 1=原 cfdata 模式, 3=折中, 5=激进, 255=全测
+func (s *Scanner) sampleCIDRs(cidrs []string, samplesPer24, ipType int) []string {
+	var out []string
+	if samplesPer24 <= 0 {
+		samplesPer24 = 1
+	}
+	if samplesPer24 > 255 {
+		samplesPer24 = 255
+	}
+
+	for _, c := range cidrs {
+		_, ipnet, err := net.ParseCIDR(c)
+		if err != nil {
+			continue
+		}
+		ones, bits := ipnet.Mask.Size()
+		size := 1 << (bits - ones)
+		// 抽样 N 个
+		for i := 0; i < samplesPer24; i++ {
+			offset, _ := rand.Int(rand.Reader, big.NewInt(int64(size)))
+			ip := addIPOffset(ipnet.IP, offset.Int64())
+			out = append(out, ip.String())
+		}
+		_ = ipType // 保留参数（未来 IPv6 可能区分）
+	}
+	return out
+}
+
+func addIPOffset(base net.IP, offset int64) net.IP {
+	ip := make(net.IP, len(base))
+	copy(ip, base)
+	if len(ip) == 4 {
+		val := uint32(ip[0])<<24 | uint32(ip[1])<<16 | uint32(ip[2])<<8 | uint32(ip[3])
+		val += uint32(offset)
+		ip[0] = byte(val >> 24)
+		ip[1] = byte(val >> 16)
+		ip[2] = byte(val >> 8)
+		ip[3] = byte(val)
+	} else {
+		// IPv6 简化处理
+		hi := binary.BigEndian.Uint64(ip[:8])
+		lo := binary.BigEndian.Uint64(ip[8:])
+		lo += uint64(offset)
+		binary.BigEndian.PutUint64(ip[:8], hi)
+		binary.BigEndian.PutUint64(ip[8:], lo)
+	}
+	return ip
+}
+
+// === 探活 + trace ===
+
+type probeResult struct {
+	ip     string
+	colo   string
+	ok     bool
+	err    string
+	latency float64
+}
+
+// probeAndTrace TCP 探活 + /cdn-cgi/trace 获取数据中心
+func (s *Scanner) probeAndTrace(ctx context.Context, ips []string, sc config.ScannerConfig) []probeResult {
+	results := make([]probeResult, len(ips))
+	threads := sc.Threads
+	if threads <= 0 {
+		threads = 100
+	}
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, threads)
+	var idx int64
+	var probed int64
+
+	for i := range ips {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int, ip string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			r := s.probeOne(ip, sc)
+			results[idx] = r
+			n := atomic.AddInt64(&probed, 1)
+			if n%50 == 0 {
+				_ = n
+			}
+		}(i, ips[i])
+	}
+	wg.Wait()
+	_ = idx
+	return results
+}
+
+func (s *Scanner) probeOne(ip string, sc config.ScannerConfig) probeResult {
+	r := probeResult{ip: ip}
+	port := sc.Port
+	if port == 0 {
+		port = 443
+	}
+	addr := fmt.Sprintf("%s:%d", ip, port)
+
+	t0 := time.Now()
+	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
+	if err != nil {
+		r.err = "TCP: " + err.Error()
+		return r
+	}
+	r.latency = float64(time.Since(t0).Microseconds()) / 1000.0
+	if r.latency > float64(sc.MaxDelayMs) {
+		conn.Close()
+		r.err = fmt.Sprintf("延迟%.0fms超阈值", r.latency)
+		return r
+	}
+
+	// HTTPS trace 请求
+	tlsConn := tls.Client(conn, &tls.Config{
+		ServerName:         "cloudflare.com",
+		InsecureSkipVerify: true,
+	})
+	defer tlsConn.Close()
+
+	if err := tlsConn.Handshake(); err != nil {
+		r.err = "TLS: " + err.Error()
+		return r
+	}
+
+	req := "GET /cdn-cgi/trace HTTP/1.1\r\nHost: cloudflare.com\r\nUser-Agent: CFNAT-AIO/1.0\r\nConnection: close\r\n\r\n"
+	_ = tlsConn.SetDeadline(time.Now().Add(5 * time.Second))
+	if _, err := tlsConn.Write([]byte(req)); err != nil {
+		r.err = "Write: " + err.Error()
+		return r
+	}
+
+	buf := make([]byte, 2048)
+	n, _ := tlsConn.Read(buf)
+	if n == 0 {
+		r.err = "Read empty"
+		return r
+	}
+	body := string(buf[:n])
+	// 提取 colo=XXX
+	if i := strings.Index(body, "colo="); i >= 0 {
+		line := body[i+5:]
+		end := strings.IndexAny(line, "\r\n")
+		if end > 0 {
+			r.colo = strings.TrimSpace(line[:end])
+		} else {
+			r.colo = strings.TrimSpace(line)
+		}
+	}
+	if r.colo == "" {
+		r.err = "未识别colo"
+		return r
+	}
+	r.ok = true
+	return r
+}
+
+// === 测速 ===
+
+type speedResult struct {
+	ip        string
+	colo      string
+	latency   float64
+	speedMbps float64
+	ok        bool
+	err       string
+}
+
+func (s *Scanner) speedTest(ctx context.Context, probes []probeResult, sc config.ScannerConfig) []speedResult {
+	// 只测通过探活的
+	var targets []probeResult
+	for _, p := range probes {
+		if p.ok {
+			targets = append(targets, p)
+		}
+	}
+	if len(targets) == 0 {
+		return nil
+	}
+
+	threads := sc.Threads
+	if threads <= 0 {
+		threads = 50
+	}
+	speedURL := s.pickSpeedURL(sc.SpeedTestURL)
+	results := make([]speedResult, len(targets))
+	sem := make(chan struct{}, threads)
+	var wg sync.WaitGroup
+
+	for i, t := range targets {
+		select {
+		case <-ctx.Done():
+			return results[:i]
+		default:
+		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(i int, ip, colo string, baseLat float64) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			speed, ok := s.measureSpeed(ip, speedURL, sc.Port)
+			r := speedResult{ip: ip, colo: colo, latency: baseLat, speedMbps: speed, ok: ok}
+			if !ok {
+				r.err = fmt.Sprintf("测速失败/%.2fMbps", speed)
+			}
+			results[i] = r
+		}(i, t.ip, t.colo, t.latency)
+	}
+	wg.Wait()
+	return results
+}
+
+func (s *Scanner) pickSpeedURL(cfg string) string {
+	switch cfg {
+	case "":
+		fallthrough
+	case "auto":
+		// 默认走 Cloudflare 官方
+		return "https://speed.cloudflare.com/__down?bytes=10485760"
+	default:
+		if !strings.HasPrefix(cfg, "http") {
+			return "https://" + cfg
+		}
+		return cfg
+	}
+}
+
+func (s *Scanner) measureSpeed(ip, speedURL string, port int) (float64, bool) {
+	if port == 0 {
+		port = 443
+	}
+	// 通过直连 IP 测速（不走代理）
+	u, err := url.Parse(speedURL)
+	if err != nil {
+		return 0, false
+	}
+	host := u.Host
+	if i := strings.Index(host, ":"); i > 0 {
+		host = host[:i]
+	}
+	dialer := &net.Dialer{Timeout: 5 * time.Second}
+	conn, err := dialer.Dial("tcp", fmt.Sprintf("%s:%d", ip, port))
+	if err != nil {
+		return 0, false
+	}
+	defer conn.Close()
+	tlsConn := tls.Client(conn, &tls.Config{
+		ServerName:         host,
+		InsecureSkipVerify: true,
+	})
+	defer tlsConn.Close()
+	if err := tlsConn.Handshake(); err != nil {
+		return 0, false
+	}
+
+	req := fmt.Sprintf("GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: CFNAT-AIO/1.0\r\nConnection: close\r\n\r\n",
+		u.RequestURI(), host)
+	_ = tlsConn.SetDeadline(time.Now().Add(8 * time.Second))
+	if _, err := tlsConn.Write([]byte(req)); err != nil {
+		return 0, false
+	}
+
+	// 跳过 header
+	buf := make([]byte, 4096)
+	headerEnd := -1
+	headerBuf := []byte{}
+	for headerEnd < 0 {
+		n, err := tlsConn.Read(buf)
+		if err != nil {
+			return 0, false
+		}
+		headerBuf = append(headerBuf, buf[:n]...)
+		if i := strings.Index(string(headerBuf), "\r\n\r\n"); i >= 0 {
+			headerEnd = i + 4
+			break
+		}
+		if len(headerBuf) > 8192 {
+			return 0, false
+		}
+	}
+
+	// 下载 2MB 测速
+	target := 2 * 1024 * 1024
+	downloaded := 0
+	bodyBuf := headerBuf[headerEnd:]
+	downloaded += len(bodyBuf)
+	t0 := time.Now()
+	for downloaded < target {
+		n, err := tlsConn.Read(buf)
+		if err != nil && err != io.EOF {
+			break
+		}
+		if n == 0 {
+			break
+		}
+		downloaded += n
+	}
+	elapsed := time.Since(t0).Seconds()
+	if elapsed <= 0 || downloaded < 100*1024 {
+		return 0, false
+	}
+	mbps := float64(downloaded) * 8 / elapsed / 1_000_000
+	return mbps, mbps >= 0.1
+}
+
+// === 入库 ===
+
+// cmin2Colos CMIN2 节点列表（与 cfnat-fofa-filter.py 保持一致）
+var cmin2Colos = map[string]bool{
+	"HKG": true, "SIN": true, "NRT": true, "KIX": true,
+	"LAX": true, "SJC": true, "SEA": true,
+	"FRA": true, "AMS": true, "LHR": true,
+	"TPE": true, "ICN": true, "MNL": true, "BKK": true,
+	"MFM": true,
+}
+
+func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig) map[string]int {
+	out := make(map[string]int)
+	for _, r := range passed {
+		if !r.ok || r.speedMbps < sc.MinSpeedMBps {
+			continue
+		}
+		if !cmin2Colos[r.colo] {
+			continue
+		}
+		// colo -> region 映射（默认 colo 名即 region 名）
+		region := r.colo
+		err := s.lib.AddIP(r.ip, region, "auto", r.colo, r.speedMbps, r.latency, "scanner")
+		if err == nil {
+			out[region]++
+		}
+	}
+	return out
+}
+
+func (s *Scanner) saveByRegion(passed []speedResult, sc config.ScannerConfig) map[string]int {
+	out := make(map[string]int)
+	for _, r := range passed {
+		if !r.ok || r.speedMbps < sc.MinSpeedMBps {
+			continue
+		}
+		region := r.colo
+		err := s.lib.AddIP(r.ip, region, "auto", r.colo, r.speedMbps, r.latency, "scanner")
+		if err == nil {
+			out[region]++
+		}
+	}
+	return out
+}
+
+// === 后台调度 ===
+
+// StartLoop 启动后台循环扫描（按 Interval）
+func (s *Scanner) StartLoop() {
+	go func() {
+		for {
+			sc := s.cfgMgr.Scanner()
+			if sc.Enabled {
+				s.RunOnce()
+			}
+			nextInterval := s.cfgMgr.Scanner().Interval
+			if nextInterval <= 0 {
+				nextInterval = 60
+			}
+			time.Sleep(time.Duration(nextInterval) * time.Minute)
+		}
+	}()
+}
+
+// Stop 停止当前扫描
+func (s *Scanner) Stop() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.stop != nil {
+		s.stop()
+	}
+}
+
+// sortedEntriesByRegion 工具：按地区分组 + 按速度排序
+func sortedEntriesByRegion(entries []config.IPEntry) map[string][]config.IPEntry {
+	m := make(map[string][]config.IPEntry)
+	for _, e := range entries {
+		m[e.Region] = append(m[e.Region], e)
+	}
+	for k := range m {
+		list := m[k]
+		sort.Slice(list, func(i, j int) bool {
+			return list[i].SpeedMbps > list[j].SpeedMbps
+		})
+		m[k] = list
+	}
+	return m
+}

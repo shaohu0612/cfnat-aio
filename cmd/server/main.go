@@ -29,7 +29,7 @@ import (
 	"cfnat-aio/internal/scanner"
 	"cfnat-aio/internal/webui"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// 打开 SQLite
-	db, err := sql.Open("sqlite3", *dbPath+"?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on")
+	db, err := sql.Open("sqlite", *dbPath+"?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on")
 	if err != nil {
 		log.Fatalf("打开 SQLite 失败: %v", err)
 	}

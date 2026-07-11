@@ -2,8 +2,7 @@
 # 第一阶段：编译 Go 二进制
 FROM golang:1.22-alpine AS builder
 
-# CGO 需要，SQLite 驱动编译时需要
-RUN apk add --no-cache gcc musl-dev
+# 纯 Go SQLite 驱动，无需 CGO
 
 WORKDIR /src
 
@@ -16,7 +15,7 @@ RUN go env -w GOPROXY=https://proxy.golang.org,direct && \
 COPY . .
 
 # 编译（再次确保 go.sum 完整，避免本地 go.sum 缺失时仍可工作）
-RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o /out/cfnat-aio ./cmd/server
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/cfnat-aio ./cmd/server
 
 # 第二阶段：最小运行时镜像
 FROM alpine:3.19

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // SQLiteStore SQLite 配置存储

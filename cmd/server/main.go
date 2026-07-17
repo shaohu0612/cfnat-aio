@@ -33,23 +33,39 @@ import (
 )
 
 var (
-	dbPath = flag.String("db", "/data/cfnat-aio.db", "SQLite 数据库文件路径")
+	dbPath = flag.String("db", "", "SQLite 数据库文件路径（默认: ./data/cfnat-aio.db）")
 	port   = flag.Int("port", 1234, "WebUI 监听端口")
 )
 
+func defaultDBPath() string {
+	// 尝试当前工作目录下的 data 子目录
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "."
+	}
+	p := filepath.Join(cwd, "data", "cfnat-aio.db")
+	return p
+}
+
 func main() {
 	flag.Parse()
+
+	// 默认数据库路径
+	dbFile := *dbPath
+	if dbFile == "" {
+		dbFile = defaultDBPath()
+	}
 
 	// 初始化统一日志系统
 	logging.InitGlobal()
 
 	// 确保数据目录存在
-	if err := os.MkdirAll(filepath.Dir(*dbPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dbFile), 0o755); err != nil {
 		log.Fatalf("创建数据目录失败: %v", err)
 	}
 
 	// 打开 SQLite
-	db, err := sql.Open("sqlite", *dbPath+"?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on")
+	db, err := sql.Open("sqlite", dbFile+"?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on")
 	if err != nil {
 		log.Fatalf("打开 SQLite 失败: %v", err)
 	}
@@ -73,7 +89,7 @@ func main() {
 		_ = cfgMgr.UpdateGeneral(g)
 	}
 	if g.DataDir == "" {
-		g.DataDir = filepath.Dir(*dbPath)
+		g.DataDir = filepath.Dir(dbFile)
 		_ = cfgMgr.UpdateGeneral(g)
 	}
 
@@ -89,6 +105,14 @@ func main() {
 	// 启动 WebUI
 	handlers := webui.New(store, cfgMgr, lib, sc, pm)
 	mux := http.NewServeMux()
+
+	// 静态资源（Vue/Naive UI 本地化文件）
+	staticDir := filepath.Join(g.DataDir, "static")
+	if info, err := os.Stat(staticDir); err == nil && info.IsDir() {
+		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
+		log.Printf("静态资源目录: %s", staticDir)
+	}
+
 	registerRoutes(mux, handlers)
 
 	srv := &http.Server{
@@ -119,7 +143,7 @@ func main() {
 	log.Printf("=========================================")
 	log.Printf("  CFNAT-AIO 启动成功")
 	log.Printf("  WebUI:  http://:%d", g.WebUIPort)
-	log.Printf("  数据库: %s", *dbPath)
+	log.Printf("  数据库: %s", dbFile)
 	regions := cfgMgr.Regions()
 	log.Printf("  地区:   %d 个已配置", len(regions))
 	for _, r := range regions {

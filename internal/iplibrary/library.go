@@ -100,9 +100,15 @@ func (l *Library) RemoveIP(ip, region string) error {
 func (l *Library) ListIPs(region string) []config.IPEntry {
 	if region == "" {
 		all, _ := l.store.ListAllIPs()
+		if all == nil {
+			return []config.IPEntry{}
+		}
 		return all
 	}
 	entries, _ := l.store.ListIPs(region)
+	if entries == nil {
+		return []config.IPEntry{}
+	}
 	return entries
 }
 
@@ -111,6 +117,34 @@ func (l *Library) CountIPs(region string) int {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	return len(l.cache[region])
+}
+
+// CountIPsByCodes 统计多个 colo 代码的总 IP 数
+func (l *Library) CountIPsByCodes(codes []string) int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	total := 0
+	for _, code := range codes {
+		total += len(l.cache[code])
+	}
+	return total
+}
+
+// PickRandomByCodes 从多个 colo 代码中随机挑选一个 IP
+func (l *Library) PickRandomByCodes(codes []string) (string, error) {
+	l.mu.RLock()
+	var allIPs []string
+	for _, code := range codes {
+		allIPs = append(allIPs, l.cache[code]...)
+	}
+	l.mu.RUnlock()
+
+	if len(allIPs) == 0 {
+		return "", fmt.Errorf("no IPs for codes %v", codes)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	return allIPs[rand.Intn(len(allIPs))], nil
 }
 
 // PickRandom 从某地区随机挑一个 IP（代理用）

@@ -266,13 +266,13 @@ func (s *SQLiteStore) GetMeta(ip, region string) (*IPMeta, error) {
 }
 
 type ScanHistory struct {
-	ID         int64
-	StartedAt  string
-	FinishedAt string
-	Status     string
-	Total      int
-	Passed     int
-	StatsJSON  string
+	ID         int64  `json:"id"`
+	StartedAt  string `json:"started_at"`
+	FinishedAt string `json:"finished_at"`
+	Status     string `json:"status"`
+	Total      int    `json:"total"`
+	Passed     int    `json:"passed"`
+	StatsJSON  string `json:"stats_json"`
 }
 
 func (s *SQLiteStore) AddScanHistory(h ScanHistory) (int64, error) {

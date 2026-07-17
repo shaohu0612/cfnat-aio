@@ -18,7 +18,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/cfnat-aio ./cmd/server
 
 # 第二阶段：最小运行时镜像
-FROM alpine:3.19
+FROM alpine:3.22
 
 RUN apk add --no-cache ca-certificates tzdata && \
     addgroup -g 1000 cfnat && adduser -u 1000 -G cfnat -D cfnat

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CFNAT-AIO</title>
-<script src="https://unpkg.com/vue@3.4/dist/vue.global.prod.js"></script>
-<script src="https://unpkg.com/naive-ui@2.38/dist/index.prod.js"></script>
+<script src="/static/vue.global.prod.js"></script>
+<script src="/static/naive-ui.prod.js"></script>
 <style>
 :root {
   --bg-primary: #0a0e14;
@@ -195,14 +195,15 @@ body {
           <!-- ========== 2. 地区管理 ========== -->
           <n-tab-pane name="regions" tab="🗺 地区管理">
             <n-card title="添加地区" size="small" style="margin-bottom:16px">
-              <n-space>
-                <n-input v-model:value="newRegion.name" placeholder="名称 (HKG/LAX/JP)" size="small" style="width:120px" />
-                <n-input v-model:value="newRegion.code" placeholder="Colo 代码" size="small" style="width:120px" />
-                <n-input-number v-model:value="newRegion.port" placeholder="端口" size="small" :min="1" :max="65535" style="width:100px" />
-                <n-switch v-model:value="newRegion.enabled" size="small" />
-                <span style="font-size:12px;color:var(--text-muted)">启用</span>
-                <n-button type="primary" size="small" @click="addRegion" :disabled="!newRegion.name || !newRegion.port">添加</n-button>
-              </n-space>
+              <div style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center">
+                <input v-model="newRegion.name" placeholder="名称 (HKG/LAX/JP)" style="width:120px;padding:5px 10px;border:1px solid #1e2430;border-radius:3px;background:#0a0e14;color:#c9d1d9;font-size:13px;outline:none">
+                <input v-model="newRegion.code" placeholder="Colo 代码" style="width:120px;padding:5px 10px;border:1px solid #1e2430;border-radius:3px;background:#0a0e14;color:#c9d1d9;font-size:13px;outline:none">
+                <input v-model="newRegion.portStr" placeholder="端口" style="width:100px;padding:5px 10px;border:1px solid #1e2430;border-radius:3px;background:#0a0e14;color:#c9d1d9;font-size:13px;outline:none">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);cursor:pointer">
+                  <input type="checkbox" v-model="newRegion.enabled" style="accent-color:#58a6ff;width:14px;height:14px"> 启用
+                </label>
+                <button @click="addRegion" :disabled="!newRegion.name || !newRegion.portStr" style="padding:5px 14px;background:#58a6ff;color:#fff;border:none;border-radius:3px;font-size:13px;cursor:pointer;opacity:1" :style="{opacity: (!newRegion.name || !newRegion.portStr) ? 0.4 : 1, cursor: (!newRegion.name || !newRegion.portStr) ? 'not-allowed' : 'pointer'}">添加</button>
+              </div>
             </n-card>
             <n-data-table :columns="regionCols" :data="regions" :bordered="false" size="small" />
           </n-tab-pane>
@@ -262,6 +263,15 @@ body {
               </div>
             </div>
 
+            <!-- 最近扫描失败提示 -->
+            <n-alert v-if="scanHistory.length > 0 && scanHistory[0].status === 'error' && !scanProgress.running" type="error" style="margin-bottom:16px">
+              最近一次扫描失败：
+              <span v-if="scanHistory[0].stats_json">{{ scanHistory[0].stats_json }}</span>
+              <span v-else>未知错误</span>
+              <br>
+              <span style="font-size:12px;color:var(--text-muted)">请检查容器网络连接，确保能访问外网（Cloudflare IP 段列表源和测速服务器）</span>
+            </n-alert>
+
             <n-card title="cfdata 扫描配置" size="small" style="margin-bottom:16px">
               <n-space vertical size="small">
                 <div class="config-row">
@@ -283,7 +293,7 @@ body {
                 </div>
                 <div class="config-row">
                   <span class="label">每/24抽样</span>
-                  <n-select v-model:value="scannerForm.samples_per_24" :options="[{label:'1 (原版)',value:1},{label:'3',value:3},{label:'5',value:5},{label:'10',value:10},{label:'全测',value:255}]" size="small" style="width:130px" />
+                  <n-select v-model:value="scannerForm.samples_per_24" :options="[{label:'1 (快速)',value:1},{label:'10',value:10},{label:'50',value:50},{label:'100 (推荐)',value:100},{label:'255 (全测)',value:255}]" size="small" style="width:130px" />
                   <span class="label" style="margin-left:16px">延迟阈值 (delay)</span>
                   <n-input-number v-model:value="scannerForm.max_delay_ms" size="small" :min="10" style="width:90px" />
                   <span style="font-size:11px;color:var(--text-muted)">ms</span>
@@ -328,7 +338,7 @@ body {
             <n-card title="手动添加 IP" size="small" style="margin-bottom:12px">
               <n-space>
                 <n-input v-model:value="addIPForm.ip" placeholder="IP 地址" size="small" style="width:160px" />
-                <n-input v-model:value="addIPForm.region" placeholder="地区 (HKG)" size="small" style="width:100px" />
+                <n-input v-model:value="addIPForm.region" placeholder="Colo (KIX)" size="small" style="width:100px" />
                 <n-input v-model:value="addIPForm.colo" placeholder="Colo" size="small" style="width:100px" />
                 <n-input-number v-model:value="addIPForm.speed" placeholder="速度 MB/s" size="small" :min="0" style="width:110px" />
                 <n-button type="primary" size="small" @click="addIPManual" :disabled="!addIPForm.ip || !addIPForm.region">添加</n-button>
@@ -423,10 +433,27 @@ body {
 </div>
 
 <script>
-const { createApp, ref, reactive, computed, onMounted, onUnmounted, watch, h } = Vue;
+const { createApp, ref, reactive, computed, onMounted, onUnmounted, watch, h, nextTick } = Vue;
 const { NConfigProvider, NMessageProvider, NTabs, NTabPane, NTag, NDataTable, NButton, NCard,
   NInput, NInputNumber, NSelect, NSwitch, NSpace, NPopconfirm, NAlert, NEmpty,
-  NLog, useMessage } = naive;
+  NLog, createDiscreteApi } = naive;
+
+// 使用 createDiscreteApi 代替 useMessage，避免 NMessageProvider 嵌套问题
+const { message: toastApi } = createDiscreteApi(['message'], {
+  configProviderProps: {
+    themeOverrides: {
+      common: {
+        primaryColor: '#58a6ff',
+        primaryColorHover: '#79b8ff',
+        primaryColorPressed: '#1f6feb',
+        successColor: '#3fb950',
+        warningColor: '#d29922',
+        errorColor: '#f85149'
+      }
+    }
+  }
+});
+const toast = (msg, type = 'success') => toastApi[type](msg);
 
 const api = async (method, path, body) => {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -439,12 +466,58 @@ const api = async (method, path, body) => {
   return r.json();
 };
 
+// 暗色主题覆盖
+const themeOverrides = {
+  common: {
+    primaryColor: '#58a6ff',
+    primaryColorHover: '#79b8ff',
+    primaryColorPressed: '#1f6feb',
+    successColor: '#3fb950',
+    warningColor: '#d29922',
+    errorColor: '#f85149',
+    bodyColor: '#0a0e14',
+    cardColor: '#12161e',
+    modalColor: '#12161e',
+    popoverColor: '#12161e',
+    tableColor: '#12161e',
+    inputColor: '#0a0e14',
+    actionColor: '#12161e',
+    textColor1: '#e6edf3',
+    textColor2: '#c9d1d9',
+    textColor3: '#6e7681',
+    borderColor: '#1e2430',
+    dividerColor: '#1e2430',
+    hoverColor: 'rgba(88,166,255,0.09)',
+    fontSize: '14px',
+    heightMedium: '34px',
+    heightSmall: '28px'
+  },
+  DataTable: {
+    tdColor: '#12161e',
+    thColor: '#12161e',
+    tdColorHover: 'rgba(88,166,255,0.06)',
+    borderColor: '#1e2430',
+    thTextColor: '#6e7681'
+  },
+  Tabs: {
+    tabTextColorLine: '#6e7681',
+    tabTextColorActiveLine: '#e6edf3',
+    tabTextColorHoverLine: '#c9d1d9',
+    barColor: '#58a6ff'
+  },
+  Tag: {
+    borderColor: '#1e2430'
+  },
+  Log: {
+    textColor: '#c9d1d9',
+    borderColor: '#1e2430'
+  }
+};
+
 const app = createApp({
   components: { NConfigProvider, NMessageProvider, NTabs, NTabPane, NTag, NDataTable, NButton, NCard,
     NInput, NInputNumber, NSelect, NSwitch, NSpace, NPopconfirm, NAlert, NEmpty, NLog },
   setup() {
-    const message = useMessage();
-    const toast = (msg, type = 'success') => message[type](msg);
 
     // ========== 状态 ==========
     const activeTab = ref('dash');
@@ -466,14 +539,31 @@ const app = createApp({
         const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
         uptimeStr.value = d > 0 ? `${d}天 ${h}时 ${m}分` : `${h}时 ${m}分`;
         proxyStatus.value.uptime_seconds++;
-        totalIPs.value = (proxyStatus.value.regions || []).reduce((s, r) => s + r.ip_count, 0);
       }
     };
 
     const pollProgress = async () => {
       try {
-        scanProgress.value = await api('GET', '/api/scanner/progress');
-        scanRunning.value = scanProgress.value.running;
+        const p = await api('GET', '/api/scanner/progress');
+        scanProgress.value = p;
+        const wasRunning = scanRunning.value;
+        scanRunning.value = p.running;
+        // 扫描刚结束，自动刷新历史以显示结果
+        if (wasRunning && !p.running) {
+          const h = await api('GET', '/api/scanner/history');
+          scanHistory.value = (h || []).slice(0, 8);
+          // 根据最新记录显示结果提示
+          if (h && h.length > 0) {
+            const latest = h[0];
+            if (latest.status === 'error') {
+              toast('扫描失败: ' + (latest.stats_json || '未知错误'), 'error');
+            } else if (latest.passed === 0) {
+              toast('扫描完成，但未发现达标的 IP（候选 ' + latest.total + '，合格 0）', 'warning');
+            } else {
+              toast('扫描完成！候选 ' + latest.total + '，合格 ' + latest.passed);
+            }
+          }
+        }
       } catch(e) { /* ignore */ }
     };
 
@@ -495,7 +585,7 @@ const app = createApp({
     };
 
     // ========== 地区管理 ==========
-    const newRegion = reactive({ name: '', code: '', port: 1004, enabled: true, fallback: true });
+    const newRegion = reactive({ name: '', code: '', portStr: '1004', enabled: true, fallback: true });
     const regionCols = [
       { title: '名称', key: 'name', width: 90 },
       { title: 'Colo', key: 'code', width: 80 },
@@ -517,24 +607,39 @@ const app = createApp({
       }
     ];
     const loadRegions = async () => {
-      try { regions.value = await api('GET', '/api/regions'); } catch (e) { /* ignore */ }
+      try { regions.value = (await api('GET', '/api/regions')) || []; } catch (e) { regions.value = []; }
     };
     const addRegion = async () => {
-      if (!newRegion.name || !newRegion.port) return;
-      const r = { ...newRegion, code: newRegion.code || newRegion.name };
-      await api('PUT', '/api/regions', [...regions.value, r]);
-      Object.assign(newRegion, { name: '', code: '', port: 1004, enabled: true });
-      toast('添加成功'); loadRegions();
+      if (!newRegion.name || !newRegion.portStr) return;
+      const port = parseInt(newRegion.portStr, 10);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        toast('端口必须是 1-65535 的有效数字', 'error'); return;
+      }
+      const r = { name: newRegion.name, code: newRegion.code || newRegion.name, port, enabled: newRegion.enabled, fallback: true };
+      try {
+        await api('PUT', '/api/regions', [...regions.value, r]);
+        Object.assign(newRegion, { name: '', code: '', portStr: '1004', enabled: true, fallback: true });
+        toast('添加成功'); loadRegions(); refreshDash();
+      } catch (e) {
+        toast('添加失败: ' + (e.message || '未知错误'), 'error');
+      }
     };
     const deleteRegion = async (name) => {
-      await api('PUT', '/api/regions', regions.value.filter(r => r.name !== name));
-      toast('已删除'); loadRegions();
+      try {
+        await api('PUT', '/api/regions', regions.value.filter(r => r.name !== name));
+        toast('已删除'); loadRegions(); refreshDash();
+      } catch (e) {
+        toast('删除失败: ' + (e.message || '未知错误'), 'error');
+      }
     };
     const toggleRegion = async (row) => {
       const updated = regions.value.map(r => r.name === row.name ? { ...r, enabled: !r.enabled } : r);
-      await api('PUT', '/api/regions', updated);
-      toast(`${row.name} ${row.enabled ? '已停用' : '已启用'}`);
-      loadRegions();
+      try {
+        await api('PUT', '/api/regions', updated);
+        toast(`${row.name} ${row.enabled ? '已停用' : '已启用'}`); loadRegions(); refreshDash();
+      } catch (e) {
+        toast('切换失败: ' + (e.message || '未知错误'), 'error');
+      }
     };
 
     // ========== cfnat 配置 ==========
@@ -556,14 +661,37 @@ const app = createApp({
     // ========== IP 库 ==========
     const allIPs = ref([]);
     const ipFilter = reactive({ region: null, source: null, search: '' });
-    const ipRegionOptions = computed(() => {
-      const s = new Set([...regions.value.map(r => r.name), ...allIPs.value.map(e => e.region)]);
-      return [...s].sort().map(n => ({ label: n, value: n }));
-    });
     const ipSourceOptions = [{ label: '手动', value: 'manual' }, { label: '自动扫描', value: 'auto' }, { label: '批量导入', value: 'import' }];
+    // colo 代码 → 地区名称 映射（根据地区配置动态生成）
+    const coloToRegionMap = computed(() => {
+      const map = {};
+      for (const r of regions.value) {
+        if (!r.code) continue;
+        const codes = r.code.split(',').map(c => c.trim()).filter(Boolean);
+        for (const code of codes) {
+          map[code] = r.name;
+        }
+      }
+      return map;
+    });
+    // 地区名称 → colo 代码列表 映射（用于筛选）
+    const regionToColosMap = computed(() => {
+      const map = {};
+      for (const r of regions.value) {
+        if (!r.code) continue;
+        map[r.name] = r.code.split(',').map(c => c.trim()).filter(Boolean);
+      }
+      return map;
+    });
+    const ipRegionOptions = computed(() => {
+      return regions.value.map(r => ({ label: r.name, value: r.name }));
+    });
     const filteredIPs = computed(() => {
       let data = allIPs.value;
-      if (ipFilter.region) data = data.filter(e => e.region === ipFilter.region);
+      if (ipFilter.region) {
+        const codes = regionToColosMap.value[ipFilter.region] || [ipFilter.region];
+        data = data.filter(e => codes.includes(e.region));
+      }
       if (ipFilter.source) data = data.filter(e => e.source === ipFilter.source);
       if (ipFilter.search) {
         const s = ipFilter.search.toLowerCase();
@@ -576,15 +704,18 @@ const app = createApp({
     const ipCols = [
       { type: 'selection', width: 36 },
       { title: 'IP', key: 'ip', width: 160, render: (r) => h('code', { style:'font-size:12px' }, r.ip) },
-      { title: '地区', key: 'region', width: 75, render: (r) => h(NTag, { size:'tiny', type:'info', bordered:false }, ()=>r.region) },
-      { title: 'Colo', key: 'colo', width: 65 },
+      { title: 'Colo', key: 'region', width: 65, render: (r) => h(NTag, { size:'tiny', type:'info', bordered:false }, ()=>r.region) },
+      { title: '地区', key: 'region_name', width: 75, render: (r) => {
+        const name = coloToRegionMap.value[r.region] || '-';
+        return h(NTag, { size:'tiny', type:'success', bordered:false }, ()=>name);
+      }},
       { title: '速度', key: 'speed_mbps', width: 100, sorter: (a,b)=>(a.speed_mbps||0)-(b.speed_mbps||0),
         render: (r) => r.speed_mbps ? `${r.speed_mbps.toFixed(2)} MB/s` : '-' },
-      { title: '延迟', key: 'latency_ms', width: 75, sorter: (a,b)=>(a.latency_ms||0)-(b.latency_ms||0),
-        render: (r) => r.latency_ms ? `${r.latency_ms.toFixed(0)} ms` : '-' },
+      { title: 'TCP延迟', key: 'latency_ms', width: 85, sorter: (a,b)=>(a.latency_ms||0)-(b.latency_ms||0),
+        render: (r) => r.latency_ms ? `${r.latency_ms.toFixed(1)} ms` : '-' },
       { title: '来源', key: 'source', width: 75, render: (r) => {
-        const m = { manual: 'info', auto: 'default', import: 'success' };
-        return h(NTag, { size:'tiny', type: m[r.source]||'default', bordered:false }, ()=>r.source||'-');
+        const m = { manual: 'info', auto: 'warning', import: 'success' };
+        return h(NTag, { size:'tiny', type: m[r.source]||'warning', bordered:false }, ()=>r.source||'-');
       }},
       { title: '失败', key: 'fail_count', width: 55 },
       { title: '操作', key: 'actions', width: 65,
@@ -596,7 +727,8 @@ const app = createApp({
     ];
     const addIPForm = reactive({ ip: '', region: '', colo: '', speed: 0 });
     const loadIPs = async () => {
-      try { allIPs.value = await api('GET', '/api/ips'); } catch(e){}
+      try { allIPs.value = (await api('GET', '/api/ips')) || []; } catch(e){ allIPs.value = []; }
+      totalIPs.value = allIPs.value.length;
     };
     const onCheckIPs = (keys) => { checkedIPKeys.value = keys; };
     const addIPManual = async () => {
@@ -646,19 +778,39 @@ const app = createApp({
 
     // ========== cfdata 扫描器 ==========
     const scannerForm = reactive({
-      enabled: false, interval: 60, min_speed_mbps: 3.0, ip_type: 4, port: 443,
-      samples_per_24: 1, max_delay_ms: 500, threads: 100, scan_mode: 'tcping',
+      enabled: false, interval: 60, min_speed_mbps: 3.0, ip_type: 6, port: 443,
+      samples_per_24: 100, max_delay_ms: 500, threads: 100, scan_mode: 'tcping',
       speed_test_url: 'auto', only_cmin2: true
     });
     const scanHistoryCols = [
       { title: 'ID', key: 'id', width: 55 },
       { title: '开始时间', key: 'started_at', width: 150 },
-      { title: '结束时间', key: 'finished_at', width: 150 },
       { title: '状态', key: 'status', width: 70,
         render: (r) => h(NTag, { size:'tiny', type: {ok:'success',error:'error',running:'warning'}[r.status]||'default', bordered:false }, ()=>r.status)
       },
-      { title: '候选数', key: 'total', width: 70 },
-      { title: '合格数', key: 'passed', width: 70 }
+      { title: '候选', key: 'total', width: 55 },
+      { title: '合格', key: 'passed', width: 55 },
+      { title: '备注', key: 'stats_json', ellipsis: { tooltip: true }, render: (r) => {
+          const s = r.stats_json || '';
+          // 提取错误信息
+          const m = s.match(/加载CIDR失败[:：]\s*(.+)/);
+          if (m) return h('span', { style:'font-size:11px;color:#f85149' }, m[1].substring(0, 80));
+          if (s.startsWith('{')) {
+            try {
+              const o = JSON.parse(s);
+              const parts = ['扫描' + (o.scanned||0)];
+              if (o.saved && typeof o.saved === 'object') {
+                const n = Object.values(o.saved).reduce((a,b) => a+b, 0);
+                parts.push('入库' + n);
+              }
+              return h('span', { style:'font-size:11px;color:var(--text-muted)' }, parts.join(' '));
+            } catch(e) {
+              return h('span', { style:'font-size:11px;color:var(--text-muted)' }, s.substring(0, 60));
+            }
+          }
+          return h('span', { style:'font-size:11px;color:var(--text-muted)' }, s || '-');
+        }
+      }
     ];
     const loadScanner = async () => {
       try {

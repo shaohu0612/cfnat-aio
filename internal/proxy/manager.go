@@ -28,6 +28,18 @@ import (
 	"cfnat-aio/internal/logging"
 )
 
+// parseCodes 将逗号分隔的 colo 代码字符串拆分为切片
+func parseCodes(code string) []string {
+	var out []string
+	for _, c := range strings.Split(code, ",") {
+		c = strings.TrimSpace(c)
+		if c != "" {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 // 全量 CF IP 兜底池（每 /24 抽 1 个，懒加载）
 var fallbackCIDRs = []string{
 	"103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "104.16.0.0/13",
@@ -144,7 +156,7 @@ func (m *Manager) startRegion(r config.ProxyRegion) *regionListener {
 		return nil
 	}
 	logging.InfoTo("proxy", "▶ 启动代理 %s → :%d (colo=%s, 当前可用 IP=%d)",
-		r.Name, r.Port, r.Code, m.lib.CountIPs(r.Name))
+		r.Name, r.Port, r.Code, m.lib.CountIPsByCodes(parseCodes(r.Code)))
 	ctx, cancel := context.WithCancel(context.Background())
 	rl := &regionListener{
 		region: r,
@@ -185,7 +197,7 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 	defer client.Close()
 
 	// 选 IP
-	target, isFallback, err := m.pickTarget(r.Name)
+	target, isFallback, err := m.pickTarget(r)
 	if err != nil {
 		logging.WarnTo("proxy", "%s: 没有可用目标 IP: %v", r.Name, err)
 		return
@@ -248,15 +260,16 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 }
 
 // pickTarget 选取转发目标
-func (m *Manager) pickTarget(region string) (string, bool, error) {
-	ip, err := m.lib.PickRandom(region)
+func (m *Manager) pickTarget(r config.ProxyRegion) (string, bool, error) {
+	codes := parseCodes(r.Code)
+	ip, err := m.lib.PickRandomByCodes(codes)
 	if err == nil {
 		return ip, false, nil
 	}
 	// 兜底
-	candidates := m.getFallbackCandidates(region)
+	candidates := m.getFallbackCandidates(r.Name)
 	if len(candidates) == 0 {
-		return "", false, fmt.Errorf("no candidates for region %s", region)
+		return "", false, fmt.Errorf("no candidates for region %s", r.Name)
 	}
 	ip, _ = m.lib.PickFallback(candidates)
 	return ip, true, nil
@@ -329,7 +342,8 @@ func (m *Manager) proxySOCKS5WithByte(client, upstream net.Conn, firstByte []byt
 		client.Write([]byte{0x05, 0x07, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
 		return errors.New("unsupported SOCKS command")
 	}
-	addr, err := readSOCKSAddr(client)
+	// ATYP 已在 buf[3] 中，需要把它重新喂给 readSOCKSAddr，避免重复消费 client
+	addr, err := readSOCKSAddr(io.MultiReader(bytes.NewReader(buf[3:4]), client))
 	if err != nil {
 		return err
 	}
@@ -448,11 +462,22 @@ func (m *Manager) HandleHTTPProxy(w http.ResponseWriter, r *http.Request) {
 	}
 	defer client.Close()
 
-	region := r.Header.Get("X-CFNAT-Region")
-	if region == "" {
-		region = "HKG"
+	regionName := r.Header.Get("X-CFNAT-Region")
+	if regionName == "" {
+		regionName = "HKG"
 	}
-	target, _, err := m.pickTarget(region)
+	// 查找对应的 region 配置
+	var regionCfg config.ProxyRegion
+	for _, rg := range m.cfgMgr.Regions() {
+		if rg.Name == regionName {
+			regionCfg = rg
+			break
+		}
+	}
+	if regionCfg.Name == "" {
+		regionCfg = config.ProxyRegion{Name: regionName, Code: regionName}
+	}
+	target, _, err := m.pickTarget(regionCfg)
 	if err != nil {
 		client.Write([]byte("HTTP/1.1 502 Bad Gateway\r\n\r\n"))
 		return
@@ -500,7 +525,7 @@ func (m *Manager) Status() Status {
 			Name:      r.Name,
 			Port:      r.Port,
 			Enabled:   r.Enabled,
-			IPCount:   m.lib.CountIPs(r.Name),
+			IPCount:   m.lib.CountIPsByCodes(parseCodes(r.Code)),
 			Listening: listening,
 			CurrentIP: m.currentIP[r.Name],
 			Colo:      r.Code,

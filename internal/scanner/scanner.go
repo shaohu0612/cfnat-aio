@@ -16,8 +16,8 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
-	"io"
 	"math/big"
 	"net"
 	"net/http"
@@ -130,6 +130,9 @@ func (s *Scanner) RunOnce() {
 	logging.InfoTo("scanner", "▶ 扫描任务 #%d 启动 (IPv%d, 抽样数=%d/24, 速度阈值=%.1fMB/s)",
 		histID, sc.IPType, sc.SamplesPer24, sc.MinSpeedMBps)
 
+	// 注意：不再自动检测 IPv6 可用性，由用户在 UI 中选择 IP 类型
+	// 如果选择了 IPv6 但环境不支持，TCP 连接会超时，扫描结果为 0，用户可切换到 IPv4
+
 	// 阶段 1: 加载 CIDR 列表
 	s.setProgress("1/5 加载CIDR", 0, 0, "")
 	cidrs, err := s.loadCIDRs(sc.IPType)
@@ -158,12 +161,40 @@ func (s *Scanner) RunOnce() {
 		s.finishRun(histID, "error", len(candidates), 0, "探活阶段异常")
 		return
 	}
-	logging.InfoTo("scanner", "  [3/5] TCP+TLS 探活: %d 个通过", len(stats))
+	// 统计真正通过探活的数量
+	okCount := 0
+	errSample := ""
+	for _, r := range stats {
+		if r.OK {
+			okCount++
+		} else if errSample == "" && r.Error != "" {
+			errSample = r.Error
+		}
+	}
+	logging.InfoTo("scanner", "  [3/5] TCP+TLS 探活: %d/%d 个通过", okCount, len(stats))
+	if okCount == 0 && errSample != "" {
+		logging.ErrorTo("scanner", "    探活失败示例: %s", errSample)
+	}
 
-	// 阶段 4: 测速（针对通过探活的 IP）
-	s.setProgress("4/5 测速中", 0, int64(len(stats)), "")
+	// 阶段 4: 测速（针对通过探活的 IP，按延迟取 top 100）
+	speedTestTotal := okCount
+	if speedTestTotal > 100 {
+		speedTestTotal = 100
+	}
+	s.setProgress("4/5 测速中", 0, int64(speedTestTotal), "")
 	passed := s.speedTest(ctx, stats, sc)
-	logging.InfoTo("scanner", "  [4/5] 速度测试: %d 个达到 %.1fMB/s 阈值", len(passed), sc.MinSpeedMBps)
+
+	// 统计真正测速达标的数量和 colo 分布
+	speedPassed := 0
+	coloDist := map[string]int{}
+	for _, r := range passed {
+		if r.ok && r.speedMbps >= sc.MinSpeedMBps {
+			speedPassed++
+			coloDist[r.colo]++
+		}
+	}
+	logging.InfoTo("scanner", "  [4/5] 速度测试: %d/%d 个达到 %.1fMB/s 阈值 (共测速 %d, 探活通过 %d)", speedPassed, len(passed), sc.MinSpeedMBps, len(passed), okCount)
+	logging.InfoTo("scanner", "    colo 分布: %v", coloDist)
 
 	// 阶段 5: 按地区入库（只入速度达标的）
 	s.setProgress("5/5 入库中", 0, int64(len(passed)), "")
@@ -177,11 +208,12 @@ func (s *Scanner) RunOnce() {
 
 	// 更新统计
 	total := len(candidates)
-	statsJSON := fmt.Sprintf(`{"cmin2":%v,"saved":%v,"scanned":%d,"speed_passed":%d}`,
-		savedByRegion, savedByRegion, total, len(passed))
-	s.finishRun(histID, "ok", total, len(passed), statsJSON)
+	savedJSON, _ := json.Marshal(savedByRegion)
+	statsJSON := fmt.Sprintf(`{"cmin2":%s,"saved":%s,"scanned":%d,"speed_passed":%d}`,
+		string(savedJSON), string(savedJSON), total, speedPassed)
+	s.finishRun(histID, "ok", total, speedPassed, statsJSON)
 
-	logging.InfoTo("scanner", "✓ 扫描任务 #%d 完成: 候选 %d, 通过 %d", histID, total, len(passed))
+	logging.InfoTo("scanner", "✓ 扫描任务 #%d 完成: 候选 %d, 通过 %d", histID, total, speedPassed)
 
 	// 记录到 history
 	hs, _ := s.store.ListScanHistory(50)
@@ -206,32 +238,83 @@ func (s *Scanner) finishRun(histID int64, status string, total, passed int, stat
 
 // === CIDR 加载 ===
 
+// checkIPv6Available 检测当前环境是否支持 IPv6 直连
+// 通过尝试 TCP 连接 Cloudflare 的 IPv6 DNS 地址来判断
+func (s *Scanner) checkIPv6Available() bool {
+	// 尝试连接 2606:4700:4700::1111 (Cloudflare DNS) 的 443 端口
+	testAddr := "[2606:4700:4700::1111]:443"
+	conn, err := net.DialTimeout("tcp", testAddr, 3*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+// hasIPv6Interface 检测系统是否有 IPv6 全局地址（非回环、非链路本地）
+func hasIPv6Interface() bool {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return false
+	}
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok {
+			if ipNet.IP.To4() == nil && ipNet.IP.IsGlobalUnicast() {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// 内置 Cloudflare CIDR 列表（fallback，当外网不可达时使用）
+// 来源：https://www.cloudflare.com/ips-v4 和 ips-v6
+var builtinCIDRsV4 = []string{
+	"173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
+	"141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
+	"197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+	"104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+}
+
+var builtinCIDRsV6 = []string{
+	"2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32",
+	"2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+}
+
 // loadCIDRs 加载 Cloudflare IP 段列表
-// 来源：baipiao.eu.org 镜像（与 cfdata 一致）
+// 优先从远程获取，失败时使用内置列表作为 fallback
 func (s *Scanner) loadCIDRs(ipType int) ([]string, error) {
 	var sourceURL string
+	var fallback []string
 	if ipType == 4 {
-		sourceURL = "https://www.baipiao.eu.org/cloudflare/ips-v4"
+		sourceURL = "https://www.cloudflare.com/ips-v4"
+		fallback = builtinCIDRsV4
 	} else {
-		sourceURL = "https://www.baipiao.eu.org/cloudflare/ips-v6"
+		sourceURL = "https://www.cloudflare.com/ips-v6"
+		fallback = builtinCIDRsV6
 	}
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Get(sourceURL)
 	if err != nil {
-		return nil, err
+		logging.WarnTo("scanner", "远程 CIDR 列表获取失败，使用内置列表: %v", err)
+		return fallback, nil
 	}
 	defer resp.Body.Close()
 
 	var cidrs []string
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+	sc := bufio.NewScanner(resp.Body)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
 		if line != "" && !strings.HasPrefix(line, "#") {
 			cidrs = append(cidrs, line)
 		}
 	}
-	return cidrs, scanner.Err()
+	if len(cidrs) == 0 {
+		logging.WarnTo("scanner", "远程 CIDR 列表为空，使用内置列表")
+		return fallback, nil
+	}
+	return cidrs, sc.Err()
 }
 
 // === 按 /24 抽样 ===
@@ -253,19 +336,38 @@ func (s *Scanner) sampleCIDRs(cidrs []string, samplesPer24, ipType int) []string
 			continue
 		}
 		ones, bits := ipnet.Mask.Size()
-		size := 1 << (bits - ones)
+		hostBits := bits - ones
+		if hostBits <= 0 {
+			continue
+		}
+		// 使用 big.Int 计算网段大小，避免 int 溢出（IPv6 网段可能非常大）
+		size := new(big.Int).Lsh(big.NewInt(1), uint(hostBits))
 		// 抽样 N 个
 		for i := 0; i < samplesPer24; i++ {
-			offset, _ := rand.Int(rand.Reader, big.NewInt(int64(size)))
+			offset, _ := rand.Int(rand.Reader, size)
 			ip := addIPOffset(ipnet.IP, offset.Int64())
 			out = append(out, ip.String())
 		}
+		// 调试日志：打印前几个生成的 IP
+		start := len(out) - samplesPer24
+		if start < 0 {
+			start = 0
+		}
+		sampleIPs := out[start:]
+		if len(sampleIPs) > 3 {
+			sampleIPs = sampleIPs[:3]
+		}
+		logging.InfoTo("scanner", "    CIDR %s (base=%v, len=%d) → 示例: %v", c, ipnet.IP, len(ipnet.IP), sampleIPs)
 		_ = ipType // 保留参数（未来 IPv6 可能区分）
 	}
 	return out
 }
 
 func addIPOffset(base net.IP, offset int64) net.IP {
+	// 优先使用 To4() 确保 IPv4 地址走 4 字节路径
+	if v4 := base.To4(); v4 != nil {
+		base = v4
+	}
 	ip := make(net.IP, len(base))
 	copy(ip, base)
 	if len(ip) == 4 {
@@ -276,12 +378,26 @@ func addIPOffset(base net.IP, offset int64) net.IP {
 		ip[2] = byte(val >> 8)
 		ip[3] = byte(val)
 	} else {
-		// IPv6 简化处理
+		// IPv6 处理
 		hi := binary.BigEndian.Uint64(ip[:8])
 		lo := binary.BigEndian.Uint64(ip[8:])
-		lo += uint64(offset)
-		binary.BigEndian.PutUint64(ip[:8], hi)
-		binary.BigEndian.PutUint64(ip[8:], lo)
+		// offset 是 int64，可能为负（big.Int.Int64() 对大数会截断）
+		// 使用无符号加法并处理进位
+		if offset >= 0 {
+			off := uint64(offset)
+			newLo := lo + off
+			if newLo < lo { // 进位
+				hi++
+			}
+			binary.BigEndian.PutUint64(ip[:8], hi)
+			binary.BigEndian.PutUint64(ip[8:], newLo)
+		} else {
+			// 负偏移不应该出现，但做防御性处理
+			off := uint64(-offset)
+			newLo := lo - off
+			binary.BigEndian.PutUint64(ip[:8], hi)
+			binary.BigEndian.PutUint64(ip[8:], newLo)
+		}
 	}
 	return ip
 }
@@ -320,7 +436,7 @@ func ProbeOne(ip string, sc config.ScannerConfig) ProbeResult {
 	if port == 0 {
 		port = 443
 	}
-	addr := fmt.Sprintf("%s:%d", ip, port)
+	addr := net.JoinHostPort(ip, fmt.Sprintf("%d", port))
 
 	t0 := time.Now()
 	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
@@ -342,13 +458,14 @@ func ProbeOne(ip string, sc config.ScannerConfig) ProbeResult {
 	})
 	defer tlsConn.Close()
 
+	// TLS 握手必须设置超时，避免 Docker/某些网络环境下无限阻塞
+	_ = tlsConn.SetDeadline(time.Now().Add(5 * time.Second))
 	if err := tlsConn.Handshake(); err != nil {
 		r.Error = "TLS: " + err.Error()
 		return r
 	}
 
 	req := "GET /cdn-cgi/trace HTTP/1.1\r\nHost: cloudflare.com\r\nUser-Agent: CFNAT-AIO/1.0\r\nConnection: close\r\n\r\n"
-	_ = tlsConn.SetDeadline(time.Now().Add(5 * time.Second))
 	if _, err := tlsConn.Write([]byte(req)); err != nil {
 		r.Error = "Write: " + err.Error()
 		return r
@@ -467,9 +584,23 @@ func (s *Scanner) speedTest(ctx context.Context, probes []ProbeResult, sc config
 		return nil
 	}
 
+	// 按延迟排序，只测延迟最低的 top N（避免过多请求触发 speed.cloudflare.com 429）
+	sort.Slice(targets, func(i, j int) bool {
+		return targets[i].Latency < targets[j].Latency
+	})
+	maxSpeedTest := 100 // 最多测速 100 个（延迟最低的）
+	if len(targets) > maxSpeedTest {
+		logging.InfoTo("scanner", "    延迟排序后取 top %d/%d 进行测速（避免 429 速率限制）", maxSpeedTest, len(targets))
+		targets = targets[:maxSpeedTest]
+	}
+
+	// 测速并发数独立控制，避免 speed.cloudflare.com 429 速率限制
 	threads := sc.Threads
 	if threads <= 0 {
-		threads = 50
+		threads = 5
+	}
+	if threads > 5 {
+		threads = 5 // 测速下载量大，限制最大并发 5 避免 429
 	}
 	speedURL := s.pickSpeedURL(sc.SpeedTestURL)
 	results := make([]speedResult, len(targets))
@@ -531,74 +662,83 @@ func (s *Scanner) measureSpeed(ip, speedURL string, port int) (float64, bool) {
 	if port == 0 {
 		port = 443
 	}
-	// 通过直连 IP 测速（不走代理）
 	u, err := url.Parse(speedURL)
 	if err != nil {
+		logging.ErrorTo("scanner", "测速 URL 解析失败: %v", err)
 		return 0, false
 	}
-	host := u.Host
-	if i := strings.Index(host, ":"); i > 0 {
-		host = host[:i]
-	}
+	host := u.Hostname()
+
+	// 使用 net/http 标准库客户端，自定义 Dialer 直连指定 IP
+	// 相比手动 HTTP 解析，能正确处理重定向、chunked 编码、Content-Length 等边缘情况
 	dialer := &net.Dialer{Timeout: 5 * time.Second}
-	conn, err := dialer.Dial("tcp", fmt.Sprintf("%s:%d", ip, port))
-	if err != nil {
-		return 0, false
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// 忽略 DNS 解析的 addr，直连到指定 IP
+			return dialer.DialContext(ctx, "tcp", net.JoinHostPort(ip, fmt.Sprintf("%d", port)))
+		},
+		TLSClientConfig: &tls.Config{
+			ServerName:         host,
+			InsecureSkipVerify: true,
+		},
+		DisableKeepAlives: true, // 每次测速独立连接，不复用
 	}
-	defer conn.Close()
-	tlsConn := tls.Client(conn, &tls.Config{
-		ServerName:         host,
-		InsecureSkipVerify: true,
-	})
-	defer tlsConn.Close()
-	if err := tlsConn.Handshake(); err != nil {
-		return 0, false
-	}
-
-	req := fmt.Sprintf("GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: CFNAT-AIO/1.0\r\nConnection: close\r\n\r\n",
-		u.RequestURI(), host)
-	_ = tlsConn.SetDeadline(time.Now().Add(8 * time.Second))
-	if _, err := tlsConn.Write([]byte(req)); err != nil {
-		return 0, false
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: transport,
 	}
 
-	// 跳过 header
-	buf := make([]byte, 4096)
-	headerEnd := -1
-	headerBuf := []byte{}
-	for headerEnd < 0 {
-		n, err := tlsConn.Read(buf)
+	// 请求测速 URL（429 时自动重试，指数退避）
+	var resp *http.Response
+	maxRetries := 2
+	for retry := 0; retry <= maxRetries; retry++ {
+		resp, err = client.Get(speedURL)
 		if err != nil {
+			if retry < maxRetries {
+				time.Sleep(time.Duration(1<<retry) * time.Second)
+				continue
+			}
 			return 0, false
 		}
-		headerBuf = append(headerBuf, buf[:n]...)
-		if i := strings.Index(string(headerBuf), "\r\n\r\n"); i >= 0 {
-			headerEnd = i + 4
-			break
+		// 429 速率限制：等待后重试
+		if resp.StatusCode == 429 && retry < maxRetries {
+			resp.Body.Close()
+			time.Sleep(time.Duration(2*(1<<retry)) * time.Second)
+			continue
 		}
-		if len(headerBuf) > 8192 {
-			return 0, false
+		break
+	}
+	if resp == nil {
+		return 0, false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		// 429 不逐条日志，避免刷屏（统计在 speedTest 层汇总）
+		if resp.StatusCode != 429 {
+			logging.ErrorTo("scanner", "测速 HTTP 状态码异常 %s: %d", ip, resp.StatusCode)
 		}
+		return 0, false
 	}
 
 	// 下载 2MB 测速
 	target := 2 * 1024 * 1024
+	buf := make([]byte, 32*1024)
 	downloaded := 0
-	bodyBuf := headerBuf[headerEnd:]
-	downloaded += len(bodyBuf)
 	t0 := time.Now()
 	for downloaded < target {
-		n, err := tlsConn.Read(buf)
-		if err != nil && err != io.EOF {
-			break
+		n, err := resp.Body.Read(buf)
+		if n > 0 {
+			downloaded += n
 		}
-		if n == 0 {
-			break
+		if err != nil {
+			break // EOF 或其他读取错误均结束
 		}
-		downloaded += n
 	}
 	elapsed := time.Since(t0).Seconds()
 	if elapsed <= 0 || downloaded < 100*1024 {
+		logging.ErrorTo("scanner", "测速下载不足 %s: downloaded=%d bytes, elapsed=%.2fs, contentLength=%d",
+			ip, downloaded, elapsed, resp.ContentLength)
 		return 0, false
 	}
 	mbps := float64(downloaded) * 8 / elapsed / 1_000_000

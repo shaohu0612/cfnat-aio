@@ -1,37 +1,60 @@
 # CFNAT-AIO
 
-**All-In-One Cloudflare CMIN2 优选 IP 工具** — 整合 cfnat 代理 + cfdata 扫描 + WebUI 控制台，单容器单进程。
+**All-In-One Cloudflare CMIN2 优选 IP 工具** — 整合 cfnat 代理转发、cfdata IP 扫描与 WebUI 控制台于单一容器进程。
 
 ## 特性
 
-- **多地区代理**：每个地区独立端口（如 HKG→:1001、LAX→:1002、JP→:1003），WebUI 动态增删，无需重启
-- **CMIN2 IP 库**：按地区分库，只保留测速合格的 IP，自动淘汰失效
-- **扫描器**：继承 cfdata 管线，改进点：
-  - 每 /24 抽样数可配（1/3/5/全测）
-  - 保留所有 /24 测试记录
-  - 增量更新（优先复测上次好的 IP）
-  - 扫描结果为空时 fallback 到全量随机
-- **批量导入探测**：粘贴 IP 列表（FOFA/CF-Workers 导出的结果），自动探测 colo 识别 CMIN2 并入库
-- **WebUI**：暗色主题，纯静态（无外部依赖），:1234 端口
-- **热重载**：改代理、改地区、改扫描参数、增删 IP，全部不重启
-- **持久化**：SQLite 单文件，Docker volume 挂载 `/vol1/1000/docker/cfnat-aio`
+- **多地区代理**：每个地区独立 SOCKS5/HTTP 端口，WebUI 动态增删改，配置变更无需重启
+- **CMIN2 IP 库**：按 Cloudflare colo 代码分库存储，只保留测速达标的 IP，支持健康检查淘汰
+- **扫描器**：继承 cfdata 扫描管线，5 阶段处理（加载 CIDR → 抽样 → 探活 → 测速 → 入库）
+- **批量导入探测**：粘贴 IP 列表（FOFA/CF-Workers 导出结果），自动探活识别 colo、CMIN2 筛选、测速入库
+- **WebUI 控制台**：暗色主题，纯静态（无外部 CDN 依赖），包含仪表盘、地区管理、IP 库、扫描任务、系统设置 5 个模块
+- **热重载**：代理端口、地区配置、扫描参数、IP 库增删，全部运行时生效
+- **持久化**：SQLite 单文件存储，Docker volume 挂载 `/data`
 
-## 部署
+## 快速开始
 
 ```bash
 git clone <repo>
 cd cfnat-aio
-docker compose up -d --build
+docker compose up -d
 ```
 
-访问：http://192.168.7.4:1234
+访问 WebUI：`http://<服务器IP>:1234`
 
-## 客户端配置
+## 默认端口映射
 
-```
-qBittorrent:  SOCKS5 192.168.7.4:1001   # 走 HKG
-Transmission: SOCKS5 192.168.7.4:1002   # 走 LAX
-```
+`docker-compose.yml` 中预置了以下端口：
+
+| 用途 | 宿主机端口 | 容器端口 |
+|------|-----------|----------|
+| WebUI | 1234 | 1234 |
+| 香港代理 | 2001 | 1001 |
+| 美国代理 | 2002 | 1002 |
+| 日本代理 | 2003 | 1003 |
+| 新加坡代理 | 2004 | 1004 |
+| 越南代理 | 2005 | 1005 |
+
+## 客户端配置示例
+
+**qBittorrent**：设置 → 连接 → 代理类型 SOCKS5，主机 `<服务器IP>`，端口 `2003`（日本）
+
+**v2rayN**：添加 SOCKS5 服务器，地址 `<服务器IP>`，端口 `2003`，无需认证
+
+**Transmission**：编辑配置文件 `proxy` 段，类型 socks5，地址 `<服务器IP>`，端口 `2002`（美国）
+
+任何支持 SOCKS5 或 HTTP CONNECT 代理的客户端均可使用。
+
+## WebUI 模块
+
+| 模块 | 功能 |
+|------|------|
+| 仪表盘 | 地区状态卡片、可用 IP 统计、实时日志流（SSE） |
+| 地区管理 | 增删改代理地区，配置 colo 代码、端口、启用状态 |
+| IP 库 | 查看/筛选/手动添加/删除 IP，按地区名称和来源筛选 |
+| 扫描任务 | 配置扫描参数、手动触发扫描、查看扫描历史 |
+| 批量导入 | 粘贴 IP 列表自动探测 colo 和测速，可选自动入库 |
+| 系统设置 | WebUI 端口、日志级别、自动启动、API Token |
 
 ## 目录结构
 
@@ -39,32 +62,44 @@ Transmission: SOCKS5 192.168.7.4:1002   # 走 LAX
 cfnat-aio/
 ├── cmd/server/         # main 入口
 ├── internal/
-│   ├── config/         # 配置 + SQLite 存储
-│   ├── iplibrary/      # CMIN2 IP 库管理
-│   ├── scanner/        # 扫描器（继承 cfdata）
-│   ├── proxy/          # 代理转发（继承 cfnat）
-│   ├── logging/        # 统一日志系统
-│   └── webui/          # WebUI 处理器 + 模板
+│   ├── config/         # 配置管理 + SQLite 存储
+│   ├── iplibrary/      # CMIN2 IP 库（缓存 + DB）
+│   ├── scanner/        # IP 扫描器（cfdata 继承）
+│   ├── proxy/          # 代理转发（cfnat 继承，SOCKS5/HTTP/透传）
+│   ├── logging/        # 统一日志（内存 ring buffer + SSE）
+│   └── webui/          # WebUI HTTP 处理器 + Vue 3 模板
+├── data/               # SQLite 数据库和日志（.gitignore）
 ├── Dockerfile
 ├── docker-compose.yml
+├── 产品设计文档v1.0.md
+├── 产品使用说明文档.md
 └── .github/workflows/build.yml
 ```
 
 ## 数据流
 
 ```
-外部 IP 来源（FOFA/CF-Workers 手动导出）
-   ↓ 粘贴到 WebUI
-批量导入探测（自动探 colo 识别 CMIN2）
-   ↓ TCP 探活
-扫描器（自动 / 手动）
-   ↓ TCP 探活 + 测速
-CMIN2 IP 库（按地区分库）
+Cloudflare CIDR 列表（官网 / 内置 fallback）
+   ↓
+抽样（每 /24 抽取 N 个）
+   ↓
+TCP 探活 + TLS 握手 + /cdn-cgi/trace 识别 colo
+   ↓
+测速（下载 speed.cloudflare.com）
+   ↓
+CMIN2 IP 库（按 colo 分库，速度降序排列）
    ↓ 随机选取
-代理监听（每地区一个端口）
-   ↓ SOCKS5
-qBittorrent / Transmission / 其他客户端
+代理监听（每地区一个端口，SOCKS5/HTTP/透传）
+   ↓
+客户端（qBittorrent / v2rayN / Transmission 等）
 ```
+
+外部 IP 来源（FOFA / CF-Workers 导出）可通过"批量导入探测"直接注入上述数据流。
+
+## 文档
+
+- [产品设计文档 v1.0](产品设计文档v1.0.md) — 功能模块、数据模型、技术架构、已知限制
+- [产品使用说明文档](产品使用说明文档.md) — 部署、配置、扫描、客户端连接、常见问题
 
 ## License
 

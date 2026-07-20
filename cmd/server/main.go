@@ -127,6 +127,9 @@ func main() {
 		sc.StartLoop()
 	}
 
+	// 启动健康检查循环（V1.4）
+	pm.StartHealthCheck()
+
 	// 优雅退出
 	_, cancel := context.WithCancel(context.Background())
 	go func() {

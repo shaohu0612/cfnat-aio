@@ -69,6 +69,10 @@ type Manager struct {
 	
 	connCounts   sync.Map             // IP -> 连接数（V1.2 最少连接数负载均衡）
 	metricsMgr   *MetricsManager      // IP 质量指标管理器（V1.3）
+	
+	isolationMap sync.Map             // IP -> 隔离到期时间（V1.4）
+	hcCancel     context.CancelFunc   // 健康检查取消函数（V1.4）
+	hcRunning    bool                 // 健康检查运行状态（V1.4）
 }
 
 // New 创建代理管理器
@@ -312,29 +316,46 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 
 	cfg := m.cfgMgr.ProxyForward()
 
-	switch cfg.LoadBalanceMode {
-	case "least-conn":
-		if exclude != nil && len(exclude) > 0 {
-			ip, err = m.pickLeastConn(codes, exclude)
-		} else {
-			ip, err = m.pickLeastConn(codes, nil)
+	maxAttempts := 10
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		switch cfg.LoadBalanceMode {
+		case "least-conn":
+			if exclude != nil && len(exclude) > 0 {
+				ip, err = m.pickLeastConn(codes, exclude)
+			} else {
+				ip, err = m.pickLeastConn(codes, nil)
+			}
+		case "weighted-random":
+			if exclude != nil && len(exclude) > 0 {
+				ip, err = m.pickWeightedRandom(codes, exclude)
+			} else {
+				ip, err = m.pickWeightedRandom(codes, nil)
+			}
+		default:
+			if exclude != nil && len(exclude) > 0 {
+				ip, err = m.lib.PickRandomByCodesWithExclude(codes, exclude)
+			} else {
+				ip, err = m.lib.PickRandomByCodes(codes)
+			}
 		}
-	case "weighted-random":
-		if exclude != nil && len(exclude) > 0 {
-			ip, err = m.pickWeightedRandom(codes, exclude)
-		} else {
-			ip, err = m.pickWeightedRandom(codes, nil)
+
+		if err != nil {
+			break
 		}
-	default:
-		if exclude != nil && len(exclude) > 0 {
-			ip, err = m.lib.PickRandomByCodesWithExclude(codes, exclude)
-		} else {
-			ip, err = m.lib.PickRandomByCodes(codes)
+
+		if m.isIsolated(ip) {
+			if exclude == nil {
+				exclude = make(map[string]bool)
+			}
+			exclude[ip] = true
+			continue
 		}
+
+		return ip, false, nil
 	}
 
 	if err == nil {
-		return ip, false, nil
+		err = fmt.Errorf("all available IPs are isolated")
 	}
 
 	candidates := m.getFallbackCandidates(r.Name)
@@ -737,4 +758,148 @@ func (m *Manager) Status() Status {
 	}
 }
 
-// 静默导入占位（无）
+// StartHealthCheck 启动健康检查循环（V1.4）
+func (m *Manager) StartHealthCheck() {
+	if m.hcRunning {
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	m.hcCancel = cancel
+	m.hcRunning = true
+	
+	go m.healthCheckLoop(ctx)
+	logging.InfoTo("proxy", "健康检查已启动")
+}
+
+// StopHealthCheck 停止健康检查循环（V1.4）
+func (m *Manager) StopHealthCheck() {
+	if !m.hcRunning || m.hcCancel == nil {
+		return
+	}
+	m.hcCancel()
+	m.hcRunning = false
+	logging.InfoTo("proxy", "健康检查已停止")
+}
+
+func (m *Manager) healthCheckLoop(ctx context.Context) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			m.performHealthCheck()
+		}
+	}
+}
+
+func (m *Manager) performHealthCheck() {
+	cfg := m.cfgMgr.ProxyForward()
+	interval := time.Duration(cfg.HealthCheckInterval) * time.Second
+	
+	m.mu.Lock()
+	now := time.Now()
+	regions := m.cfgMgr.Regions()
+	
+	for _, r := range regions {
+		lastHC, ok := m.lastHealth[r.Name]
+		if !ok || now.Sub(lastHC) >= interval {
+			m.lastHealth[r.Name] = now
+			m.mu.Unlock()
+			m.checkRegionHealth(r)
+			m.mu.Lock()
+		}
+	}
+	
+	m.mu.Unlock()
+	
+	m.cleanupExpiredIsolations()
+	m.metricsMgr.Cleanup(5 * time.Minute)
+}
+
+func (m *Manager) checkRegionHealth(r config.ProxyRegion) {
+	cfg := m.cfgMgr.ProxyForward()
+	codes := parseCodes(r.Code)
+	
+	for _, code := range codes {
+		ips := m.lib.ListIPs(code)
+		for _, entry := range ips {
+			if m.isIsolated(entry.IP) {
+				continue
+			}
+			
+			if m.isInWarmup(entry) {
+				continue
+			}
+			
+			metrics := m.metricsMgr.Get(entry.IP)
+			if metrics.GetSampleCount() < 5 {
+				continue
+			}
+			
+			delay := metrics.GetDelay()
+			lossRate := metrics.GetLossRate()
+			
+			if delay > float64(cfg.MaxDelayMs) || lossRate > cfg.MaxLossRate {
+				m.isolateIP(entry.IP, cfg.IsolationDuration)
+				logging.WarnTo("proxy", "%s: IP %s 被隔离 (延迟=%.1fms, 丢包率=%.1f%%)",
+					r.Name, entry.IP, delay, lossRate)
+			}
+		}
+	}
+}
+
+func (m *Manager) isIsolated(ip string) bool {
+	if val, ok := m.isolationMap.Load(ip); ok {
+		expireAt := val.(time.Time)
+		if time.Now().Before(expireAt) {
+			return true
+		}
+		m.isolationMap.Delete(ip)
+	}
+	return false
+}
+
+func (m *Manager) isolateIP(ip string, duration int) {
+	expireAt := time.Now().Add(time.Duration(duration) * time.Second)
+	m.isolationMap.Store(ip, expireAt)
+}
+
+func (m *Manager) cleanupExpiredIsolations() {
+	m.isolationMap.Range(func(key, value interface{}) bool {
+		ip := key.(string)
+		expireAt := value.(time.Time)
+		if time.Now().After(expireAt) {
+			m.isolationMap.Delete(ip)
+			logging.InfoTo("proxy", "IP %s 隔离已解除", ip)
+		}
+		return true
+	})
+}
+
+func (m *Manager) isInWarmup(entry config.IPEntry) bool {
+	cfg := m.cfgMgr.ProxyForward()
+	if cfg.WarmupDuration <= 0 {
+		return false
+	}
+	if entry.AddedAt == "" {
+		return false
+	}
+	addedAt, err := time.Parse(time.RFC3339, entry.AddedAt)
+	if err != nil {
+		return false
+	}
+	return time.Since(addedAt) < time.Duration(cfg.WarmupDuration)*time.Second
+}
+
+// GetIsolatedIPs 获取所有被隔离的 IP（供 WebUI 显示）
+func (m *Manager) GetIsolatedIPs() map[string]time.Time {
+	result := make(map[string]time.Time)
+	m.isolationMap.Range(func(key, value interface{}) bool {
+		result[key.(string)] = value.(time.Time)
+		return true
+	})
+	return result
+}

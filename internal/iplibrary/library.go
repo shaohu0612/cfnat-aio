@@ -25,13 +25,19 @@ type Library struct {
 
 	// 热缓存：每地区的可用 IP 列表
 	cache map[string][]string // region -> [ip, ip, ...] (按速度排序)
+
+	// 双层 IP 池（V1.7）
+	activePool   map[string][]config.IPEntry // region -> [IPEntry] 活跃池
+	standbyPool  map[string][]config.IPEntry // region -> [IPEntry] 备选池
 }
 
 // New 创建 IP 库
 func New(store *config.SQLiteStore) *Library {
 	lib := &Library{
-		store: store,
-		cache: make(map[string][]string),
+		store:       store,
+		cache:       make(map[string][]string),
+		activePool:  make(map[string][]config.IPEntry),
+		standbyPool: make(map[string][]config.IPEntry),
 	}
 	lib.reload()
 	return lib
@@ -265,4 +271,106 @@ func (l *Library) Regions() []string {
 // IsEmpty 地区是否为空
 func (l *Library) IsEmpty(region string) bool {
 	return l.CountIPs(region) == 0
+}
+
+// RebuildPools 重建双层 IP 池（V1.7）
+func (l *Library) RebuildPools(activeSize int, standbyRatio float64) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	allIPs := l.ListIPs("")
+	regionMap := make(map[string][]config.IPEntry)
+	for _, e := range allIPs {
+		regionMap[e.Region] = append(regionMap[e.Region], e)
+	}
+
+	l.activePool = make(map[string][]config.IPEntry)
+	l.standbyPool = make(map[string][]config.IPEntry)
+
+	for region, entries := range regionMap {
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].SpeedMbps > entries[j].SpeedMbps
+		})
+
+		activeCount := activeSize
+		if len(entries) < activeSize {
+			activeCount = len(entries)
+		}
+		l.activePool[region] = entries[:activeCount]
+
+		standbyCount := int(float64(activeSize) * standbyRatio)
+		remaining := entries[activeCount:]
+		if len(remaining) < standbyCount {
+			standbyCount = len(remaining)
+		}
+		l.standbyPool[region] = remaining[:standbyCount]
+	}
+
+	logging.InfoTo("iplibrary", "双层 IP 池已重建：活跃池 %d 个地区，备选池 %d 个地区",
+		len(l.activePool), len(l.standbyPool))
+}
+
+// PromoteFromStandby 从备选池提升 IP 到活跃池（V1.7）
+func (l *Library) PromoteFromStandby(region string, count int) []config.IPEntry {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	standby := l.standbyPool[region]
+	if len(standby) == 0 {
+		return nil
+	}
+
+	promoteCount := count
+	if len(standby) < count {
+		promoteCount = len(standby)
+	}
+
+	promoted := standby[:promoteCount]
+	l.standbyPool[region] = standby[promoteCount:]
+	l.activePool[region] = append(l.activePool[region], promoted...)
+
+	logging.InfoTo("iplibrary", "%s: 从备选池提升 %d 个 IP 到活跃池", region, len(promoted))
+	return promoted
+}
+
+// RemoveFromActive 从活跃池中移除 IP（V1.7）
+func (l *Library) RemoveFromActive(region, ip string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	active := l.activePool[region]
+	for i, entry := range active {
+		if entry.IP == ip {
+			l.activePool[region] = append(active[:i], active[i+1:]...)
+			logging.InfoTo("iplibrary", "%s: 从活跃池移除 IP %s", region, ip)
+			return true
+		}
+	}
+	return false
+}
+
+// GetActivePool 获取活跃池（V1.7）
+func (l *Library) GetActivePool(region string) []config.IPEntry {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.activePool[region]
+}
+
+// GetStandbyPool 获取备选池（V1.7）
+func (l *Library) GetStandbyPool(region string) []config.IPEntry {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.standbyPool[region]
+}
+
+// GetPoolSizes 获取各地区池大小（V1.7）
+func (l *Library) GetPoolSizes() map[string][2]int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	result := make(map[string][2]int)
+	for region := range l.activePool {
+		result[region] = [2]int{len(l.activePool[region]), len(l.standbyPool[region])}
+	}
+	return result
 }

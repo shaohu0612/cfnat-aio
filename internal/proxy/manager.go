@@ -931,6 +931,12 @@ func (m *Manager) checkRegionHealth(r config.ProxyRegion) {
 				m.isolateIP(entry.IP, cfg.IsolationDuration)
 				logging.WarnTo("proxy", "%s: IP %s 被隔离 (延迟=%.1fms, 丢包率=%.1f%%)",
 					r.Name, entry.IP, delay, lossRate)
+
+				m.lib.RemoveFromActive(code, entry.IP)
+				promoted := m.lib.PromoteFromStandby(code, 1)
+				if len(promoted) > 0 {
+					logging.InfoTo("proxy", "%s: 从备选池提升 IP %s 到活跃池", r.Name, promoted[0].IP)
+				}
 			}
 		}
 	}

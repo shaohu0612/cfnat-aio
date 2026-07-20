@@ -63,9 +63,11 @@ type Manager struct {
 	// 运行状态（供 WebUI 显示）
 	running    bool
 	startedAt  time.Time
-	lastHealth map[string]time.Time // region -> 上次健康检查时间
+	lastHealth    map[string]time.Time // region -> 上次健康检查时间
 	currentIP  map[string]string    // region -> 当前代理中使用的 IP（从日志/手动）
 	retryCount map[string]int       // region -> 今日重试次数（V1.1）
+	
+	connCounts sync.Map             // IP -> 连接数（V1.2 最少连接数负载均衡）
 }
 
 // New 创建代理管理器
@@ -246,7 +248,9 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 			continue
 		}
 
+		m.incrConnCount(target, 1)
 		m.handleProtocol(ctx, client, upstream, r)
+		m.incrConnCount(target, -1)
 		return
 	}
 
@@ -291,10 +295,27 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 	var ip string
 	var err error
 
-	if exclude != nil && len(exclude) > 0 {
-		ip, err = m.lib.PickRandomByCodesWithExclude(codes, exclude)
-	} else {
-		ip, err = m.lib.PickRandomByCodes(codes)
+	cfg := m.cfgMgr.ProxyForward()
+
+	switch cfg.LoadBalanceMode {
+	case "least-conn":
+		if exclude != nil && len(exclude) > 0 {
+			ip, err = m.pickLeastConn(codes, exclude)
+		} else {
+			ip, err = m.pickLeastConn(codes, nil)
+		}
+	case "weighted-random":
+		if exclude != nil && len(exclude) > 0 {
+			ip, err = m.pickWeightedRandom(codes, exclude)
+		} else {
+			ip, err = m.pickWeightedRandom(codes, nil)
+		}
+	default:
+		if exclude != nil && len(exclude) > 0 {
+			ip, err = m.lib.PickRandomByCodesWithExclude(codes, exclude)
+		} else {
+			ip, err = m.lib.PickRandomByCodes(codes)
+		}
 	}
 
 	if err == nil {
@@ -321,6 +342,70 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 
 	ip, _ = m.lib.PickFallback(candidates)
 	return ip, true, nil
+}
+
+// pickLeastConn 选取连接数最少的 IP（V1.2）
+func (m *Manager) pickLeastConn(codes []string, exclude map[string]bool) (string, error) {
+	ips, err := m.lib.ListIPsByCodes(codes)
+	if err != nil {
+		return "", err
+	}
+
+	if len(ips) == 0 {
+		return "", errors.New("no available IPs")
+	}
+
+	var available []config.IPEntry
+	for _, ip := range ips {
+		if exclude != nil && exclude[ip.IP] {
+			continue
+		}
+		available = append(available, ip)
+	}
+
+	if len(available) == 0 {
+		return "", errors.New("no available IPs after exclusion")
+	}
+
+	minCount := -1
+	var candidates []string
+	for _, ip := range available {
+		count, _ := m.connCounts.LoadOrStore(ip.IP, 0)
+		c := count.(int)
+		if minCount == -1 || c < minCount {
+			minCount = c
+			candidates = []string{ip.IP}
+		} else if c == minCount {
+			candidates = append(candidates, ip.IP)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return "", errors.New("no candidates")
+	}
+
+	ip, _ := m.lib.PickFallback(candidates)
+	return ip, nil
+}
+
+// pickWeightedRandom 加权随机选取（预留 V1.5）
+func (m *Manager) pickWeightedRandom(codes []string, exclude map[string]bool) (string, error) {
+	return m.lib.PickRandomByCodesWithExclude(codes, exclude)
+}
+
+// incrConnCount 增减连接计数（V1.2）
+func (m *Manager) incrConnCount(ip string, delta int) {
+	for {
+		if val, ok := m.connCounts.Load(ip); ok {
+			if m.connCounts.CompareAndSwap(ip, val, val.(int)+delta) {
+				return
+			}
+		} else {
+			if m.connCounts.CompareAndSwap(ip, nil, delta) {
+				return
+			}
+		}
+	}
 }
 
 // getFallbackCandidates 懒加载兜底池
@@ -551,15 +636,16 @@ type Status struct {
 
 // RegionStatus 地区状态
 type RegionStatus struct {
-	Name      string `json:"name"`
-	Port      int    `json:"port"`
-	Enabled   bool   `json:"enabled"`
-	IPCount   int    `json:"ip_count"`
-	Listening bool   `json:"listening"`
-	CurrentIP string `json:"current_ip"`
-	Colo      string `json:"colo"`
-	Clients   int    `json:"clients"`   // 当前活跃连接数（近似）
-	RetryCount int   `json:"retry_count"` // 今日重试次数（V1.1）
+	Name        string `json:"name"`
+	Port        int    `json:"port"`
+	Enabled     bool   `json:"enabled"`
+	IPCount     int    `json:"ip_count"`
+	Listening   bool   `json:"listening"`
+	CurrentIP   string `json:"current_ip"`
+	Colo        string `json:"colo"`
+	Clients     int    `json:"clients"`   // 当前活跃连接数（近似）
+	ActiveConns int    `json:"active_conns"` // 当前活跃连接数（V1.2）
+	RetryCount  int    `json:"retry_count"` // 今日重试次数（V1.1）
 }
 
 // Status 获取所有地区状态
@@ -570,15 +656,36 @@ func (m *Manager) Status() Status {
 	out := make([]RegionStatus, 0, len(regions))
 	for _, r := range regions {
 		_, listening := m.listeners[r.Name]
+		
+		codes := parseCodes(r.Code)
+		activeConns := 0
+		m.connCounts.Range(func(key, value interface{}) bool {
+			ip := key.(string)
+			count := value.(int)
+			if count > 0 {
+				for _, code := range codes {
+					ips := m.lib.ListIPs(code)
+					for _, entry := range ips {
+						if entry.IP == ip {
+							activeConns += count
+							return true
+						}
+					}
+				}
+			}
+			return true
+		})
+		
 		out = append(out, RegionStatus{
-			Name:       r.Name,
-			Port:       r.Port,
-			Enabled:    r.Enabled,
-			IPCount:    m.lib.CountIPsByCodes(parseCodes(r.Code)),
-			Listening:  listening,
-			CurrentIP:  m.currentIP[r.Name],
-			Colo:       r.Code,
-			RetryCount: m.retryCount[r.Name],
+			Name:        r.Name,
+			Port:        r.Port,
+			Enabled:     r.Enabled,
+			IPCount:     m.lib.CountIPsByCodes(codes),
+			Listening:   listening,
+			CurrentIP:   m.currentIP[r.Name],
+			Colo:        r.Code,
+			ActiveConns: activeConns,
+			RetryCount:  m.retryCount[r.Name],
 		})
 	}
 	uptime := int64(0)

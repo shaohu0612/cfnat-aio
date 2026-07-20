@@ -147,6 +147,19 @@ func (l *Library) PickRandomByCodes(codes []string) (string, error) {
 	return allIPs[rand.Intn(len(allIPs))], nil
 }
 
+// ListIPsByCodes 列出多个 colo 代码的所有 IP（V1.2 最少连接数负载均衡用）
+func (l *Library) ListIPsByCodes(codes []string) ([]config.IPEntry, error) {
+	var allIPs []config.IPEntry
+	for _, code := range codes {
+		entries, err := l.store.ListIPs(code)
+		if err != nil {
+			return nil, err
+		}
+		allIPs = append(allIPs, entries...)
+	}
+	return allIPs, nil
+}
+
 // PickRandomByCodesWithExclude 从多个 colo 代码中随机挑选一个 IP，排除指定 IP
 func (l *Library) PickRandomByCodesWithExclude(codes []string, exclude map[string]bool) (string, error) {
 	l.mu.RLock()

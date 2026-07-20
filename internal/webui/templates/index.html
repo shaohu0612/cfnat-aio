@@ -168,6 +168,7 @@ body {
                 </div>
                 <div class="rc-right">
                   <div class="rc-stat"><div class="num">{{ r.ip_count }}</div><div class="lbl">可用 IP</div></div>
+                  <div class="rc-stat"><div class="num">{{ r.active_conns || 0 }}</div><div class="lbl">活跃连接</div></div>
                   <div class="rc-stat"><div class="num">{{ r.retry_count || 0 }}</div><div class="lbl">今日重试</div></div>
                   <div class="rc-stat"><div class="num">{{ r.colo }}</div><div class="lbl">Colo</div></div>
                 </div>

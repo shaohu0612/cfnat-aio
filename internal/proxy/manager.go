@@ -74,6 +74,8 @@ type Manager struct {
 	isolationMap sync.Map             // IP -> 隔离到期时间（V1.4）
 	hcCancel     context.CancelFunc   // 健康检查取消函数（V1.4）
 	hcRunning    bool                 // 健康检查运行状态（V1.4）
+	
+	stickyMgr    *StickyManager       // 连接亲和性管理器（V1.6）
 }
 
 // New 创建代理管理器
@@ -89,6 +91,7 @@ func New(store *config.SQLiteStore, lib *iplibrary.Library, cfgMgr *config.Manag
 		currentIP:     make(map[string]string),
 		retryCount:    make(map[string]int),
 		metricsMgr:    NewMetricsManager(),
+		stickyMgr:     NewStickyManager(1000, 15*time.Second),
 		startedAt:     time.Now(),
 	}
 	return m
@@ -216,8 +219,26 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 	retryExclude := make(map[string]bool)
 	lastErr := error(nil)
 
+	clientIP, _, _ := net.SplitHostPort(client.RemoteAddr().String())
+
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		target, isFallback, err := m.pickTarget(r, retryExclude)
+		var target string
+		var isFallback bool
+		var err error
+
+		if attempt == 0 && cfg.StickyEnabled {
+			if stickyIP, ok := m.stickyMgr.Get(clientIP, r.Name); ok {
+				if !m.isIsolated(stickyIP) {
+					target = stickyIP
+					isFallback = false
+					err = nil
+				}
+			}
+		}
+
+		if target == "" {
+			target, isFallback, err = m.pickTarget(r, retryExclude)
+		}
 		if err != nil {
 			if attempt == maxRetries {
 				logging.WarnTo("proxy", "%s: 没有可用目标 IP: %v", r.Name, err)
@@ -267,6 +288,10 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 		alpha := 2.0 / float64(cfg.EWMASampleWindow+1)
 		m.metricsMgr.Get(target).UpdateDelay(delayMs, alpha)
 		m.metricsMgr.Get(target).UpdateLoss(false, alpha)
+
+		if cfg.StickyEnabled {
+			m.stickyMgr.Set(clientIP, r.Name, target)
+		}
 
 		m.incrConnCount(target, 1)
 		m.handleProtocol(ctx, client, upstream, r)
@@ -876,6 +901,7 @@ func (m *Manager) performHealthCheck() {
 	
 	m.cleanupExpiredIsolations()
 	m.metricsMgr.Cleanup(5 * time.Minute)
+	m.stickyMgr.Cleanup()
 }
 
 func (m *Manager) checkRegionHealth(r config.ProxyRegion) {

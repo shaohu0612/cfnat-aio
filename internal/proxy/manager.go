@@ -162,6 +162,17 @@ func (rl *regionListener) stop() {
 	<-rl.done
 }
 
+// UpdateConfig 代理转发配置热更新（V1.1+）
+func (m *Manager) UpdateConfig(pf config.ProxyForwardConfig) error {
+	m.mu.Lock()
+	m.stickyMgr.SetTTL(time.Duration(pf.StickyTTL) * time.Second)
+	m.mu.Unlock()
+	// 根据最新容量参数重建双层 IP 池
+	m.lib.RebuildPools(pf.ActivePoolSize, pf.StandbyPoolRatio)
+	logging.InfoTo("proxy", "代理转发配置已热更新")
+	return nil
+}
+
 func (m *Manager) startRegion(r config.ProxyRegion) *regionListener {
 	addr := fmt.Sprintf(":%d", r.Port)
 	ln, err := net.Listen("tcp", addr)
@@ -756,18 +767,22 @@ type Status struct {
 
 // RegionStatus 地区状态
 type RegionStatus struct {
-	Name        string  `json:"name"`
-	Port        int     `json:"port"`
-	Enabled     bool    `json:"enabled"`
-	IPCount     int     `json:"ip_count"`
-	Listening   bool    `json:"listening"`
-	CurrentIP   string  `json:"current_ip"`
-	Colo        string  `json:"colo"`
-	Clients     int     `json:"clients"`   // 当前活跃连接数（近似）
-	ActiveConns int     `json:"active_conns"` // 当前活跃连接数（V1.2）
-	RetryCount  int     `json:"retry_count"` // 今日重试次数（V1.1）
-	AvgDelayMs  float64 `json:"avg_delay_ms"` // EWMA 平均延迟（V1.3）
-	LossRate    float64 `json:"loss_rate"`    // EWMA 丢包率（V1.3）
+	Name            string  `json:"name"`
+	Port            int     `json:"port"`
+	Enabled         bool    `json:"enabled"`
+	IPCount         int     `json:"ip_count"`
+	Listening       bool    `json:"listening"`
+	CurrentIP       string  `json:"current_ip"`
+	Colo            string  `json:"colo"`
+	Clients         int     `json:"clients"`   // 当前活跃连接数（近似）
+	ActiveConns     int     `json:"active_conns"` // 当前活跃连接数（V1.2）
+	RetryCount      int     `json:"retry_count"` // 今日重试次数（V1.1）
+	AvgDelayMs      float64 `json:"avg_delay_ms"` // EWMA 平均延迟（V1.3）
+	LossRate        float64 `json:"loss_rate"`    // EWMA 丢包率（V1.3）
+	StickyCount     int     `json:"sticky_count"` // 活跃粘性会话数（V1.6）
+	ActivePoolCount int     `json:"active_pool_count"` // 主池 IP 数（V1.7）
+	StandbyPoolCount int    `json:"standby_pool_count"` // 备选池 IP 数（V1.7）
+	HealthStatus    string  `json:"health_status"` // 健康状态（healthy/degraded/down）
 }
 
 // Status 获取所有地区状态
@@ -776,6 +791,8 @@ func (m *Manager) Status() Status {
 	defer m.mu.Unlock()
 	regions := m.cfgMgr.Regions()
 	out := make([]RegionStatus, 0, len(regions))
+	poolSizes := m.lib.GetPoolSizes()
+	
 	for _, r := range regions {
 		_, listening := m.listeners[r.Name]
 		
@@ -801,6 +818,7 @@ func (m *Manager) Status() Status {
 		avgDelayMs := 0.0
 		lossRate := 0.0
 		sampleCount := 0
+		isolatedCount := 0
 		for _, code := range codes {
 			ips := m.lib.ListIPs(code)
 			for _, entry := range ips {
@@ -810,6 +828,9 @@ func (m *Manager) Status() Status {
 					lossRate += metrics.GetLossRate()
 					sampleCount++
 				}
+				if m.isIsolated(entry.IP) {
+					isolatedCount++
+				}
 			}
 		}
 		if sampleCount > 0 {
@@ -817,18 +838,48 @@ func (m *Manager) Status() Status {
 			lossRate = lossRate / float64(sampleCount)
 		}
 		
+		activePoolCount := 0
+		standbyPoolCount := 0
+		for _, code := range codes {
+			if sizes, ok := poolSizes[code]; ok {
+				activePoolCount += sizes[0]
+				standbyPoolCount += sizes[1]
+			}
+		}
+		
+		stickyCount := 0
+		m.stickyMgr.mu.Lock()
+		for key := range m.stickyMgr.slots {
+			if strings.HasSuffix(key, ":"+r.Name) {
+				stickyCount++
+			}
+		}
+		m.stickyMgr.mu.Unlock()
+		
+		healthStatus := "healthy"
+		totalIPs := m.lib.CountIPsByCodes(codes)
+		if totalIPs == 0 {
+			healthStatus = "down"
+		} else if isolatedCount >= totalIPs/2 || lossRate > 20 {
+			healthStatus = "degraded"
+		}
+		
 		out = append(out, RegionStatus{
-			Name:        r.Name,
-			Port:        r.Port,
-			Enabled:     r.Enabled,
-			IPCount:     m.lib.CountIPsByCodes(codes),
-			Listening:   listening,
-			CurrentIP:   m.currentIP[r.Name],
-			Colo:        r.Code,
-			ActiveConns: activeConns,
-			RetryCount:  m.retryCount[r.Name],
-			AvgDelayMs:  avgDelayMs,
-			LossRate:    lossRate,
+			Name:            r.Name,
+			Port:            r.Port,
+			Enabled:         r.Enabled,
+			IPCount:         totalIPs,
+			Listening:       listening,
+			CurrentIP:       m.currentIP[r.Name],
+			Colo:            r.Code,
+			ActiveConns:     activeConns,
+			RetryCount:      m.retryCount[r.Name],
+			AvgDelayMs:      avgDelayMs,
+			LossRate:        lossRate,
+			StickyCount:     stickyCount,
+			ActivePoolCount: activePoolCount,
+			StandbyPoolCount: standbyPoolCount,
+			HealthStatus:    healthStatus,
 		})
 	}
 	uptime := int64(0)
@@ -983,6 +1034,29 @@ func (m *Manager) isInWarmup(entry config.IPEntry) bool {
 		return false
 	}
 	return time.Since(addedAt) < time.Duration(cfg.WarmupDuration)*time.Second
+}
+
+// Metrics 获取指标管理器（供 WebUI 查询 IP 质量分数）
+func (m *Manager) Metrics() *MetricsManager {
+	return m.metricsMgr
+}
+
+// IsIsolated 判断 IP 是否被隔离（供 WebUI 查询）
+func (m *Manager) IsIsolated(ip string) bool {
+	return m.isIsolated(ip)
+}
+
+// IsInWarmup 判断 IP 是否在预热期（供 WebUI 查询）
+func (m *Manager) IsInWarmup(entry config.IPEntry) bool {
+	return m.isInWarmup(entry)
+}
+
+// ConnCount 获取 IP 当前连接数（供 WebUI 查询）
+func (m *Manager) ConnCount(ip string) (int, bool) {
+	if val, ok := m.connCounts.Load(ip); ok {
+		return val.(int), true
+	}
+	return 0, false
 }
 
 // GetIsolatedIPs 获取所有被隔离的 IP（供 WebUI 显示）

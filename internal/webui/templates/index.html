@@ -8,112 +8,602 @@
 <script src="/static/naive-ui.prod.js"></script>
 <style>
 :root {
-  --bg-primary: #0a0e14;
-  --bg-card: #12161e;
-  --border: #1e2430;
-  --text: #c9d1d9;
-  --text-muted: #6e7681;
-  --accent: #58a6ff;
-  --accent2: #3fb950;
-  --accent3: #d29922;
-  --danger: #f85149;
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg-primary);
+  font-family: var(--font-body);
+  background: var(--cfnat-background);
   min-height: 100vh;
-  color: var(--text);
+  color: var(--cfnat-foreground);
 }
-.n-config-provider { background: var(--bg-primary); min-height: 100vh; }
-.app-header {
-  background: linear-gradient(135deg, #1a1f35 0%, #12161e 50%, #0a0e14 100%);
-  border-bottom: 1px solid var(--border);
-  padding: 20px 32px;
-  display: flex; align-items: center; gap: 16px;
-}
-.app-logo {
-  width: 42px; height: 42px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700; color: #fff;
-}
-.app-title h1 { font-size: 22px; font-weight: 700; color: #e6edf3; line-height: 1.2; }
-.app-title p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.app-content { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.n-config-provider { background: var(--cfnat-background); min-height: 100vh; }
 
-/* 状态卡片 */
-.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+/* ====== 顶部导航栏 ====== */
+.app-header {
+  background: var(--cfnat-card);
+  border-bottom: 1px solid var(--cfnat-border);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 4px;
+}
+.app-header .logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
+  white-space: nowrap;
+}
+.app-header .logo-text {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--cfnat-primary);
+  letter-spacing: 1px;
+}
+.app-header .logo-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--cfnat-border);
+}
+.app-header .logo-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+  white-space: nowrap;
+}
+.app-header .nav-links {
+  display: flex;
+  gap: 4px;
+}
+.app-header .nav-links a {
+  padding: 8px 16px;
+  border-radius: var(--cfnat-radius-md);
+  color: var(--cfnat-muted-foreground);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.app-header .nav-links a.active {
+  color: var(--cfnat-primary);
+  background: rgba(88,166,255,0.1);
+}
+.app-header .nav-links a:hover:not(.active) {
+  color: var(--cfnat-foreground);
+}
+
+/* ====== 主内容区 ====== */
+.app-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ====== 页面标题 ====== */
+.page-title {
+  margin-bottom: 20px;
+}
+.page-title h1 {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--cfnat-foreground);
+  margin: 0 0 4px 0;
+}
+.page-title p {
+  font-size: var(--font-size-sm);
+  color: var(--cfnat-muted-foreground);
+  margin: 0;
+}
+
+/* ====== 统计卡片 ====== */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
 .stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 18px 20px;
+  background: var(--cfnat-card);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-lg);
+  padding: 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+  border-color: rgba(88,166,255,0.3);
+  box-shadow: 0 0 0 1px rgba(88,166,255,0.1);
+}
+.stat-card .stat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.stat-card .stat-icon {
+  color: var(--cfnat-primary);
+}
+.stat-card .stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+}
+.stat-card .stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--cfnat-foreground);
+  line-height: 1.2;
+}
+.stat-card .stat-value + .stat-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--state-info);
+  box-shadow: 0 0 6px 2px rgba(88,166,255,0.4);
+  margin-left: 8px;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ====== 健康状态指示灯 ====== */
+.health-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.health-dot.green {
+  background: var(--state-success);
+  box-shadow: 0 0 8px 2px rgba(63,185,80,0.3);
+}
+.health-dot.yellow {
+  background: var(--state-warning);
+  box-shadow: 0 0 8px 2px rgba(210,153,34,0.3);
+}
+.health-dot.red {
+  background: var(--state-error);
+  box-shadow: 0 0 8px 2px rgba(248,81,73,0.3);
+}
+
+/* ====== 地区卡片 ====== */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.section-header .section-icon {
+  color: var(--cfnat-primary);
+}
+.section-header .section-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--cfnat-foreground);
+}
+.region-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.region-card {
+  background: var(--cfnat-card);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-lg);
+  padding: 20px;
   transition: border-color 0.2s;
 }
-.stat-card:hover { border-color: var(--accent); }
-.stat-card .sc-icon { font-size: 24px; margin-bottom: 6px; }
-.stat-card .sc-val { font-size: 26px; font-weight: 700; color: #e6edf3; }
-.stat-card .sc-lbl { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-/* 地区卡片 */
-.region-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 20px;
-  margin-bottom: 10px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 10px;
+.region-card:hover {
+  border-color: rgba(88,166,255,0.3);
 }
-.region-card:hover { border-color: var(--accent); }
-.rc-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.rc-name { font-size: 17px; font-weight: 700; color: #e6edf3; min-width: 50px; }
-.rc-port { font-family: monospace; color: var(--accent); font-size: 14px; }
-.rc-ip { font-family: monospace; color: var(--accent2); font-size: 13px; }
-.rc-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.rc-stat { text-align: center; }
-.rc-stat .num { font-size: 18px; font-weight: 700; color: #e6edf3; }
-.rc-stat .lbl { font-size: 10px; color: var(--text-muted); }
+.region-card .region-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.region-card .region-left {
+  flex: 0 0 260px;
+  min-width: 0;
+}
+.region-card .region-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.region-card .region-name {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--cfnat-foreground);
+}
+.region-card .region-port {
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  color: var(--cfnat-muted-foreground);
+}
+.region-card .region-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--cfnat-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+.region-card .region-badge.success {
+  background: rgba(63,185,80,0.15);
+  color: var(--state-success);
+}
+.region-card .region-badge.success .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--state-success);
+}
+.region-card .region-badge.default {
+  background: rgba(110,118,129,0.15);
+  color: var(--cfnat-muted-foreground);
+}
+.region-card .region-forward {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.region-card .region-forward-label {
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+}
+.region-card .region-forward-arrow {
+  color: var(--cfnat-muted-foreground);
+  font-size: 14px;
+}
+.region-card .region-forward-ip {
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  color: var(--cfnat-primary);
+}
+.region-card .region-colo {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+  margin-top: 6px;
+}
+.region-card .region-right {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 24px;
+  align-content: start;
+}
+.region-card .metric-item {
+  display: flex;
+  flex-direction: column;
+}
+.region-card .metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cfnat-foreground);
+  line-height: 1.2;
+}
+.region-card .metric-value.success {
+  color: var(--state-success);
+}
+.region-card .metric-value.warning {
+  color: var(--state-warning);
+}
+.region-card .metric-value.error {
+  color: var(--state-error);
+}
+.region-card .metric-label {
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+  margin-top: 2px;
+}
+.region-card .metric-annotation {
+  font-size: 10px;
+  color: var(--cfnat-muted-foreground);
+  margin-top: 2px;
+}
 
-/* cfdata progress */
+/* ====== 配置面板 ====== */
+.config-card {
+  background: var(--cfnat-card);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.config-card .config-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--cfnat-foreground);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.config-card .config-title .title-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(88,166,255,0.15);
+  color: var(--cfnat-primary);
+}
+.config-card .config-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--cfnat-muted-foreground);
+  margin-bottom: 16px;
+}
+.config-section {
+  margin-bottom: 20px;
+}
+.config-section:last-child {
+  margin-bottom: 0;
+}
+.config-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(88,166,255,0.05);
+  border: 1px solid rgba(88,166,255,0.1);
+  border-radius: var(--cfnat-radius-md);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0;
+}
+.config-section-header:hover {
+  background: rgba(88,166,255,0.08);
+}
+.config-section-header .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.config-section-header .section-name {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--cfnat-foreground);
+}
+.config-section-header .section-version {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(88,166,255,0.15);
+  color: var(--cfnat-primary);
+}
+.config-section-header .section-arrow {
+  font-size: 10px;
+  color: var(--cfnat-muted-foreground);
+  transition: transform 0.2s;
+}
+.config-section-header.expanded .section-arrow {
+  transform: rotate(90deg);
+}
+.config-section-content {
+  padding: 16px;
+  border: 1px solid var(--cfnat-border);
+  border-top: none;
+  border-radius: 0 0 var(--cfnat-radius-md) var(--cfnat-radius-md);
+}
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cfnat-border);
+}
+.config-row:last-child {
+  border-bottom: none;
+}
+.config-row .config-label {
+  font-size: var(--font-size-sm);
+  color: var(--cfnat-card-foreground);
+  min-width: 140px;
+}
+.config-row .config-hint {
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+  flex: 1;
+}
+.config-row .config-hint.error {
+  color: var(--state-error);
+}
+
+/* ====== IP 库 ====== */
+.ip-table-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 0;
+}
+.ip-stats-bar {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--cfnat-muted);
+  border-radius: var(--cfnat-radius-md);
+  margin-bottom: 12px;
+}
+.ip-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ip-stat-item .stat-num {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+.ip-stat-item .stat-num.normal {
+  color: var(--state-success);
+}
+.ip-stat-item .stat-num.isolated {
+  color: var(--state-warning);
+}
+.ip-stat-item .stat-num.warming {
+  color: var(--state-info);
+}
+.ip-stat-item .stat-num.active {
+  color: var(--cfnat-primary);
+}
+.ip-stat-item .stat-num.standby {
+  color: var(--cfnat-muted-foreground);
+}
+.ip-stat-item .stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
+}
+.ip-col-settings {
+  position: relative;
+}
+.ip-col-settings .settings-btn {
+  padding: 4px 8px;
+  background: var(--cfnat-muted);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-sm);
+  color: var(--cfnat-muted-foreground);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ip-col-settings .settings-btn:hover {
+  border-color: var(--cfnat-primary);
+  color: var(--cfnat-primary);
+}
+.ip-col-settings .settings-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--cfnat-popover);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-md);
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+.ip-col-settings .settings-panel .panel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--cfnat-radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-card-foreground);
+}
+.ip-col-settings .settings-panel .panel-item:hover {
+  background: var(--cfnat-muted);
+}
+
+/* ====== 进度面板 ====== */
 .progress-panel {
-  background: #0a0e14;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--cfnat-card);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-lg);
   padding: 16px 20px;
   margin-bottom: 14px;
 }
-.progress-stage { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.progress-stage .label { font-size: 14px; color: var(--accent); font-weight: 600; min-width: 100px; }
-.progress-stage .ip { font-family: monospace; font-size: 13px; color: var(--accent3); }
+.progress-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.progress-stage .label {
+  font-size: var(--font-size-sm);
+  color: var(--cfnat-primary);
+  font-weight: 600;
+  min-width: 100px;
+}
+.progress-stage .ip {
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  color: var(--state-warning);
+}
 .progress-bar-outer {
-  height: 6px; background: #1e2430; border-radius: 3px; overflow: hidden;
+  height: 6px;
+  background: var(--cfnat-muted);
+  border-radius: 3px;
+  overflow: hidden;
 }
 .progress-bar-inner {
-  height: 100%; background: linear-gradient(90deg, #4facfe, #00f2fe);
-  border-radius: 3px; transition: width 0.4s ease;
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe, #00f2fe);
+  border-radius: 3px;
+  transition: width 0.4s ease;
 }
-.progress-stats { display: flex; gap: 20px; margin-top: 6px; font-size: 12px; color: var(--text-muted); }
-
-/* 日志 */
-.log-viewer { background: #0a0e14; border: 1px solid var(--border); border-radius: 8px; height: 500px; overflow: hidden; }
-
-/* 导入 */
-.ip-table-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 0; }
-.collapsible-header {
-  cursor: pointer; user-select: none; padding: 8px 0;
-  display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 13px;
+.progress-stats {
+  display: flex;
+  gap: 20px;
+  margin-top: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--cfnat-muted-foreground);
 }
-.collapsible-header:hover { color: var(--text); }
 
-/* 配置行 */
-.config-row {
-  display: flex; align-items: center; gap: 12px; padding: 8px 0;
+/* ====== 日志 ====== */
+.log-viewer {
+  background: var(--cfnat-card);
+  border: 1px solid var(--cfnat-border);
+  border-radius: var(--cfnat-radius-lg);
+  height: 500px;
+  overflow: hidden;
 }
-.config-row .label { color: var(--text-muted); font-size: 13px; min-width: 100px; }
-.config-row .hint { font-size: 11px; color: var(--danger); }
+
+/* ====== 滚动条 ====== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cfnat-muted);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--cfnat-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cfnat-muted-foreground);
+}
 </style>
 </head>
 <body>
@@ -121,211 +611,302 @@ body {
   <n-config-provider :theme-overrides="themeOverrides">
     <n-message-provider>
       <div class="app-header">
-        <div class="app-logo">🚀</div>
-        <div class="app-title">
-          <h1>CFNAT-AIO</h1>
-          <p>Cloudflare CMIN2 优选 IP · 多地区代理 · WebUI 控制台</p>
+        <div class="logo-area">
+          <div class="logo-text">CFNAT-AIO</div>
+          <div class="logo-divider"></div>
+          <div class="logo-subtitle">Cloudflare CMIN2 优选 IP / 智能代理控制台</div>
+        </div>
+        <div class="nav-links">
+          <a :class="{ active: activeTab === 'dash' }" @click.prevent="activeTab = 'dash'">仪表盘</a>
+          <a :class="{ active: activeTab === 'regions' }" @click.prevent="activeTab = 'regions'">地区管理</a>
+          <a :class="{ active: activeTab === 'cfnat' }" @click.prevent="activeTab = 'cfnat'">cfnat 配置</a>
+          <a :class="{ active: activeTab === 'cfdata' }" @click.prevent="activeTab = 'cfdata'">cfdata</a>
+          <a :class="{ active: activeTab === 'ips' }" @click.prevent="activeTab = 'ips'">IP 库</a>
+          <a :class="{ active: activeTab === 'logs' }" @click.prevent="activeTab = 'logs'">日志</a>
+          <a :class="{ active: activeTab === 'settings' }" @click.prevent="activeTab = 'settings'">通用设置</a>
         </div>
       </div>
       <div class="app-content">
-        <n-tabs v-model:value="activeTab" type="line" animated>
+        <div v-if="activeTab === 'dash'" class="page-title">
+          <h1>仪表盘</h1>
+          <p>全局运行状态与地区代理概览</p>
+        </div>
 
-          <!-- ========== 1. 仪表盘 ========== -->
-          <n-tab-pane name="dash" tab="📊 仪表盘">
-            <div class="stat-cards">
-              <div class="stat-card">
-                <div class="sc-icon">⏱</div>
-                <div class="sc-val">{{ uptimeStr }}</div>
-                <div class="sc-lbl">运行时间</div>
+        <!-- ========== 1. 仪表盘 ========== -->
+        <div v-show="activeTab === 'dash'">
+          <div class="stat-cards">
+            <div class="stat-card">
+              <div class="stat-header">
+                <svg class="stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="stat-label">运行时间</span>
               </div>
-              <div class="stat-card">
-                <div class="sc-icon">🌐</div>
-                <div class="sc-val">{{ totalIPs }}</div>
-                <div class="sc-lbl">总 IP 数</div>
+              <div class="stat-value">{{ uptimeStr }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <svg class="stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                <span class="stat-label">总 IP 数</span>
               </div>
-              <div class="stat-card">
-                <div class="sc-icon">📍</div>
-                <div class="sc-val">{{ proxyStatus.regions ? proxyStatus.regions.filter(r=>r.listening).length : 0 }} / {{ regions.length }}</div>
-                <div class="sc-lbl">代理监听 / 地区</div>
+              <div class="stat-value">{{ totalIPs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <svg class="stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span class="stat-label">代理监听 / 地区</span>
               </div>
-              <div class="stat-card">
-                <div class="sc-icon">🔍</div>
-                <div class="sc-val">{{ scanRunning ? '扫描中' : scanProgress.percent > 0 ? '已完成' : (scannerConfig.enabled ? '后台待命' : '已停止') }}</div>
-                <div class="sc-lbl">cfdata 状态</div>
+              <div class="stat-value">{{ proxyStatus.regions ? proxyStatus.regions.filter(r=>r.listening).length : 0 }} / {{ regions.length }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <svg class="stat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                <span class="stat-label">cfdata 状态</span>
+              </div>
+              <div class="stat-value" style="display:flex;align-items:center;">
+                <span>{{ scanRunning ? '扫描中' : scanProgress.percent > 0 ? '已完成' : (scannerConfig.enabled ? '后台待命' : '已停止') }}</span>
+                <span v-if="scanRunning" class="stat-pulse"></span>
               </div>
             </div>
+          </div>
 
-            <!-- 代理监听 -->
-            <h3 style="margin:0 0 12px;color:#e6edf3;font-size:15px">代理监听状态</h3>
-            <div v-if="proxyStatus.regions && proxyStatus.regions.length">
-              <div class="region-card" v-for="r in proxyStatus.regions" :key="r.name">
-                <div class="rc-left">
-                  <n-tag :type="r.listening ? 'success' : 'default'" size="small" round>{{ r.listening ? '监听中' : '已停止' }}</n-tag>
-                  <span class="rc-name">{{ r.name }}</span>
-                  <span class="rc-port">:{{ r.port }}</span>
-                  <span class="rc-ip" v-if="r.current_ip" :title="'当前转发: '+r.current_ip">→ {{ r.current_ip }}</span>
-                  <span style="color:var(--text-muted);font-size:12px" v-else>等待连接</span>
+          <div class="section-header">
+            <svg class="section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            <span class="section-title">地区代理状态</span>
+          </div>
+
+          <div class="region-cards">
+            <div class="region-card" v-for="r in proxyStatus.regions" :key="r.name">
+              <div class="region-content">
+                <div class="region-left">
+                  <div class="region-top">
+                    <div :class="['health-dot', getHealthClass(r.health_status)]"></div>
+                    <span class="region-name">{{ r.name }}</span>
+                    <span class="region-port">:{{ r.port }}</span>
+                    <span :class="['region-badge', r.listening ? 'success' : 'default']">
+                      <span class="dot"></span>
+                      {{ r.listening ? '监听中' : '已停止' }}
+                    </span>
+                  </div>
+                  <div class="region-forward">
+                    <span class="region-forward-label">当前转发</span>
+                    <span class="region-forward-arrow">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </span>
+                    <span v-if="r.current_ip" class="region-forward-ip">{{ r.current_ip }}</span>
+                    <span v-else class="region-forward-label">等待连接</span>
+                  </div>
+                  <div class="region-colo">{{ r.colo }}</div>
                 </div>
-                <div class="rc-right">
-                  <div class="rc-stat"><div class="num">{{ r.ip_count }}</div><div class="lbl">可用 IP</div></div>
-                  <div class="rc-stat"><div class="num">{{ r.active_conns || 0 }}</div><div class="lbl">活跃连接</div></div>
-                  <div class="rc-stat"><div class="num">{{ (r.avg_delay_ms || 0).toFixed(0) }}</div><div class="lbl">延迟 ms</div></div>
-                  <div class="rc-stat"><div class="num" :style="{color: (r.loss_rate || 0) > 10 ? '#f85149' : 'inherit'}">{{ (r.loss_rate || 0).toFixed(1) }}%</div><div class="lbl">丢包率</div></div>
-                  <div class="rc-stat"><div class="num">{{ r.retry_count || 0 }}</div><div class="lbl">今日重试</div></div>
-                  <div class="rc-stat"><div class="num">{{ r.colo }}</div><div class="lbl">Colo</div></div>
+                <div class="region-right">
+                  <div class="metric-item">
+                    <div class="metric-value">{{ r.ip_count }}</div>
+                    <div class="metric-label">可用 IP</div>
+                    <div class="metric-annotation">主池 {{ r.active_pool_count || 0 }} / {{ proxyForwardForm.active_pool_size || 20 }}</div>
+                  </div>
+                  <div class="metric-item">
+                    <div class="metric-value">{{ r.active_conns || 0 }}</div>
+                    <div class="metric-label">活跃连接</div>
+                  </div>
+                  <div class="metric-item">
+                    <div class="metric-value">{{ r.retry_count || 0 }}</div>
+                    <div class="metric-label">今日重试</div>
+                  </div>
+                  <div class="metric-item">
+                    <div :class="['metric-value', getDelayClass(r.avg_delay_ms)]">{{ (r.avg_delay_ms || 0).toFixed(0) }}ms</div>
+                    <div class="metric-label">延迟</div>
+                  </div>
+                  <div class="metric-item">
+                    <div :class="['metric-value', getLossClass(r.loss_rate)]">{{ (r.loss_rate || 0).toFixed(1) }}%</div>
+                    <div class="metric-label">丢包</div>
+                  </div>
+                  <div class="metric-item">
+                    <div class="metric-value">{{ r.sticky_count || 0 }}</div>
+                    <div class="metric-label">Sticky</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <n-empty v-else description="暂无代理监听" style="padding:40px" />
+          </div>
 
-            <!-- cfnat 运行状态 -->
-            <h3 style="margin:20px 0 12px;color:#e6edf3;font-size:15px">cfnat 运行状态</h3>
-            <n-card size="small" style="margin-bottom:16px">
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
-                <div><span style="color:var(--text-muted);font-size:12px">TLS</span><br><n-tag :type="cfnatConfig.tls_mode ? 'success' : 'default'" size="small" round>{{ cfnatConfig.tls_mode ? '开启' : '关闭' }}</n-tag></div>
-                <div><span style="color:var(--text-muted);font-size:12px">随机选取</span><br><n-tag :type="cfnatConfig.random_pick ? 'success' : 'default'" size="small" round>{{ cfnatConfig.random_pick ? '是' : '否' }}</n-tag></div>
-                <div><span style="color:var(--text-muted);font-size:12px">IP 池大小</span><br><span style="font-weight:700">{{ cfnatConfig.ip_pool_size }}</span></div>
-                <div><span style="color:var(--text-muted);font-size:12px">转发轮换数</span><br><span style="font-weight:700">{{ cfnatConfig.forward_num }}</span></div>
-                <div><span style="color:var(--text-muted);font-size:12px">测速时长</span><br><span style="font-weight:700">{{ cfnatConfig.speed_time }}s</span></div>
-                <div><span style="color:var(--text-muted);font-size:12px">期望状态码</span><br><span style="font-weight:700">{{ cfnatConfig.expect_code }}</span></div>
-              </div>
-            </n-card>
+          <div v-if="proxyStatus.regions && proxyStatus.regions.length === 0" class="config-card">
+            <div style="text-align:center;padding:40px;color:var(--cfnat-muted-foreground);">暂无代理监听</div>
+          </div>
 
-            <!-- 最近扫描 -->
-            <h3 style="margin:20px 0 12px;color:#e6edf3;font-size:15px">最近扫描</h3>
+          <div class="config-card">
+            <div class="config-title">cfnat 运行状态</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+              <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">TLS</span><br><n-tag :type="cfnatConfig.tls_mode ? 'success' : 'default'" size="small" round>{{ cfnatConfig.tls_mode ? '开启' : '关闭' }}</n-tag></div>
+              <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">随机选取</span><br><n-tag :type="cfnatConfig.random_pick ? 'success' : 'default'" size="small" round>{{ cfnatConfig.random_pick ? '是' : '否' }}</n-tag></div>
+              <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">IP 池大小</span><br><span style="font-weight:700">{{ cfnatConfig.ip_pool_size }}</span></div>
+              <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">转发轮换数</span><br><span style="font-weight:700">{{ cfnatConfig.forward_num }}</span></div>
+              <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">测速时长</span><br><span style="font-weight:700">{{ cfnatConfig.speed_time }}s</span></div>
+              <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">期望状态码</span><br><span style="font-weight:700">{{ cfnatConfig.expect_code }}</span></div>
+            </div>
+          </div>
+
+          <div class="config-card">
+            <div class="config-title">最近扫描</div>
             <n-data-table :columns="scanHistoryCols" :data="scanHistory" :bordered="false" size="small" max-height="260" />
-          </n-tab-pane>
+          </div>
+        </div>
 
-          <!-- ========== 2. 地区管理 ========== -->
-          <n-tab-pane name="regions" tab="🗺 地区管理">
-            <n-card title="添加地区" size="small" style="margin-bottom:16px">
-              <div style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center">
-                <input v-model="newRegion.name" placeholder="名称 (HKG/LAX/JP)" style="width:120px;padding:5px 10px;border:1px solid #1e2430;border-radius:3px;background:#0a0e14;color:#c9d1d9;font-size:13px;outline:none">
-                <input v-model="newRegion.code" placeholder="Colo 代码" style="width:120px;padding:5px 10px;border:1px solid #1e2430;border-radius:3px;background:#0a0e14;color:#c9d1d9;font-size:13px;outline:none">
-                <input v-model="newRegion.portStr" placeholder="端口" style="width:100px;padding:5px 10px;border:1px solid #1e2430;border-radius:3px;background:#0a0e14;color:#c9d1d9;font-size:13px;outline:none">
-                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);cursor:pointer">
-                  <input type="checkbox" v-model="newRegion.enabled" style="accent-color:#58a6ff;width:14px;height:14px"> 启用
-                </label>
-                <button @click="addRegion" :disabled="!newRegion.name || !newRegion.portStr" style="padding:5px 14px;background:#58a6ff;color:#fff;border:none;border-radius:3px;font-size:13px;cursor:pointer;opacity:1" :style="{opacity: (!newRegion.name || !newRegion.portStr) ? 0.4 : 1, cursor: (!newRegion.name || !newRegion.portStr) ? 'not-allowed' : 'pointer'}">添加</button>
-              </div>
-            </n-card>
-            <n-data-table :columns="regionCols" :data="regions" :bordered="false" size="small" />
-          </n-tab-pane>
+          <div v-show="activeTab === 'regions'">
+          <div class="page-title">
+            <h1>地区管理</h1>
+            <p>管理代理监听地区与端口配置</p>
+          </div>
 
-          <!-- ========== 3. cfnat 配置 ========== -->
-          <n-tab-pane name="cfnat" tab="⚙ cfnat 配置">
-            <n-card title="代理转发参数" size="small">
-              <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">对应原 cfnat 的环境变量，控制代理转发行为。</p>
-              <div class="config-row">
-                <span class="label">TLS 连接 (tls)</span>
-                <n-switch v-model:value="cfnatForm.tls_mode" size="small" />
-              </div>
-              <div class="config-row">
-                <span class="label">随机选取 IP (random)</span>
-                <n-switch v-model:value="cfnatForm.random_pick" size="small" />
-              </div>
-              <div class="config-row">
-                <span class="label">IP 池大小 (ipnum)</span>
-                <n-input-number v-model:value="cfnatForm.ip_pool_size" size="small" :min="1" :max="100" style="width:100px" />
-                <span style="font-size:11px;color:var(--text-muted)">每个地区保留的可用 IP 数量</span>
-              </div>
-              <div class="config-row">
-                <span class="label">转发轮换数 (num)</span>
-                <n-input-number v-model:value="cfnatForm.forward_num" size="small" :min="1" :max="20" style="width:100px" />
-                <span style="font-size:11px;color:var(--text-muted)">同时用于转发的 IP 个数</span>
-              </div>
-              <div class="config-row">
-                <span class="label">测速时长 (speedtime)</span>
-                <n-input-number v-model:value="cfnatForm.speed_time" size="small" :min="1" :max="30" style="width:100px" />
-                <span style="font-size:11px;color:var(--text-muted)">秒</span>
-              </div>
-              <div class="config-row">
-                <span class="label">期望状态码 (code)</span>
-                <n-input-number v-model:value="cfnatForm.expect_code" size="small" :min="100" :max="599" style="width:100px" />
-              </div>
-              <n-button type="primary" size="small" style="margin-top:14px" @click="saveCfnat" :loading="cfnatSaving">{{ cfnatSaving ? '保存中' : '保存配置' }}</n-button>
-            </n-card>
-          </n-tab-pane>
-
-          <!-- ========== 4. cfdata 扫描器 ========== -->
-          <n-tab-pane name="cfdata" tab="🔬 cfdata">
-            <!-- 扫描进度面板 -->
-            <div class="progress-panel" v-if="scanProgress.running || scanProgress.percent > 0">
-              <div class="progress-stage">
-                <span class="label">{{ scanProgress.stage || '--' }}</span>
-                <span class="ip" v-if="scanProgress.current_ip">{{ scanProgress.current_ip }}</span>
-                <span style="font-size:12px;color:var(--text-muted);margin-left:auto">
-                  {{ scanProgress.stage_done }} / {{ scanProgress.stage_total }}
-                </span>
-              </div>
-              <div class="progress-bar-outer">
-                <div class="progress-bar-inner" :style="{width: (scanProgress.percent||0)+'%'}"></div>
-              </div>
-              <div class="progress-stats">
-                <span>阶段 {{ scanProgress.percent || 0 }}%</span>
-                <span>已测: {{ scanProgress.total_scanned || scanProgress.stage_done || 0 }}</span>
-              </div>
+          <div class="config-card">
+            <div class="config-title">添加地区</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center">
+              <input v-model="newRegion.name" placeholder="名称 (HKG/LAX/JP)" style="width:120px;padding:6px 10px;border:1px solid var(--cfnat-border);border-radius:var(--cfnat-radius-sm);background:var(--cfnat-input);color:var(--cfnat-foreground);font-size:var(--font-size-sm);outline:none;">
+              <input v-model="newRegion.code" placeholder="Colo 代码" style="width:120px;padding:6px 10px;border:1px solid var(--cfnat-border);border-radius:var(--cfnat-radius-sm);background:var(--cfnat-input);color:var(--cfnat-foreground);font-size:var(--font-size-sm);outline:none;">
+              <input v-model="newRegion.portStr" placeholder="端口" style="width:100px;padding:6px 10px;border:1px solid var(--cfnat-border);border-radius:var(--cfnat-radius-sm);background:var(--cfnat-input);color:var(--cfnat-foreground);font-size:var(--font-size-sm);outline:none;">
+              <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-size-sm);color:var(--cfnat-muted-foreground);cursor:pointer">
+                <input type="checkbox" v-model="newRegion.enabled" style="accent-color:var(--cfnat-primary);width:14px;height:14px"> 启用
+              </label>
+              <button @click="addRegion" :disabled="!newRegion.name || !newRegion.portStr" style="padding:6px 14px;background:var(--cfnat-primary);color:#fff;border:none;border-radius:var(--cfnat-radius-sm);font-size:var(--font-size-sm);cursor:pointer" :style="{opacity: (!newRegion.name || !newRegion.portStr) ? 0.4 : 1, cursor: (!newRegion.name || !newRegion.portStr) ? 'not-allowed' : 'pointer'}">添加</button>
             </div>
+          </div>
 
-            <!-- 最近扫描失败提示 -->
-            <n-alert v-if="scanHistory.length > 0 && scanHistory[0].status === 'error' && !scanProgress.running" type="error" style="margin-bottom:16px">
-              最近一次扫描失败：
-              <span v-if="scanHistory[0].stats_json">{{ scanHistory[0].stats_json }}</span>
-              <span v-else>未知错误</span>
-              <br>
-              <span style="font-size:12px;color:var(--text-muted)">请检查容器网络连接，确保能访问外网（Cloudflare IP 段列表源和测速服务器）</span>
-            </n-alert>
+          <div class="config-card">
+            <div class="config-title">地区列表</div>
+            <n-data-table :columns="regionCols" :data="regions" :bordered="false" size="small" />
+          </div>
+        </div>
 
-            <n-card title="cfdata 扫描配置" size="small" style="margin-bottom:16px">
-              <n-space vertical size="small">
-                <div class="config-row">
-                  <n-switch v-model:value="scannerForm.enabled" size="small" />
-                  <span class="label">启用后台扫描</span>
-                  <n-input-number v-model:value="scannerForm.interval" size="small" :min="1" :max="1440" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">分钟/次</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">合格速度 (minbw)</span>
-                  <n-input-number v-model:value="scannerForm.min_speed_mbps" size="small" :min="0.1" :step="0.5" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">MB/s</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">IP 类型 (ips)</span>
-                  <n-select v-model:value="scannerForm.ip_type" :options="[{label:'IPv4',value:4},{label:'IPv6',value:6}]" size="small" style="width:100px" />
-                  <span class="label" style="margin-left:16px">端口 (port)</span>
-                  <n-input-number v-model:value="scannerForm.port" size="small" :min="1" :max="65535" style="width:90px" />
-                </div>
-                <div class="config-row">
-                  <span class="label">每/24抽样</span>
-                  <n-select v-model:value="scannerForm.samples_per_24" :options="[{label:'1 (快速)',value:1},{label:'10',value:10},{label:'50',value:50},{label:'100 (推荐)',value:100},{label:'255 (全测)',value:255}]" size="small" style="width:130px" />
-                  <span class="label" style="margin-left:16px">延迟阈值 (delay)</span>
-                  <n-input-number v-model:value="scannerForm.max_delay_ms" size="small" :min="10" style="width:90px" />
-                  <span style="font-size:11px;color:var(--text-muted)">ms</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">并发数 (task)</span>
-                  <n-input-number v-model:value="scannerForm.threads" size="small" :min="1" :max="500" style="width:90px" />
-                  <span class="label" style="margin-left:16px">测速网址 (domain)</span>
-                  <n-input v-model:value="scannerForm.speed_test_url" size="small" style="width:280px" placeholder="auto" />
-                </div>
-                <div class="config-row">
-                  <n-switch v-model:value="scannerForm.only_cmin2" size="small" />
-                  <span style="font-size:13px;color:var(--text)">只保留 CMIN2 节点</span>
-                </div>
-              </n-space>
-              <n-space style="margin-top:14px">
-                <n-button type="primary" size="small" @click="saveScanner">保存配置</n-button>
-                <n-button size="small" @click="runScan" :loading="scanRunning" :disabled="scanRunning">立即扫描</n-button>
-                <n-button size="small" type="error" @click="stopScan" :disabled="!scanRunning">停止</n-button>
-              </n-space>
-            </n-card>
+          <div v-show="activeTab === 'cfnat'">
+          <div class="page-title">
+            <h1>cfnat 配置</h1>
+            <p>代理转发参数配置</p>
+          </div>
 
+          <div class="config-card">
+            <div class="config-title">代理转发参数</div>
+            <div class="config-subtitle">对应原 cfnat 的环境变量，控制代理转发行为。</div>
+            <div class="config-row">
+              <span class="config-label">TLS 连接 (tls)</span>
+              <n-switch v-model:value="cfnatForm.tls_mode" size="small" />
+              <span class="config-hint">启用 TLS 加密连接</span>
+            </div>
+            <div class="config-row">
+              <span class="config-label">随机选取 IP (random)</span>
+              <n-switch v-model:value="cfnatForm.random_pick" size="small" />
+              <span class="config-hint">随机选择 IP 进行转发</span>
+            </div>
+            <div class="config-row">
+              <span class="config-label">IP 池大小 (ipnum)</span>
+              <n-input-number v-model:value="cfnatForm.ip_pool_size" size="small" :min="1" :max="100" style="width:100px" />
+              <span class="config-hint">每个地区保留的可用 IP 数量</span>
+            </div>
+            <div class="config-row">
+              <span class="config-label">转发轮换数 (num)</span>
+              <n-input-number v-model:value="cfnatForm.forward_num" size="small" :min="1" :max="20" style="width:100px" />
+              <span class="config-hint">同时用于转发的 IP 个数</span>
+            </div>
+            <div class="config-row">
+              <span class="config-label">测速时长 (speedtime)</span>
+              <n-input-number v-model:value="cfnatForm.speed_time" size="small" :min="1" :max="30" style="width:100px" />
+              <span class="config-hint">秒</span>
+            </div>
+            <div class="config-row">
+              <span class="config-label">期望状态码 (code)</span>
+              <n-input-number v-model:value="cfnatForm.expect_code" size="small" :min="100" :max="599" style="width:100px" />
+              <span class="config-hint">HTTP 请求期望返回的状态码</span>
+            </div>
+            <n-button type="primary" size="small" style="margin-top:14px" @click="saveCfnat" :loading="cfnatSaving">{{ cfnatSaving ? '保存中' : '保存配置' }}</n-button>
+          </div>
+        </div>
+
+          <div v-show="activeTab === 'cfdata'">
+          <div class="page-title">
+            <h1>cfdata</h1>
+            <p>IP 扫描与 CMIN2 节点探测</p>
+          </div>
+
+          <div class="progress-panel" v-if="scanProgress.running || scanProgress.percent > 0">
+            <div class="progress-stage">
+              <span class="label">{{ scanProgress.stage || '--' }}</span>
+              <span class="ip" v-if="scanProgress.current_ip">{{ scanProgress.current_ip }}</span>
+              <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);margin-left:auto">
+                {{ scanProgress.stage_done }} / {{ scanProgress.stage_total }}
+              </span>
+            </div>
+            <div class="progress-bar-outer">
+              <div class="progress-bar-inner" :style="{width: (scanProgress.percent||0)+'%'}"></div>
+            </div>
+            <div class="progress-stats">
+              <span>阶段 {{ scanProgress.percent || 0 }}%</span>
+              <span>已测: {{ scanProgress.total_scanned || scanProgress.stage_done || 0 }}</span>
+            </div>
+          </div>
+
+          <n-alert v-if="scanHistory.length > 0 && scanHistory[0].status === 'error' && !scanProgress.running" type="error" style="margin-bottom:16px">
+            最近一次扫描失败：
+            <span v-if="scanHistory[0].stats_json">{{ scanHistory[0].stats_json }}</span>
+            <span v-else>未知错误</span>
+            <br>
+            <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground)">请检查容器网络连接，确保能访问外网（Cloudflare IP 段列表源和测速服务器）</span>
+          </n-alert>
+
+          <div class="config-card">
+            <div class="config-title">cfdata 扫描配置</div>
+            <n-space vertical size="small">
+              <div class="config-row">
+                <n-switch v-model:value="scannerForm.enabled" size="small" />
+                <span class="config-label">启用后台扫描</span>
+                <n-input-number v-model:value="scannerForm.interval" size="small" :min="1" :max="1440" style="width:100px" />
+                <span class="config-hint">分钟/次</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">合格速度 (minbw)</span>
+                <n-input-number v-model:value="scannerForm.min_speed_mbps" size="small" :min="0.1" :step="0.5" style="width:100px" />
+                <span class="config-hint">MB/s</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">IP 类型 (ips)</span>
+                <n-select v-model:value="scannerForm.ip_type" :options="[{label:'IPv4',value:4},{label:'IPv6',value:6}]" size="small" style="width:100px" />
+                <span class="config-label" style="margin-left:16px">端口 (port)</span>
+                <n-input-number v-model:value="scannerForm.port" size="small" :min="1" :max="65535" style="width:90px" />
+              </div>
+              <div class="config-row">
+                <span class="config-label">每/24抽样</span>
+                <n-select v-model:value="scannerForm.samples_per_24" :options="[{label:'1 (快速)',value:1},{label:'10',value:10},{label:'50',value:50},{label:'100 (推荐)',value:100},{label:'255 (全测)',value:255}]" size="small" style="width:130px" />
+                <span class="config-label" style="margin-left:16px">延迟阈值 (delay)</span>
+                <n-input-number v-model:value="scannerForm.max_delay_ms" size="small" :min="10" style="width:90px" />
+                <span class="config-hint">ms</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">并发数 (task)</span>
+                <n-input-number v-model:value="scannerForm.threads" size="small" :min="1" :max="500" style="width:90px" />
+                <span class="config-label" style="margin-left:16px">测速网址 (domain)</span>
+                <n-input v-model:value="scannerForm.speed_test_url" size="small" style="width:280px" placeholder="auto" />
+              </div>
+              <div class="config-row">
+                <n-switch v-model:value="scannerForm.only_cmin2" size="small" />
+                <span class="config-label">只保留 CMIN2 节点</span>
+              </div>
+            </n-space>
+            <n-space style="margin-top:14px">
+              <n-button type="primary" size="small" @click="saveScanner">保存配置</n-button>
+              <n-button size="small" @click="runScan" :loading="scanRunning" :disabled="scanRunning">立即扫描</n-button>
+              <n-button size="small" type="error" @click="stopScan" :disabled="!scanRunning">停止</n-button>
+            </n-space>
+          </div>
+
+          <div class="config-card">
+            <div class="config-title">扫描历史</div>
             <n-data-table :columns="scanHistoryCols" :data="scanHistory" :bordered="false" size="small" max-height="300" />
-          </n-tab-pane>
+          </div>
+        </div>
 
-          <!-- ========== 5. IP 库 ========== -->
-          <n-tab-pane name="ips" tab="📦 IP 库">
-            <div class="ip-table-toolbar">
+          <div v-show="activeTab === 'ips'">
+          <div class="page-title">
+            <h1>IP 库</h1>
+            <p>管理和查看已扫描的 Cloudflare IP</p>
+          </div>
+
+          <div class="ip-table-toolbar">
+            <div class="filter-row">
               <n-select v-model:value="ipFilter.region" :options="ipRegionOptions" placeholder="全部地区" size="small" clearable style="width:140px" @update:value="loadIPs" />
               <n-select v-model:value="ipFilter.source" :options="ipSourceOptions" placeholder="全部来源" size="small" clearable style="width:140px" @update:value="loadIPs" />
               <n-input v-model:value="ipFilter.search" placeholder="搜索 IP..." size="small" clearable style="width:180px" />
@@ -338,171 +919,185 @@ body {
                 确定删除选中的 {{ checkedIPs.length }} 个 IP？
               </n-popconfirm>
             </div>
+          </div>
 
-            <n-card title="手动添加 IP" size="small" style="margin-bottom:12px">
-              <n-space>
-                <n-input v-model:value="addIPForm.ip" placeholder="IP 地址" size="small" style="width:160px" />
-                <n-input v-model:value="addIPForm.region" placeholder="Colo (KIX)" size="small" style="width:100px" />
-                <n-input v-model:value="addIPForm.colo" placeholder="Colo" size="small" style="width:100px" />
-                <n-input-number v-model:value="addIPForm.speed" placeholder="速度 MB/s" size="small" :min="0" style="width:110px" />
-                <n-button type="primary" size="small" @click="addIPManual" :disabled="!addIPForm.ip || !addIPForm.region">添加</n-button>
-              </n-space>
-            </n-card>
+          <div class="config-card">
+            <div class="config-title">手动添加 IP</div>
+            <n-space>
+              <n-input v-model:value="addIPForm.ip" placeholder="IP 地址" size="small" style="width:160px" />
+              <n-input v-model:value="addIPForm.region" placeholder="Colo (KIX)" size="small" style="width:100px" />
+              <n-input v-model:value="addIPForm.colo" placeholder="Colo" size="small" style="width:100px" />
+              <n-input-number v-model:value="addIPForm.speed" placeholder="速度 MB/s" size="small" :min="0" style="width:110px" />
+              <n-button type="primary" size="small" @click="addIPManual" :disabled="!addIPForm.ip || !addIPForm.region">添加</n-button>
+            </n-space>
+          </div>
 
-            <n-card title="批量导入探测 CMIN2" size="small" style="margin-bottom:12px">
-              <n-input v-model:value="importText" type="textarea" :rows="6" placeholder="粘贴 IP 列表（格式: IP:端口#地区 AS编号 ISP 或纯 IP）" size="small" />
-              <n-space style="margin-top:10px" align="center">
-                <n-switch v-model:value="importAutoAdd" size="small" />
-                <span style="font-size:12px;color:var(--text-muted)">自动将测速达标的 CMIN2 节点入库</span>
-                <n-button type="primary" size="small" @click="runImportProbe" :loading="importLoading" :disabled="!importText.trim()">
-                  {{ importLoading ? '探测中...' : '🔍 开始探测' }}
-                </n-button>
-              </n-space>
-              <div v-if="importResult" style="margin-top:12px">
-                <n-alert :type="importResult.cmin2 > 0 ? 'success' : 'warning'" style="margin-bottom:8px">
-                  去重 {{ importResult.total }}，探活 {{ importResult.ok }}，
-                  CMIN2 {{ importResult.cmin2 }}，达标 {{ importResult.speed_passed || 0 }}，
-                  入库 {{ importResult.imported }}
-                  <template v-if="importResult.min_speed">（≥{{ importResult.min_speed }} MB/s）</template>
-                </n-alert>
-                <div v-if="cmin2Items.length > 0">
-                  <p style="color:var(--accent2);font-size:13px;font-weight:600">✅ CMIN2 ({{ cmin2Items.length }})</p>
-                  <n-data-table :columns="importResultCols" :data="cmin2Items" :bordered="false" size="small" max-height="300" />
-                </div>
-                <div v-if="otherItems.length > 0" style="margin-top:8px">
-                  <div class="collapsible-header" @click="showOtherItems = !showOtherItems">{{ showOtherItems ? '▼' : '▶' }} ⚠ 非 CMIN2 ({{ otherItems.length }})</div>
-                  <n-data-table v-if="showOtherItems" :columns="importOtherCols" :data="otherItems.slice(0,100)" :bordered="false" size="small" max-height="250" />
-                </div>
-                <div v-if="failItems.length > 0" style="margin-top:8px">
-                  <div class="collapsible-header" @click="showFailItems = !showFailItems">{{ showFailItems ? '▼' : '▶' }} ❌ 失败 ({{ failItems.length }})</div>
-                  <n-data-table v-if="showFailItems" :columns="importFailCols" :data="failItems.slice(0,100)" :bordered="false" size="small" max-height="250" />
-                </div>
+          <div class="config-card">
+            <div class="config-title">批量导入探测 CMIN2</div>
+            <n-input v-model:value="importText" type="textarea" :rows="6" placeholder="粘贴 IP 列表（格式: IP:端口#地区 AS编号 ISP 或纯 IP）" size="small" />
+            <n-space style="margin-top:10px" align="center">
+              <n-switch v-model:value="importAutoAdd" size="small" />
+              <span style="font-size:12px;color:var(--cfnat-muted-foreground)">自动将测速达标的 CMIN2 节点入库</span>
+              <n-button type="primary" size="small" @click="runImportProbe" :loading="importLoading" :disabled="!importText.trim()">
+                {{ importLoading ? '探测中...' : '🔍 开始探测' }}
+              </n-button>
+            </n-space>
+            <div v-if="importResult" style="margin-top:12px">
+              <n-alert :type="importResult.cmin2 > 0 ? 'success' : 'warning'" style="margin-bottom:8px">
+                去重 {{ importResult.total }}，探活 {{ importResult.ok }}，
+                CMIN2 {{ importResult.cmin2 }}，达标 {{ importResult.speed_passed || 0 }}，
+                入库 {{ importResult.imported }}
+                <template v-if="importResult.min_speed">（≥{{ importResult.min_speed }} MB/s）</template>
+              </n-alert>
+              <div v-if="cmin2Items.length > 0">
+                <p style="color:var(--cfnat-primary);font-size:13px;font-weight:600">✅ CMIN2 ({{ cmin2Items.length }})</p>
+                <n-data-table :columns="importResultCols" :data="cmin2Items" :bordered="false" size="small" max-height="300" />
               </div>
-            </n-card>
+              <div v-if="otherItems.length > 0" style="margin-top:8px">
+                <div class="collapsible-header" @click="showOtherItems = !showOtherItems">{{ showOtherItems ? '▼' : '▶' }} ⚠ 非 CMIN2 ({{ otherItems.length }})</div>
+                <n-data-table v-if="showOtherItems" :columns="importOtherCols" :data="otherItems.slice(0,100)" :bordered="false" size="small" max-height="250" />
+              </div>
+              <div v-if="failItems.length > 0" style="margin-top:8px">
+                <div class="collapsible-header" @click="showFailItems = !showFailItems">{{ showFailItems ? '▼' : '▶' }} ❌ 失败 ({{ failItems.length }})</div>
+                <n-data-table v-if="showFailItems" :columns="importFailCols" :data="failItems.slice(0,100)" :bordered="false" size="small" max-height="250" />
+              </div>
+            </div>
+          </div>
 
-            <n-data-table
-              :columns="ipCols" :data="filteredIPs" :bordered="false" size="small"
-              :row-key="(row) => row.ip + '@' + row.region"
-              max-height="500"
-              :checked-row-keys="checkedIPKeys"
-              @update:checked-row-keys="onCheckIPs"
-            />
-          </n-tab-pane>
+          <n-data-table
+            :columns="ipCols" :data="filteredIPs" :bordered="false" size="small"
+            :row-key="(row) => row.ip + '@' + row.region"
+            max-height="500"
+            :checked-row-keys="checkedIPKeys"
+            @update:checked-row-keys="onCheckIPs"
+          />
+        </div>
 
-          <!-- ========== 6. 日志 ========== -->
-          <n-tab-pane name="logs" tab="📜 日志">
-            <n-space style="margin-bottom:12px" align="center">
+          <div v-show="activeTab === 'logs'">
+          <div class="page-title">
+            <h1>日志</h1>
+            <p>系统运行日志实时查看</p>
+          </div>
+
+          <div class="config-card" style="padding:12px 16px">
+            <n-space align="center">
               <n-select v-model:value="logFilter.source" :options="logSourceOptions" placeholder="全部来源" size="small" clearable style="width:120px" />
               <n-select v-model:value="logFilter.level" :options="logLevelOptions" placeholder="全部级别" size="small" clearable style="width:120px" />
               <n-button size="small" type="primary" @click="connectLogStream" :disabled="logConnected">▶ 连接</n-button>
               <n-button size="small" @click="disconnectLogStream" :disabled="!logConnected">⏸ 暂停</n-button>
               <n-button size="small" @click="logLines = []">🗑 清屏</n-button>
-              <span style="font-size:12px;color:var(--text-muted)">{{ logConnected ? '● 已连接' : '○ 未连接' }}</span>
+              <span style="font-size:12px;color:var(--cfnat-muted-foreground)">{{ logConnected ? '● 已连接' : '○ 未连接' }}</span>
             </n-space>
-            <div class="log-viewer">
-              <n-log :lines="displayLogLines" :rows="25" :font-size="12" language="txt" trim />
+          </div>
+
+          <div class="log-viewer">
+            <n-log :lines="displayLogLines" :rows="25" :font-size="12" language="txt" trim />
+          </div>
+        </div>
+
+          <div v-show="activeTab === 'settings'">
+          <div class="page-title">
+            <h1>通用设置</h1>
+            <p>系统配置管理</p>
+          </div>
+
+          <div class="config-card">
+            <div class="config-title">通用设置</div>
+            <n-space vertical size="small" style="max-width:500px">
+              <div class="config-row">
+                <span class="config-label">WebUI 端口</span>
+                <n-input-number v-model:value="settingsForm.webui_port" size="small" :min="1" :max="65535" />
+                <span class="config-hint">(修改需重启)</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">日志级别</span>
+                <n-select v-model:value="settingsForm.log_level" :options="[{label:'debug',value:'debug'},{label:'info',value:'info'},{label:'warn',value:'warn'},{label:'error',value:'error'}]" size="small" style="width:120px" />
+              </div>
+              <div class="config-row">
+                <span class="config-label">数据目录</span>
+                <n-input v-model:value="settingsForm.data_dir" size="small" style="width:300px" />
+              </div>
+              <div class="config-row">
+                <span class="config-label">API Token</span>
+                <n-input v-model:value="settingsForm.api_token" type="password" size="small" style="width:300px" placeholder="可选，留空不校验" />
+              </div>
+            </n-space>
+            <n-button type="primary" size="small" style="margin-top:14px" @click="saveSettings">保存</n-button>
+          </div>
+
+          <div class="config-card" style="margin-top:20px;">
+            <div class="collapsible-header" @click="proxyForwardExpanded = !proxyForwardExpanded">
+              <span>{{ proxyForwardExpanded ? '▼' : '▶' }}</span> 代理转发参数（V1.1+）
             </div>
-          </n-tab-pane>
-
-          <!-- ========== 7. 通用设置 ========== -->
-          <n-tab-pane name="settings" tab="🔧 通用设置">
-            <n-card title="通用设置" size="small">
-              <n-space vertical size="small" style="max-width:500px">
-                <div class="config-row">
-                  <span class="label">WebUI 端口</span>
-                  <n-input-number v-model:value="settingsForm.webui_port" size="small" :min="1" :max="65535" />
-                  <span class="hint">(修改需重启)</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">日志级别</span>
-                  <n-select v-model:value="settingsForm.log_level" :options="[{label:'debug',value:'debug'},{label:'info',value:'info'},{label:'warn',value:'warn'},{label:'error',value:'error'}]" size="small" style="width:120px" />
-                </div>
-                <div class="config-row">
-                  <span class="label">数据目录</span>
-                  <n-input v-model:value="settingsForm.data_dir" size="small" style="width:300px" />
-                </div>
-                <div class="config-row">
-                  <span class="label">API Token</span>
-                  <n-input v-model:value="settingsForm.api_token" type="password" size="small" style="width:300px" placeholder="可选，留空不校验" />
-                </div>
-              </n-space>
-              <n-button type="primary" size="small" style="margin-top:14px" @click="saveSettings">保存</n-button>
-            </n-card>
-
-            <n-card title="代理转发设置" size="small" style="margin-top:20px;">
-              <div class="collapsible-header" @click="proxyForwardExpanded = !proxyForwardExpanded">
-                <span>{{ proxyForwardExpanded ? '▼' : '▶' }}</span> 代理转发参数（V1.1+）
+            <div v-if="proxyForwardExpanded" style="margin-top:12px;">
+              <div class="config-row">
+                <span class="config-label">最大重试次数</span>
+                <n-input-number v-model:value="proxyForwardForm.max_retries" size="small" :min="0" :max="5" style="width:100px" />
+                <span class="config-hint">连接失败后的重试次数，0=不重试</span>
               </div>
-              <div v-if="proxyForwardExpanded" style="margin-top:12px;">
-                <div class="config-row">
-                  <span class="label">最大重试次数</span>
-                  <n-input-number v-model:value="proxyForwardForm.max_retries" size="small" :min="0" :max="5" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">连接失败后的重试次数，0=不重试</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">负载均衡策略</span>
-                  <n-select v-model:value="proxyForwardForm.load_balance_mode" :options="[
-                    {label:'纯随机', value:'random'},
-                    {label:'最少连接数', value:'least-conn'},
-                    {label:'加权随机', value:'weighted-random'}
-                  ]" size="small" style="width:160px" />
-                </div>
-                <div class="config-row">
-                  <span class="label">EWMA 样本窗口</span>
-                  <n-input-number v-model:value="proxyForwardForm.ewma_sample_window" size="small" :min="20" :max="200" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">质量指标平滑窗口大小（20-200）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">健康检查间隔</span>
-                  <n-input-number v-model:value="proxyForwardForm.health_check_interval" size="small" :min="30" :max="600" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">自动健康检查间隔秒（30-600）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">最大延迟阈值</span>
-                  <n-input-number v-model:value="proxyForwardForm.max_delay_ms" size="small" :min="100" :max="2000" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">IP 隔离延迟阈值 ms（100-2000）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">最大丢包率</span>
-                  <n-input-number v-model:value="proxyForwardForm.max_loss_rate" size="small" :min="1" :max="50" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">IP 隔离丢包率阈值 %（1-50）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">隔离时长</span>
-                  <n-input-number v-model:value="proxyForwardForm.isolation_duration" size="small" :min="60" :max="900" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">IP 隔离后保留时间秒（60-900）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">预热保护期</span>
-                  <n-input-number v-model:value="proxyForwardForm.warmup_duration" size="small" :min="0" :max="300" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">新 IP 入库后免隔离时间秒（0-300）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">连接亲和性</span>
-                  <n-switch v-model:value="proxyForwardForm.sticky_enabled" size="small" />
-                  <span style="font-size:11px;color:var(--text-muted)">同一客户端短时间内复用同一 IP</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">亲和性 TTL</span>
-                  <n-input-number v-model:value="proxyForwardForm.sticky_ttl" size="small" :min="5" :max="60" style="width:100px" :disabled="!proxyForwardForm.sticky_enabled" />
-                  <span style="font-size:11px;color:var(--text-muted)">亲和性保持时间秒（5-60）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">主池容量</span>
-                  <n-input-number v-model:value="proxyForwardForm.active_pool_size" size="small" :min="5" :max="100" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">活跃 IP 池大小（5-100）</span>
-                </div>
-                <div class="config-row">
-                  <span class="label">备选池比例</span>
-                  <n-input-number v-model:value="proxyForwardForm.standby_pool_ratio" size="small" :min="0.2" :max="1.0" :step="0.1" style="width:100px" />
-                  <span style="font-size:11px;color:var(--text-muted)">备选池容量为主池的比例（0.2-1.0）</span>
-                </div>
-                <n-button type="primary" size="small" style="margin-top:14px" @click="saveProxyForward" :loading="proxyForwardSaving">{{ proxyForwardSaving ? '保存中' : '保存配置' }}</n-button>
+              <div class="config-row">
+                <span class="config-label">负载均衡策略</span>
+                <n-select v-model:value="proxyForwardForm.load_balance_mode" :options="[
+                  {label:'纯随机', value:'random'},
+                  {label:'最少连接数', value:'least-conn'},
+                  {label:'加权随机', value:'weighted-random'}
+                ]" size="small" style="width:160px" />
               </div>
-            </n-card>
-          </n-tab-pane>
-
-        </n-tabs>
+              <div class="config-row">
+                <span class="config-label">EWMA 样本窗口</span>
+                <n-input-number v-model:value="proxyForwardForm.ewma_sample_window" size="small" :min="20" :max="200" style="width:100px" />
+                <span class="config-hint">质量指标平滑窗口大小（20-200）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">健康检查间隔</span>
+                <n-input-number v-model:value="proxyForwardForm.health_check_interval" size="small" :min="30" :max="600" style="width:100px" />
+                <span class="config-hint">自动健康检查间隔秒（30-600）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">最大延迟阈值</span>
+                <n-input-number v-model:value="proxyForwardForm.max_delay_ms" size="small" :min="100" :max="2000" style="width:100px" />
+                <span class="config-hint">IP 隔离延迟阈值 ms（100-2000）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">最大丢包率</span>
+                <n-input-number v-model:value="proxyForwardForm.max_loss_rate" size="small" :min="1" :max="50" style="width:100px" />
+                <span class="config-hint">IP 隔离丢包率阈值 %（1-50）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">隔离时长</span>
+                <n-input-number v-model:value="proxyForwardForm.isolation_duration" size="small" :min="60" :max="900" style="width:100px" />
+                <span class="config-hint">IP 隔离后保留时间秒（60-900）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">预热保护期</span>
+                <n-input-number v-model:value="proxyForwardForm.warmup_duration" size="small" :min="0" :max="300" style="width:100px" />
+                <span class="config-hint">新 IP 入库后免隔离时间秒（0-300）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">连接亲和性</span>
+                <n-switch v-model:value="proxyForwardForm.sticky_enabled" size="small" />
+                <span class="config-hint">同一客户端短时间内复用同一 IP</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">亲和性 TTL</span>
+                <n-input-number v-model:value="proxyForwardForm.sticky_ttl" size="small" :min="5" :max="60" style="width:100px" :disabled="!proxyForwardForm.sticky_enabled" />
+                <span class="config-hint">亲和性保持时间秒（5-60）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">主池容量</span>
+                <n-input-number v-model:value="proxyForwardForm.active_pool_size" size="small" :min="5" :max="100" style="width:100px" />
+                <span class="config-hint">活跃 IP 池大小（5-100）</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">备选池比例</span>
+                <n-input-number v-model:value="proxyForwardForm.standby_pool_ratio" size="small" :min="0.2" :max="1.0" :step="0.1" style="width:100px" />
+                <span class="config-hint">备选池容量为主池的比例（0.2-1.0）</span>
+              </div>
+              <n-button type="primary" size="small" style="margin-top:14px" @click="saveProxyForward" :loading="proxyForwardSaving">{{ proxyForwardSaving ? '保存中' : '保存配置' }}</n-button>
+            </div>
+          </div>
+        </div>
+        <!-- </n-tabs> -->
       </div>
     </n-message-provider>
   </n-config-provider>
@@ -536,10 +1131,18 @@ const api = async (method, path, body) => {
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(path, opts);
   if (!r.ok) {
-    const e = await r.json().catch(() => ({ error: r.statusText }));
-    throw new Error(e.error || r.statusText);
+    const e = await r.json().catch(() => ({ message: r.statusText }));
+    throw new Error(e.message || e.error || r.statusText);
   }
-  return r.json();
+  const data = await r.json();
+  // 统一解包 {code, message, data} 格式
+  if (data && typeof data === 'object' && 'code' in data && 'data' in data) {
+    if (data.code < 200 || data.code >= 300) {
+      throw new Error(data.message || '请求失败');
+    }
+    return data.data;
+  }
+  return data;
 };
 
 // 暗色主题覆盖
@@ -1010,6 +1613,28 @@ const app = createApp({
       if (tab === 'settings') { loadSettings(); loadProxyForward(); }
     });
 
+    const getHealthClass = (status) => {
+      if (!status) return 'normal';
+      if (status === 'healthy') return 'normal';
+      if (status === 'degraded') return 'warning';
+      if (status === 'down') return 'error';
+      return 'normal';
+    };
+
+    const getDelayClass = (delay) => {
+      delay = delay || 0;
+      if (delay < 100) return 'normal';
+      if (delay < 200) return 'warning';
+      return 'error';
+    };
+
+    const getLossClass = (rate) => {
+      rate = rate || 0;
+      if (rate < 1) return 'normal';
+      if (rate < 5) return 'warning';
+      return 'error';
+    };
+
     return {
       activeTab, uptimeStr, totalIPs, proxyStatus, scannerConfig, scanHistory, regions, regionCols,
       newRegion, cfnatConfig, cfnatForm, cfnatSaving, scanRunning, scanProgress,
@@ -1026,6 +1651,7 @@ const app = createApp({
       loadCfnat, saveCfnat,
       connectLogStream, disconnectLogStream, loadSettings, saveSettings, refreshDash,
       loadProxyForward, saveProxyForward,
+      getHealthClass, getDelayClass, getLossClass,
     };
   }
 });

@@ -91,6 +91,13 @@ func (sm *StickyManager) Count() int {
 	return len(sm.slots)
 }
 
+// SetTTL 动态更新粘性会话 TTL
+func (sm *StickyManager) SetTTL(ttl time.Duration) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.ttl = ttl
+}
+
 func (sm *StickyManager) Cleanup() int {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()

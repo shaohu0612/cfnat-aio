@@ -102,6 +102,11 @@ func main() {
 		log.Printf("同步代理失败: %v", err)
 	}
 
+	// 根据代理转发配置初始化双层 IP 池（V1.7）
+	if err := pm.UpdateConfig(cfgMgr.ProxyForward()); err != nil {
+		log.Printf("初始化代理配置失败: %v", err)
+	}
+
 	// 启动 WebUI
 	handlers := webui.New(store, cfgMgr, lib, sc, pm)
 	mux := http.NewServeMux()
@@ -172,6 +177,7 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 
 	// 地区
 	mux.HandleFunc("/api/regions", h.HandleAPIRegions)
+	mux.HandleFunc("/api/regions/proxy", h.HandleAPIRegionsProxy)
 	mux.HandleFunc("/api/regions/", h.RouteRegionsSubpath)
 
 	// IP 库
@@ -179,6 +185,7 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 	mux.HandleFunc("/api/ips/add", h.HandleAPIIPAdd)
 	mux.HandleFunc("/api/ips/remove", h.HandleAPIIPRemove)
 	mux.HandleFunc("/api/ips/import-probe", h.HandleAPIIPImportProbe)
+	mux.HandleFunc("/api/ips/rebuild-pools", h.HandleAPIIPRebuildPools)
 
 	// 扫描器
 	mux.HandleFunc("/api/scanner", h.HandleAPIScanner)

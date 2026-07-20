@@ -70,8 +70,26 @@ func writeJSON(w http.ResponseWriter, code int, v interface{}) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// writeAPIResponse 统一 API 成功响应格式：{code, message, data}
+func writeAPIResponse(w http.ResponseWriter, code int, data interface{}) {
+	writeJSON(w, code, map[string]interface{}{
+		"code":    code,
+		"message": "success",
+		"data":    data,
+	})
+}
+
+// writeAPIError 统一 API 错误响应格式：{code, message, data: nil}
+func writeAPIError(w http.ResponseWriter, code int, msg string) {
+	writeJSON(w, code, map[string]interface{}{
+		"code":    code,
+		"message": msg,
+		"data":    nil,
+	})
+}
+
 func writeError(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
+	writeAPIError(w, code, msg)
 }
 
 func readJSON(r *http.Request, v interface{}) error {
@@ -97,7 +115,7 @@ func (h *Handlers) HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 // HandleHealth 健康检查
 func (h *Handlers) HandleHealth(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, map[string]string{"status": "ok"})
+	writeAPIResponse(w, 200, map[string]string{"status": "ok"})
 }
 
 // === 地区管理 ===
@@ -105,7 +123,7 @@ func (h *Handlers) HandleHealth(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleAPIRegions(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, 200, h.CfgMgr.Regions())
+		writeAPIResponse(w, 200, h.CfgMgr.Regions())
 	case http.MethodPut, http.MethodPost:
 		var regions []config.ProxyRegion
 		if err := readJSON(r, &regions); err != nil {
@@ -126,7 +144,7 @@ func (h *Handlers) HandleAPIRegions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go h.Proxy.Sync()
-		writeJSON(w, 200, regions)
+		writeAPIResponse(w, 200, regions)
 	default:
 		writeError(w, 405, "method not allowed")
 	}
@@ -156,7 +174,7 @@ func (h *Handlers) HandleAPIRegion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go h.Proxy.Sync()
-		writeJSON(w, 200, region)
+		writeAPIResponse(w, 200, region)
 	case http.MethodDelete:
 		regions := h.CfgMgr.Regions()
 		var out []config.ProxyRegion
@@ -170,7 +188,7 @@ func (h *Handlers) HandleAPIRegion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go h.Proxy.Sync()
-		writeJSON(w, 200, map[string]string{"status": "deleted"})
+		writeAPIResponse(w, 200, map[string]string{"status": "deleted"})
 	default:
 		writeError(w, 405, "method not allowed")
 	}
@@ -187,7 +205,7 @@ func (h *Handlers) HandleAPILogs(w http.ResponseWriter, r *http.Request) {
 			limit = n
 		}
 	}
-	writeJSON(w, 200, logging.Default().Snapshot(limit))
+	writeAPIResponse(w, 200, logging.Default().Snapshot(limit))
 }
 
 // HandleAPILogsStream 实时日志流（SSE）
@@ -235,7 +253,48 @@ func (h *Handlers) HandleAPILogsStream(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleAPIIPs(w http.ResponseWriter, r *http.Request) {
 	region := r.URL.Query().Get("region")
 	entries := h.Lib.ListIPs(region)
-	writeJSON(w, 200, entries)
+
+	type ipEntryResponse struct {
+		config.IPEntry `json:",inline"`
+		Status         string  `json:"status"`
+		Pool           string  `json:"pool"`
+		ConnCount      int     `json:"conn_count"`
+		QualityScore   float64 `json:"quality_score"`
+		EWMADelayMs    float64 `json:"ewma_delay_ms"`
+		EWMALossRate   float64 `json:"ewma_loss_rate"`
+		Weight         float64 `json:"weight"`
+	}
+
+	out := make([]ipEntryResponse, 0, len(entries))
+	for _, e := range entries {
+		metrics := h.Proxy.Metrics().Get(e.IP)
+		
+		status := "normal"
+		if h.Proxy.IsIsolated(e.IP) {
+			status = "isolated"
+		} else if h.Proxy.IsInWarmup(e) {
+			status = "warming"
+		}
+
+		pool := h.Lib.GetPoolForIP(e.IP, e.Region)
+		
+		connCount := 0
+		if val, ok := h.Proxy.ConnCount(e.IP); ok {
+			connCount = val
+		}
+
+		out = append(out, ipEntryResponse{
+			IPEntry:       e,
+			Status:        status,
+			Pool:          pool,
+			ConnCount:     connCount,
+			QualityScore:  metrics.QualityScore(),
+			EWMADelayMs:   metrics.GetDelay(),
+			EWMALossRate:  metrics.GetLossRate(),
+			Weight:        metrics.QualityScore() / 100.0,
+		})
+	}
+	writeAPIResponse(w, 200, out)
 }
 
 func (h *Handlers) HandleAPIIPAdd(w http.ResponseWriter, r *http.Request) {
@@ -262,7 +321,7 @@ func (h *Handlers) HandleAPIIPAdd(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, err.Error())
 		return
 	}
-	writeJSON(w, 200, map[string]string{"status": "ok"})
+	writeAPIResponse(w, 200, map[string]string{"status": "ok"})
 }
 
 func (h *Handlers) HandleAPIIPRemove(w http.ResponseWriter, r *http.Request) {
@@ -278,7 +337,44 @@ func (h *Handlers) HandleAPIIPRemove(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, err.Error())
 		return
 	}
-	writeJSON(w, 200, map[string]string{"status": "ok"})
+	writeAPIResponse(w, 200, map[string]string{"status": "ok"})
+}
+
+// HandleAPIIPRebuildPools 手动重建 IP 池（V1.7）
+// POST /api/ips/rebuild-pools
+func (h *Handlers) HandleAPIIPRebuildPools(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	
+	var req struct {
+		Region        string  `json:"region"`
+		ActivePoolSize int    `json:"active_pool_size"`
+		StandbyRatio  float64 `json:"standby_ratio"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	
+	cfg := h.CfgMgr.ProxyForward()
+	activeSize := req.ActivePoolSize
+	if activeSize <= 0 {
+		activeSize = cfg.ActivePoolSize
+	}
+	standbyRatio := req.StandbyRatio
+	if standbyRatio <= 0 {
+		standbyRatio = cfg.StandbyPoolRatio
+	}
+	
+	if req.Region != "" {
+		h.Lib.RebuildPoolsForRegion(req.Region, activeSize, standbyRatio)
+	} else {
+		h.Lib.RebuildPools(activeSize, standbyRatio)
+	}
+	
+	writeAPIResponse(w, 200, map[string]string{"status": "ok"})
 }
 
 // === 扫描器 ===
@@ -286,7 +382,7 @@ func (h *Handlers) HandleAPIIPRemove(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleAPIScanner(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, 200, h.CfgMgr.Scanner())
+		writeAPIResponse(w, 200, h.CfgMgr.Scanner())
 	case http.MethodPut, http.MethodPost:
 		var sc config.ScannerConfig
 		if err := readJSON(r, &sc); err != nil {
@@ -297,7 +393,7 @@ func (h *Handlers) HandleAPIScanner(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 500, err.Error())
 			return
 		}
-		writeJSON(w, 200, sc)
+		writeAPIResponse(w, 200, sc)
 	default:
 		writeError(w, 405, "method not allowed")
 	}
@@ -309,16 +405,16 @@ func (h *Handlers) HandleAPIScannerRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go h.Scanner.RunOnce()
-	writeJSON(w, 202, map[string]string{"status": "started"})
+	writeAPIResponse(w, 202, map[string]string{"status": "started"})
 }
 
 func (h *Handlers) HandleAPIScannerStop(w http.ResponseWriter, r *http.Request) {
 	h.Scanner.Stop()
-	writeJSON(w, 200, map[string]string{"status": "stopped"})
+	writeAPIResponse(w, 200, map[string]string{"status": "stopped"})
 }
 
 func (h *Handlers) HandleAPIScannerHistory(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, h.Scanner.History())
+	writeAPIResponse(w, 200, h.Scanner.History())
 }
 
 // === IP 导入探测 ===
@@ -507,7 +603,7 @@ func (h *Handlers) HandleAPIIPImportProbe(w http.ResponseWriter, r *http.Request
 	logging.InfoTo("webui", "导入探测完成: 去重 %d, 探活 %d, CMIN2 %d, 测速达标 %d, 入库 %d",
 		len(deduped), totalOK, cmin2Count, speedPassed, imported)
 
-	writeJSON(w, 200, map[string]interface{}{
+	writeAPIResponse(w, 200, map[string]interface{}{
 		"total":        len(deduped),
 		"probed":       len(results),
 		"ok":           totalOK,
@@ -525,7 +621,7 @@ func (h *Handlers) HandleAPIIPImportProbe(w http.ResponseWriter, r *http.Request
 func (h *Handlers) HandleAPISettings(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, 200, h.CfgMgr.General())
+		writeAPIResponse(w, 200, h.CfgMgr.General())
 	case http.MethodPut, http.MethodPost:
 		var g config.GeneralConfig
 		if err := readJSON(r, &g); err != nil {
@@ -537,7 +633,7 @@ func (h *Handlers) HandleAPISettings(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 500, err.Error())
 			return
 		}
-		writeJSON(w, 200, g)
+		writeAPIResponse(w, 200, g)
 	default:
 		writeError(w, 405, "method not allowed")
 	}
@@ -549,7 +645,7 @@ func (h *Handlers) HandleAPISettings(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleAPICfnatConfig(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, 200, h.CfgMgr.Cfnat())
+		writeAPIResponse(w, 200, h.CfgMgr.Cfnat())
 	case http.MethodPut, http.MethodPost:
 		var c config.CfnatConfig
 		if err := readJSON(r, &c); err != nil {
@@ -572,7 +668,7 @@ func (h *Handlers) HandleAPICfnatConfig(w http.ResponseWriter, r *http.Request) 
 			writeError(w, 500, err.Error())
 			return
 		}
-		writeJSON(w, 200, c)
+		writeAPIResponse(w, 200, c)
 	default:
 		writeError(w, 405, "method not allowed")
 	}
@@ -582,7 +678,7 @@ func (h *Handlers) HandleAPICfnatConfig(w http.ResponseWriter, r *http.Request) 
 func (h *Handlers) HandleAPIProxyForward(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, 200, h.CfgMgr.ProxyForward())
+		writeAPIResponse(w, 200, h.CfgMgr.ProxyForward())
 	case http.MethodPut, http.MethodPost:
 		var pf config.ProxyForwardConfig
 		if err := readJSON(r, &pf); err != nil {
@@ -653,7 +749,12 @@ func (h *Handlers) HandleAPIProxyForward(w http.ResponseWriter, r *http.Request)
 			writeError(w, 500, err.Error())
 			return
 		}
-		writeJSON(w, 200, pf)
+		// 通知代理管理器配置已变更，使粘性 TTL 等参数实时生效
+		if err := h.Proxy.UpdateConfig(pf); err != nil {
+			writeError(w, 500, err.Error())
+			return
+		}
+		writeAPIResponse(w, 200, pf)
 	default:
 		writeError(w, 405, "method not allowed")
 	}
@@ -662,13 +763,23 @@ func (h *Handlers) HandleAPIProxyForward(w http.ResponseWriter, r *http.Request)
 // === 扫描进度 ===
 
 func (h *Handlers) HandleAPIScannerProgress(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, h.Scanner.Progress())
+	writeAPIResponse(w, 200, h.Scanner.Progress())
 }
 
 // === 代理状态 ===
 
+// HandleAPIRegionsProxy 返回各地区代理运行状态（dashboard 区域卡片用）
+// GET /api/regions/proxy
+func (h *Handlers) HandleAPIRegionsProxy(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	writeAPIResponse(w, 200, h.Proxy.Status())
+}
+
 func (h *Handlers) HandleAPIProxyStatus(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, h.Proxy.Status())
+	writeAPIResponse(w, 200, h.Proxy.Status())
 }
 
 func (h *Handlers) HandleAPIProxySync(w http.ResponseWriter, r *http.Request) {
@@ -676,7 +787,7 @@ func (h *Handlers) HandleAPIProxySync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, err.Error())
 		return
 	}
-	writeJSON(w, 200, map[string]string{"status": "synced"})
+	writeAPIResponse(w, 200, map[string]string{"status": "synced"})
 }
 
 // 路由分发辅助（按子路径处理 /api/regions/{name} 等）

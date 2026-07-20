@@ -1,6 +1,6 @@
 services:
   cfnat-aio:
-    image: alpine:3.22
+    image: cfnat-aio:latest
     container_name: cfnat-aio
     restart: unless-stopped
     ports:
@@ -20,5 +20,3 @@ services:
       - https_proxy=
       - NO_PROXY=*
       - no_proxy=*
-    entrypoint: ["/data/cfnat-aio"]
-    command: ["-port", "1234"]

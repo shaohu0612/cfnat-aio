@@ -1,0 +1,11 @@
+FROM alpine:3.20
+
+COPY cfnat-aio /usr/local/bin/cfnat-aio
+RUN chmod +x /usr/local/bin/cfnat-aio
+
+WORKDIR /data
+
+EXPOSE 1234
+
+ENTRYPOINT ["/usr/local/bin/cfnat-aio"]
+CMD ["-port", "1234"]

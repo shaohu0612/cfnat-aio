@@ -7,10 +7,14 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"log"
+	"net"
 	"sync"
 	"time"
+
+	"cfnat-aio/internal/logging"
 )
 
 // ProxyRegion 描述一个代理地区（监听端口 + CMIN2 IP 库）
@@ -137,6 +141,12 @@ func (m *Manager) loadAll() error {
 		_ = m.db.SaveScanner(m.scanner)
 	}
 
+	if m.scanner.IPType == 6 && !hasIPv6Connectivity() {
+		logging.WarnTo("config", "⚠ IPv6 不可用，自动切换到 IPv4")
+		m.scanner.IPType = 4
+		_ = m.db.SaveScanner(m.scanner)
+	}
+
 	if rs, err := m.db.LoadRegions(); err == nil && len(rs) > 0 {
 		m.regions = rs
 	} else {
@@ -170,7 +180,7 @@ func defaultScannerConfig() ScannerConfig {
 		Enabled:      false,
 		Interval:     60,
 		MinSpeedMBps: 3.0,
-		IPType:       6,
+		IPType:       4,
 		Port:         443,
 		SamplesPer24: 100,
 		MaxDelayMs:   500,
@@ -334,4 +344,16 @@ func (m *Manager) Logf(format string, v ...interface{}) {
 	} else {
 		log.Printf(format, v...)
 	}
+}
+
+func hasIPv6Connectivity() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "[2606:4700:4700::1111]:80")
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
 }

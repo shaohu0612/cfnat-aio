@@ -274,6 +274,7 @@ func (l *Library) IsEmpty(region string) bool {
 }
 
 // RebuildPools 重建双层 IP 池（V1.7）
+// 仅将健康 IP（最近检查成功且连续失败次数 < 3）纳入池，确保重启后健康状态不丢失
 func (l *Library) RebuildPools(activeSize int, standbyRatio float64) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -288,18 +289,29 @@ func (l *Library) RebuildPools(activeSize int, standbyRatio float64) {
 	l.standbyPool = make(map[string][]config.IPEntry)
 
 	for region, entries := range regionMap {
-		sort.Slice(entries, func(i, j int) bool {
-			return entries[i].SpeedMbps > entries[j].SpeedMbps
+		// 过滤掉健康检查失败的 IP
+		var healthy []config.IPEntry
+		for _, e := range entries {
+			if e.LastOK && e.FailCount < 3 {
+				healthy = append(healthy, e)
+			}
+		}
+		if len(healthy) == 0 {
+			continue
+		}
+
+		sort.Slice(healthy, func(i, j int) bool {
+			return healthy[i].SpeedMbps > healthy[j].SpeedMbps
 		})
 
 		activeCount := activeSize
-		if len(entries) < activeSize {
-			activeCount = len(entries)
+		if len(healthy) < activeSize {
+			activeCount = len(healthy)
 		}
-		l.activePool[region] = entries[:activeCount]
+		l.activePool[region] = healthy[:activeCount]
 
 		standbyCount := int(float64(activeSize) * standbyRatio)
-		remaining := entries[activeCount:]
+		remaining := healthy[activeCount:]
 		if len(remaining) < standbyCount {
 			standbyCount = len(remaining)
 		}
@@ -308,6 +320,43 @@ func (l *Library) RebuildPools(activeSize int, standbyRatio float64) {
 
 	logging.InfoTo("iplibrary", "双层 IP 池已重建：活跃池 %d 个地区，备选池 %d 个地区",
 		len(l.activePool), len(l.standbyPool))
+}
+
+// RebuildPoolsForRegion 为指定地区重建 IP 池（V1.7）
+func (l *Library) RebuildPoolsForRegion(region string, activeSize int, standbyRatio float64) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	entries := l.ListIPs(region)
+	var healthy []config.IPEntry
+	for _, e := range entries {
+		if e.LastOK && e.FailCount < 3 {
+			healthy = append(healthy, e)
+		}
+	}
+	if len(healthy) == 0 {
+		return
+	}
+
+	sort.Slice(healthy, func(i, j int) bool {
+		return healthy[i].SpeedMbps > healthy[j].SpeedMbps
+	})
+
+	activeCount := activeSize
+	if len(healthy) < activeSize {
+		activeCount = len(healthy)
+	}
+	l.activePool[region] = healthy[:activeCount]
+
+	standbyCount := int(float64(activeSize) * standbyRatio)
+	remaining := healthy[activeCount:]
+	if len(remaining) < standbyCount {
+		standbyCount = len(remaining)
+	}
+	l.standbyPool[region] = remaining[:standbyCount]
+
+	logging.InfoTo("iplibrary", "地区 %s IP 池已重建：活跃池 %d，备选池 %d",
+		region, len(l.activePool[region]), len(l.standbyPool[region]))
 }
 
 // PromoteFromStandby 从备选池提升 IP 到活跃池（V1.7）
@@ -361,6 +410,24 @@ func (l *Library) GetStandbyPool(region string) []config.IPEntry {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	return l.standbyPool[region]
+}
+
+// GetPoolForIP 判断IP所属池（active/standby/none）
+func (l *Library) GetPoolForIP(ip, region string) string {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	for _, entry := range l.activePool[region] {
+		if entry.IP == ip {
+			return "active"
+		}
+	}
+	for _, entry := range l.standbyPool[region] {
+		if entry.IP == ip {
+			return "standby"
+		}
+	}
+	return "none"
 }
 
 // GetPoolSizes 获取各地区池大小（V1.7）

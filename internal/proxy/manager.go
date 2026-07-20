@@ -67,7 +67,8 @@ type Manager struct {
 	currentIP  map[string]string    // region -> 当前代理中使用的 IP（从日志/手动）
 	retryCount map[string]int       // region -> 今日重试次数（V1.1）
 	
-	connCounts sync.Map             // IP -> 连接数（V1.2 最少连接数负载均衡）
+	connCounts   sync.Map             // IP -> 连接数（V1.2 最少连接数负载均衡）
+	metricsMgr   *MetricsManager      // IP 质量指标管理器（V1.3）
 }
 
 // New 创建代理管理器
@@ -82,6 +83,7 @@ func New(store *config.SQLiteStore, lib *iplibrary.Library, cfgMgr *config.Manag
 		lastHealth:    make(map[string]time.Time),
 		currentIP:     make(map[string]string),
 		retryCount:    make(map[string]int),
+		metricsMgr:    NewMetricsManager(),
 		startedAt:     time.Now(),
 	}
 	return m
@@ -240,13 +242,26 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 		m.mu.Unlock()
 
 		dialer := &net.Dialer{Timeout: 5 * time.Second}
+		startTime := time.Now()
 		upstream, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:443", target))
+		delayMs := float64(time.Since(startTime).Milliseconds())
+
 		if err != nil {
 			logging.WarnTo("proxy", "%s: 连接 %s:443 失败: %v", r.Name, target, err)
 			_ = m.store.MarkIPChecked(target, r.Name, false, 0, 0)
+			
+			cfg := m.cfgMgr.ProxyForward()
+			alpha := 2.0 / float64(cfg.EWMASampleWindow+1)
+			m.metricsMgr.Get(target).UpdateLoss(true, alpha)
+			
 			lastErr = err
 			continue
 		}
+
+		cfg := m.cfgMgr.ProxyForward()
+		alpha := 2.0 / float64(cfg.EWMASampleWindow+1)
+		m.metricsMgr.Get(target).UpdateDelay(delayMs, alpha)
+		m.metricsMgr.Get(target).UpdateLoss(false, alpha)
 
 		m.incrConnCount(target, 1)
 		m.handleProtocol(ctx, client, upstream, r)
@@ -636,16 +651,18 @@ type Status struct {
 
 // RegionStatus 地区状态
 type RegionStatus struct {
-	Name        string `json:"name"`
-	Port        int    `json:"port"`
-	Enabled     bool   `json:"enabled"`
-	IPCount     int    `json:"ip_count"`
-	Listening   bool   `json:"listening"`
-	CurrentIP   string `json:"current_ip"`
-	Colo        string `json:"colo"`
-	Clients     int    `json:"clients"`   // 当前活跃连接数（近似）
-	ActiveConns int    `json:"active_conns"` // 当前活跃连接数（V1.2）
-	RetryCount  int    `json:"retry_count"` // 今日重试次数（V1.1）
+	Name        string  `json:"name"`
+	Port        int     `json:"port"`
+	Enabled     bool    `json:"enabled"`
+	IPCount     int     `json:"ip_count"`
+	Listening   bool    `json:"listening"`
+	CurrentIP   string  `json:"current_ip"`
+	Colo        string  `json:"colo"`
+	Clients     int     `json:"clients"`   // 当前活跃连接数（近似）
+	ActiveConns int     `json:"active_conns"` // 当前活跃连接数（V1.2）
+	RetryCount  int     `json:"retry_count"` // 今日重试次数（V1.1）
+	AvgDelayMs  float64 `json:"avg_delay_ms"` // EWMA 平均延迟（V1.3）
+	LossRate    float64 `json:"loss_rate"`    // EWMA 丢包率（V1.3）
 }
 
 // Status 获取所有地区状态
@@ -676,6 +693,25 @@ func (m *Manager) Status() Status {
 			return true
 		})
 		
+		avgDelayMs := 0.0
+		lossRate := 0.0
+		sampleCount := 0
+		for _, code := range codes {
+			ips := m.lib.ListIPs(code)
+			for _, entry := range ips {
+				metrics := m.metricsMgr.Get(entry.IP)
+				if metrics.GetSampleCount() > 0 {
+					avgDelayMs += metrics.GetDelay()
+					lossRate += metrics.GetLossRate()
+					sampleCount++
+				}
+			}
+		}
+		if sampleCount > 0 {
+			avgDelayMs = avgDelayMs / float64(sampleCount)
+			lossRate = lossRate / float64(sampleCount)
+		}
+		
 		out = append(out, RegionStatus{
 			Name:        r.Name,
 			Port:        r.Port,
@@ -686,6 +722,8 @@ func (m *Manager) Status() Status {
 			Colo:        r.Code,
 			ActiveConns: activeConns,
 			RetryCount:  m.retryCount[r.Name],
+			AvgDelayMs:  avgDelayMs,
+			LossRate:    lossRate,
 		})
 	}
 	uptime := int64(0)

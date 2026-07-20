@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
@@ -424,9 +425,67 @@ func (m *Manager) pickLeastConn(codes []string, exclude map[string]bool) (string
 	return ip, nil
 }
 
-// pickWeightedRandom 加权随机选取（预留 V1.5）
+// pickWeightedRandom 加权随机选取（V1.5）
+// 基于 IP 速度（SpeedMbps）加权，速度越快的 IP 被选中概率越高
 func (m *Manager) pickWeightedRandom(codes []string, exclude map[string]bool) (string, error) {
-	return m.lib.PickRandomByCodesWithExclude(codes, exclude)
+	var candidates []struct {
+		IP    string
+		Score float64
+	}
+
+	for _, code := range codes {
+		ips := m.lib.ListIPs(code)
+		for _, entry := range ips {
+			if exclude != nil && exclude[entry.IP] {
+				continue
+			}
+			if m.isIsolated(entry.IP) {
+				continue
+			}
+
+			score := entry.SpeedMbps
+			if score <= 0 {
+				score = 1.0
+			}
+
+			metrics := m.metricsMgr.Get(entry.IP)
+			if metrics.GetSampleCount() > 0 {
+				delay := metrics.GetDelay()
+				lossRate := metrics.GetLossRate()
+
+				if delay > 0 {
+					score *= 100.0 / (delay + 100.0)
+				}
+				if lossRate > 0 {
+					score *= (100.0 - lossRate) / 100.0
+				}
+			}
+
+			candidates = append(candidates, struct {
+				IP    string
+				Score float64
+			}{entry.IP, score})
+		}
+	}
+
+	if len(candidates) == 0 {
+		return "", errors.New("no available IPs")
+	}
+
+	totalScore := 0.0
+	for _, c := range candidates {
+		totalScore += c.Score
+	}
+
+	r := rand.Float64() * totalScore
+	for _, c := range candidates {
+		r -= c.Score
+		if r <= 0 {
+			return c.IP, nil
+		}
+	}
+
+	return candidates[0].IP, nil
 }
 
 // incrConnCount 增减连接计数（V1.2）

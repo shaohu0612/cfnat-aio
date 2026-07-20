@@ -556,7 +556,6 @@ func (h *Handlers) HandleAPICfnatConfig(w http.ResponseWriter, r *http.Request) 
 			writeError(w, 400, err.Error())
 			return
 		}
-		// 校验
 		if c.IPPoolSize < 1 {
 			c.IPPoolSize = 1
 		}
@@ -574,6 +573,87 @@ func (h *Handlers) HandleAPICfnatConfig(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		writeJSON(w, 200, c)
+	default:
+		writeError(w, 405, "method not allowed")
+	}
+}
+
+// HandleAPIProxyForward 代理转发配置 GET/PUT（V1.1）
+func (h *Handlers) HandleAPIProxyForward(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, 200, h.CfgMgr.ProxyForward())
+	case http.MethodPut, http.MethodPost:
+		var pf config.ProxyForwardConfig
+		if err := readJSON(r, &pf); err != nil {
+			writeError(w, 400, err.Error())
+			return
+		}
+		if pf.MaxRetries < 0 {
+			pf.MaxRetries = 0
+		}
+		if pf.MaxRetries > 5 {
+			pf.MaxRetries = 5
+		}
+		if pf.EWMASampleWindow < 20 {
+			pf.EWMASampleWindow = 20
+		}
+		if pf.EWMASampleWindow > 200 {
+			pf.EWMASampleWindow = 200
+		}
+		if pf.HealthCheckInterval < 30 {
+			pf.HealthCheckInterval = 30
+		}
+		if pf.HealthCheckInterval > 600 {
+			pf.HealthCheckInterval = 600
+		}
+		if pf.MaxDelayMs < 100 {
+			pf.MaxDelayMs = 100
+		}
+		if pf.MaxDelayMs > 2000 {
+			pf.MaxDelayMs = 2000
+		}
+		if pf.MaxLossRate < 1 {
+			pf.MaxLossRate = 1
+		}
+		if pf.MaxLossRate > 50 {
+			pf.MaxLossRate = 50
+		}
+		if pf.IsolationDuration < 60 {
+			pf.IsolationDuration = 60
+		}
+		if pf.IsolationDuration > 900 {
+			pf.IsolationDuration = 900
+		}
+		if pf.WarmupDuration < 0 {
+			pf.WarmupDuration = 0
+		}
+		if pf.WarmupDuration > 300 {
+			pf.WarmupDuration = 300
+		}
+		if pf.StickyTTL < 5 {
+			pf.StickyTTL = 5
+		}
+		if pf.StickyTTL > 60 {
+			pf.StickyTTL = 60
+		}
+		if pf.ActivePoolSize < 5 {
+			pf.ActivePoolSize = 5
+		}
+		if pf.ActivePoolSize > 100 {
+			pf.ActivePoolSize = 100
+		}
+		if pf.StandbyPoolRatio < 0.2 {
+			pf.StandbyPoolRatio = 0.2
+		}
+		if pf.StandbyPoolRatio > 1.0 {
+			pf.StandbyPoolRatio = 1.0
+		}
+		if err := h.CfgMgr.UpdateProxyForward(pf); err != nil {
+			writeError(w, 500, err.Error())
+			return
+		}
+		writeJSON(w, 200, pf)
 	default:
 		writeError(w, 405, "method not allowed")
 	}

@@ -127,6 +127,21 @@ func (s *SQLiteStore) SaveCfnat(c CfnatConfig) error {
 	return s.setKV("cfnat", string(b))
 }
 
+func (s *SQLiteStore) LoadProxyForward() (ProxyForwardConfig, error) {
+	v, err := s.getKV("proxy_forward")
+	if err != nil {
+		return ProxyForwardConfig{}, err
+	}
+	var pf ProxyForwardConfig
+	err = json.Unmarshal([]byte(v), &pf)
+	return pf, err
+}
+
+func (s *SQLiteStore) SaveProxyForward(pf ProxyForwardConfig) error {
+	b, _ := json.Marshal(pf)
+	return s.setKV("proxy_forward", string(b))
+}
+
 func (s *SQLiteStore) LoadRegions() ([]ProxyRegion, error) {
 	v, err := s.getKV("regions")
 	if err != nil {

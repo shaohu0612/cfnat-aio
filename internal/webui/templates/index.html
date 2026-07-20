@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -168,6 +168,7 @@ body {
                 </div>
                 <div class="rc-right">
                   <div class="rc-stat"><div class="num">{{ r.ip_count }}</div><div class="lbl">可用 IP</div></div>
+                  <div class="rc-stat"><div class="num">{{ r.retry_count || 0 }}</div><div class="lbl">今日重试</div></div>
                   <div class="rc-stat"><div class="num">{{ r.colo }}</div><div class="lbl">Colo</div></div>
                 </div>
               </div>
@@ -423,6 +424,78 @@ body {
                 </div>
               </n-space>
               <n-button type="primary" size="small" style="margin-top:14px" @click="saveSettings">保存</n-button>
+            </n-card>
+
+            <n-card title="代理转发设置" size="small" style="margin-top:20px;">
+              <div class="collapsible-header" @click="proxyForwardExpanded = !proxyForwardExpanded">
+                <span>{{ proxyForwardExpanded ? '▼' : '▶' }}</span> 代理转发参数（V1.1+）
+              </div>
+              <div v-if="proxyForwardExpanded" style="margin-top:12px;">
+                <div class="config-row">
+                  <span class="label">最大重试次数</span>
+                  <n-input-number v-model:value="proxyForwardForm.max_retries" size="small" :min="0" :max="5" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">连接失败后的重试次数，0=不重试</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">负载均衡策略</span>
+                  <n-select v-model:value="proxyForwardForm.load_balance_mode" :options="[
+                    {label:'纯随机', value:'random'},
+                    {label:'最少连接数', value:'least-conn'},
+                    {label:'加权随机', value:'weighted-random', disabled:true}
+                  ]" size="small" style="width:160px" />
+                </div>
+                <div class="config-row">
+                  <span class="label">EWMA 样本窗口</span>
+                  <n-input-number v-model:value="proxyForwardForm.ewma_sample_window" size="small" :min="20" :max="200" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">质量指标平滑窗口大小（20-200）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">健康检查间隔</span>
+                  <n-input-number v-model:value="proxyForwardForm.health_check_interval" size="small" :min="30" :max="600" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">自动健康检查间隔秒（30-600）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">最大延迟阈值</span>
+                  <n-input-number v-model:value="proxyForwardForm.max_delay_ms" size="small" :min="100" :max="2000" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">IP 隔离延迟阈值 ms（100-2000）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">最大丢包率</span>
+                  <n-input-number v-model:value="proxyForwardForm.max_loss_rate" size="small" :min="1" :max="50" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">IP 隔离丢包率阈值 %（1-50）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">隔离时长</span>
+                  <n-input-number v-model:value="proxyForwardForm.isolation_duration" size="small" :min="60" :max="900" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">IP 隔离后保留时间秒（60-900）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">预热保护期</span>
+                  <n-input-number v-model:value="proxyForwardForm.warmup_duration" size="small" :min="0" :max="300" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">新 IP 入库后免隔离时间秒（0-300）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">连接亲和性</span>
+                  <n-switch v-model:value="proxyForwardForm.sticky_enabled" size="small" />
+                  <span style="font-size:11px;color:var(--text-muted)">同一客户端短时间内复用同一 IP</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">亲和性 TTL</span>
+                  <n-input-number v-model:value="proxyForwardForm.sticky_ttl" size="small" :min="5" :max="60" style="width:100px" :disabled="!proxyForwardForm.sticky_enabled" />
+                  <span style="font-size:11px;color:var(--text-muted)">亲和性保持时间秒（5-60）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">主池容量</span>
+                  <n-input-number v-model:value="proxyForwardForm.active_pool_size" size="small" :min="5" :max="100" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">活跃 IP 池大小（5-100）</span>
+                </div>
+                <div class="config-row">
+                  <span class="label">备选池比例</span>
+                  <n-input-number v-model:value="proxyForwardForm.standby_pool_ratio" size="small" :min="0.2" :max="1.0" :step="0.1" style="width:100px" />
+                  <span style="font-size:11px;color:var(--text-muted)">备选池容量为主池的比例（0.2-1.0）</span>
+                </div>
+                <n-button type="primary" size="small" style="margin-top:14px" @click="saveProxyForward" :loading="proxyForwardSaving">{{ proxyForwardSaving ? '保存中' : '保存配置' }}</n-button>
+              </div>
             </n-card>
           </n-tab-pane>
 
@@ -881,9 +954,41 @@ const app = createApp({
       toast('已保存（端口修改需重启）');
     };
 
+    // ========== 代理转发配置（V1.1） ==========
+    const proxyForwardExpanded = ref(false);
+    const proxyForwardSaving = ref(false);
+    const proxyForwardForm = reactive({
+      max_retries: 3,
+      load_balance_mode: 'random',
+      ewma_sample_window: 50,
+      health_check_interval: 120,
+      max_delay_ms: 500,
+      max_loss_rate: 10,
+      isolation_duration: 300,
+      warmup_duration: 60,
+      sticky_enabled: false,
+      sticky_ttl: 15,
+      active_pool_size: 20,
+      standby_pool_ratio: 0.5
+    });
+    const loadProxyForward = async () => {
+      try { Object.assign(proxyForwardForm, await api('GET', '/api/proxy/forward')); } catch(e){}
+    };
+    const saveProxyForward = async () => {
+      proxyForwardSaving.value = true;
+      try {
+        await api('PUT', '/api/proxy/forward', { ...proxyForwardForm });
+        toast('代理转发配置已保存');
+      } catch(e) {
+        toast('保存失败: ' + e.message, 'error');
+      } finally {
+        proxyForwardSaving.value = false;
+      }
+    };
+
     // ========== 生命周期 ==========
     onMounted(() => {
-      refreshDash(); loadRegions(); loadIPs(); loadSettings(); loadCfnat();
+      refreshDash(); loadRegions(); loadIPs(); loadSettings(); loadCfnat(); loadProxyForward();
       connectLogStream();
       dashTimer = setInterval(updateUptime, 1000);
       refreshTimer = setInterval(refreshDash, 5000);
@@ -899,7 +1004,7 @@ const app = createApp({
       if (tab === 'cfnat') loadCfnat();
       if (tab === 'cfdata') loadScanner();
       if (tab === 'ips') loadIPs();
-      if (tab === 'settings') loadSettings();
+      if (tab === 'settings') { loadSettings(); loadProxyForward(); }
     });
 
     return {
@@ -912,10 +1017,12 @@ const app = createApp({
       scannerForm, scanHistoryCols,
       logConnected, logLines, logFilter, logSourceOptions, logLevelOptions, displayLogLines,
       settingsForm, themeOverrides,
+      proxyForwardExpanded, proxyForwardSaving, proxyForwardForm,
       addRegion, deleteRegion, toggleRegion, loadIPs, onCheckIPs, addIPManual, removeIP, batchDeleteIPs,
       runImportProbe, loadScanner, saveScanner, runScan, stopScan,
       loadCfnat, saveCfnat,
       connectLogStream, disconnectLogStream, loadSettings, saveSettings, refreshDash,
+      loadProxyForward, saveProxyForward,
     };
   }
 });

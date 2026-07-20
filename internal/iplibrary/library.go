@@ -147,6 +147,27 @@ func (l *Library) PickRandomByCodes(codes []string) (string, error) {
 	return allIPs[rand.Intn(len(allIPs))], nil
 }
 
+// PickRandomByCodesWithExclude 从多个 colo 代码中随机挑选一个 IP，排除指定 IP
+func (l *Library) PickRandomByCodesWithExclude(codes []string, exclude map[string]bool) (string, error) {
+	l.mu.RLock()
+	var allIPs []string
+	for _, code := range codes {
+		for _, ip := range l.cache[code] {
+			if !exclude[ip] {
+				allIPs = append(allIPs, ip)
+			}
+		}
+	}
+	l.mu.RUnlock()
+
+	if len(allIPs) == 0 {
+		return "", fmt.Errorf("no IPs for codes %v after exclusion", codes)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	return allIPs[rand.Intn(len(allIPs))], nil
+}
+
 // PickRandom 从某地区随机挑一个 IP（代理用）
 // 会先做"软过滤"：跳过最近失败过的 IP
 func (l *Library) PickRandom(region string) (string, error) {

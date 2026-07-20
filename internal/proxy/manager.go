@@ -65,6 +65,7 @@ type Manager struct {
 	startedAt  time.Time
 	lastHealth map[string]time.Time // region -> 上次健康检查时间
 	currentIP  map[string]string    // region -> 当前代理中使用的 IP（从日志/手动）
+	retryCount map[string]int       // region -> 今日重试次数（V1.1）
 }
 
 // New 创建代理管理器
@@ -78,6 +79,7 @@ func New(store *config.SQLiteStore, lib *iplibrary.Library, cfgMgr *config.Manag
 		fallbackPicks: make(map[string][]string),
 		lastHealth:    make(map[string]time.Time),
 		currentIP:     make(map[string]string),
+		retryCount:    make(map[string]int),
 		startedAt:     time.Now(),
 	}
 	return m
@@ -196,35 +198,64 @@ func (m *Manager) serveRegion(ctx context.Context, ln net.Listener, r config.Pro
 func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.ProxyRegion) {
 	defer client.Close()
 
-	// 选 IP
-	target, isFallback, err := m.pickTarget(r)
-	if err != nil {
-		logging.WarnTo("proxy", "%s: 没有可用目标 IP: %v", r.Name, err)
+	cfg := m.cfgMgr.ProxyForward()
+	maxRetries := cfg.MaxRetries
+	if maxRetries < 0 {
+		maxRetries = 0
+	}
+
+	retryExclude := make(map[string]bool)
+	lastErr := error(nil)
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		target, isFallback, err := m.pickTarget(r, retryExclude)
+		if err != nil {
+			if attempt == maxRetries {
+				logging.WarnTo("proxy", "%s: 没有可用目标 IP: %v", r.Name, err)
+			}
+			return
+		}
+
+		retryExclude[target] = true
+
+		src := "IP库"
+		if isFallback {
+			src = "兜底池"
+		}
+		if attempt == 0 {
+			logging.InfoTo("proxy", "%s: %s → %s:443 (%s)", r.Name,
+				client.RemoteAddr().String(), target, src)
+		} else {
+			logging.WarnTo("proxy", "%s: 重试(%d) %s → %s:443 (%s)", r.Name,
+				attempt, client.RemoteAddr().String(), target, src)
+			m.mu.Lock()
+			m.retryCount[r.Name]++
+			m.mu.Unlock()
+		}
+
+		m.mu.Lock()
+		m.currentIP[r.Name] = target
+		m.mu.Unlock()
+
+		dialer := &net.Dialer{Timeout: 5 * time.Second}
+		upstream, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:443", target))
+		if err != nil {
+			logging.WarnTo("proxy", "%s: 连接 %s:443 失败: %v", r.Name, target, err)
+			_ = m.store.MarkIPChecked(target, r.Name, false, 0, 0)
+			lastErr = err
+			continue
+		}
+
+		m.handleProtocol(ctx, client, upstream, r)
 		return
 	}
-	src := "IP库"
-	if isFallback {
-		src = "兜底池"
-	}
-	logging.InfoTo("proxy", "%s: %s → %s:443 (%s)", r.Name,
-		client.RemoteAddr().String(),
-		target, src)
 
-	m.mu.Lock()
-	m.currentIP[r.Name] = target
-	m.mu.Unlock()
+	logging.ErrorTo("proxy", "%s: 所有重试均失败，客户端断开: %v", r.Name, lastErr)
+}
 
-	// 连接上游 CF IP:443
-	dialer := &net.Dialer{Timeout: 5 * time.Second}
-	upstream, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:443", target))
-	if err != nil {
-		logging.WarnTo("proxy", "%s: 连接 %s:443 失败: %v", r.Name, target, err)
-		_ = m.store.MarkIPChecked(target, r.Name, false, 0, 0)
-		return
-	}
+func (m *Manager) handleProtocol(ctx context.Context, client, upstream net.Conn, r config.ProxyRegion) {
 	defer upstream.Close()
 
-	// 协议自动检测：读第一个字节判断
 	firstByte := make([]byte, 1)
 	client.SetReadDeadline(time.Now().Add(8 * time.Second))
 	if _, err := io.ReadFull(client, firstByte); err != nil {
@@ -233,25 +264,20 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 
 	switch {
 	case firstByte[0] == 0x05:
-		// SOCKS5 CONNECT 代理
 		if err := m.proxySOCKS5WithByte(client, upstream, firstByte); err != nil {
-			// SOCKS5 握手失败，回退到透传（重发已读字节）
 			upstream.Write(firstByte)
 			go io.Copy(upstream, client)
 			io.Copy(client, upstream)
 		}
 
 	case firstByte[0] >= 0x20 && firstByte[0] <= 0x7E:
-		// 可打印 ASCII → 可能是 HTTP CONNECT
 		if err := m.proxyHTTPConnect(client, upstream, firstByte); err != nil {
-			// HTTP 解析失败，回退到透传
 			upstream.Write(firstByte)
 			go io.Copy(upstream, client)
 			io.Copy(client, upstream)
 		}
 
 	default:
-		// 非标准开头的字节流（TLS ClientHello 等）→ 透传
 		upstream.Write(firstByte)
 		client.SetReadDeadline(time.Time{})
 		go io.Copy(upstream, client)
@@ -260,17 +286,39 @@ func (m *Manager) handleConn(ctx context.Context, client net.Conn, r config.Prox
 }
 
 // pickTarget 选取转发目标
-func (m *Manager) pickTarget(r config.ProxyRegion) (string, bool, error) {
+func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (string, bool, error) {
 	codes := parseCodes(r.Code)
-	ip, err := m.lib.PickRandomByCodes(codes)
+	var ip string
+	var err error
+
+	if exclude != nil && len(exclude) > 0 {
+		ip, err = m.lib.PickRandomByCodesWithExclude(codes, exclude)
+	} else {
+		ip, err = m.lib.PickRandomByCodes(codes)
+	}
+
 	if err == nil {
 		return ip, false, nil
 	}
-	// 兜底
+
 	candidates := m.getFallbackCandidates(r.Name)
 	if len(candidates) == 0 {
 		return "", false, fmt.Errorf("no candidates for region %s", r.Name)
 	}
+
+	if exclude != nil && len(exclude) > 0 {
+		var filtered []string
+		for _, c := range candidates {
+			if !exclude[c] {
+				filtered = append(filtered, c)
+			}
+		}
+		if len(filtered) == 0 {
+			return "", false, fmt.Errorf("no fallback candidates after exclusion")
+		}
+		candidates = filtered
+	}
+
 	ip, _ = m.lib.PickFallback(candidates)
 	return ip, true, nil
 }
@@ -477,7 +525,7 @@ func (m *Manager) HandleHTTPProxy(w http.ResponseWriter, r *http.Request) {
 	if regionCfg.Name == "" {
 		regionCfg = config.ProxyRegion{Name: regionName, Code: regionName}
 	}
-	target, _, err := m.pickTarget(regionCfg)
+	target, _, err := m.pickTarget(regionCfg, nil)
 	if err != nil {
 		client.Write([]byte("HTTP/1.1 502 Bad Gateway\r\n\r\n"))
 		return
@@ -510,7 +558,8 @@ type RegionStatus struct {
 	Listening bool   `json:"listening"`
 	CurrentIP string `json:"current_ip"`
 	Colo      string `json:"colo"`
-	Clients   int    `json:"clients"` // 当前活跃连接数（近似）
+	Clients   int    `json:"clients"`   // 当前活跃连接数（近似）
+	RetryCount int   `json:"retry_count"` // 今日重试次数（V1.1）
 }
 
 // Status 获取所有地区状态
@@ -522,13 +571,14 @@ func (m *Manager) Status() Status {
 	for _, r := range regions {
 		_, listening := m.listeners[r.Name]
 		out = append(out, RegionStatus{
-			Name:      r.Name,
-			Port:      r.Port,
-			Enabled:   r.Enabled,
-			IPCount:   m.lib.CountIPsByCodes(parseCodes(r.Code)),
-			Listening: listening,
-			CurrentIP: m.currentIP[r.Name],
-			Colo:      r.Code,
+			Name:       r.Name,
+			Port:       r.Port,
+			Enabled:    r.Enabled,
+			IPCount:    m.lib.CountIPsByCodes(parseCodes(r.Code)),
+			Listening:  listening,
+			CurrentIP:  m.currentIP[r.Name],
+			Colo:       r.Code,
+			RetryCount: m.retryCount[r.Name],
 		})
 	}
 	uptime := int64(0)

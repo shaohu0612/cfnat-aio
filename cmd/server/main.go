@@ -187,6 +187,9 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 	// cfnat 代理配置
 	mux.HandleFunc("/api/cfnat", h.HandleAPICfnatConfig)
 
+	// 代理转发配置（V1.1）
+	mux.HandleFunc("/api/proxy/forward", h.HandleAPIProxyForward)
+
 	// 通用
 	mux.HandleFunc("/api/settings", h.HandleAPISettings)
 

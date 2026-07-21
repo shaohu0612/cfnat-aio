@@ -917,7 +917,8 @@ func (m *Manager) StopHealthCheck() {
 }
 
 func (m *Manager) healthCheckLoop(ctx context.Context) {
-	ticker := time.NewTicker(time.Second)
+	cfg := m.cfgMgr.ProxyForward()
+	ticker := time.NewTicker(time.Duration(cfg.HealthCheckInterval) * time.Second)
 	defer ticker.Stop()
 	
 	for {
@@ -957,24 +958,31 @@ func (m *Manager) performHealthCheck() {
 
 func (m *Manager) checkRegionHealth(r config.ProxyRegion) {
 	cfg := m.cfgMgr.ProxyForward()
-	codes := parseCodes(r.Code)
 	
-	for _, code := range codes {
-		ips := m.lib.ListIPs(code)
-		for _, entry := range ips {
-			if m.isIsolated(entry.IP) {
-				continue
-			}
-			
-			if m.isInWarmup(entry) {
-				continue
-			}
-			
-			metrics := m.metricsMgr.Get(entry.IP)
-			if metrics.GetSampleCount() < 5 {
-				continue
-			}
-			
+	// 获取该地区所有 IP（不按 colo 代码过滤）
+	ips := m.lib.ListIPs(r.Name)
+	for _, entry := range ips {
+		if m.isIsolated(entry.IP) {
+			continue
+		}
+		
+		if m.isInWarmup(entry) {
+			continue
+		}
+		
+		// 主动探活
+		ok, latency := m.probeIP(entry.IP)
+		alpha := 2.0 / float64(cfg.EWMASampleWindow+1)
+		metrics := m.metricsMgr.Get(entry.IP)
+		if ok {
+			metrics.UpdateDelay(float64(latency), alpha)
+			metrics.UpdateLoss(false, alpha)
+		} else {
+			metrics.UpdateLoss(true, alpha)
+		}
+		
+		// 样本门槛从 5 降低到 3
+		if metrics.GetSampleCount() >= 3 {
 			delay := metrics.GetDelay()
 			lossRate := metrics.GetLossRate()
 			
@@ -983,14 +991,26 @@ func (m *Manager) checkRegionHealth(r config.ProxyRegion) {
 				logging.WarnTo("proxy", "%s: IP %s 被隔离 (延迟=%.1fms, 丢包率=%.1f%%)",
 					r.Name, entry.IP, delay, lossRate)
 
-				m.lib.RemoveFromActive(code, entry.IP)
-				promoted := m.lib.PromoteFromStandby(code, 1)
+				m.lib.RemoveFromActive(entry.Colo, entry.IP)
+				promoted := m.lib.PromoteFromStandby(entry.Colo, 1)
 				if len(promoted) > 0 {
 					logging.InfoTo("proxy", "%s: 从备选池提升 IP %s 到活跃池", r.Name, promoted[0].IP)
 				}
 			}
 		}
 	}
+}
+
+func (m *Manager) probeIP(ip string) (bool, int64) {
+	addr := net.JoinHostPort(ip, "443")
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+	if err != nil {
+		return false, 0
+	}
+	conn.Close()
+	latency := time.Since(start).Milliseconds()
+	return true, latency
 }
 
 func (m *Manager) isIsolated(ip string) bool {

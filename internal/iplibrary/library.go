@@ -9,6 +9,7 @@ package iplibrary
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"sort"
 	"sync"
@@ -91,6 +92,21 @@ func (l *Library) AddIP(ip, region, source, colo string, speed, latency float64,
 	return err
 }
 
+// AddIPsBatch 批量添加 IP，只在最后调用一次 reload
+func (l *Library) AddIPsBatch(entries []config.IPEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	err := l.store.UpsertIPsBatch(entries)
+	if err == nil {
+		l.reload()
+		logging.InfoTo("iplibrary", "批量入库完成：共 %d 条 IP", len(entries))
+	} else {
+		logging.ErrorTo("iplibrary", "批量入库失败: %v", err)
+	}
+	return err
+}
+
 // RemoveIP 删除 IP
 func (l *Library) RemoveIP(ip, region string) error {
 	err := l.store.DeleteIP(ip, region)
@@ -99,6 +115,47 @@ func (l *Library) RemoveIP(ip, region string) error {
 		logging.InfoTo("iplibrary", "已删除 IP %s（地区 %s）", ip, region)
 	}
 	return err
+}
+
+// calculateQualityScore 计算 IP 质量分数（0-100）
+func calculateQualityScore(entry config.IPEntry) float64 {
+	latencyScore := 100.0 / (entry.LatencyMs + 100.0)
+	// 当前数据结构无 LossRate，使用 FailCount 近似估算
+	lossRate := float64(entry.FailCount) * 33.3
+	if lossRate > 100.0 {
+		lossRate = 100.0
+	}
+	lossScore := (100.0 - lossRate) / 100.0
+	speedScore := entry.SpeedMbps / 10.0
+	if speedScore > 1.0 {
+		speedScore = 1.0
+	}
+	freshnessScore := 1.0
+	if entry.LastCheck != "" {
+		lastCheck, _ := time.Parse(time.RFC3339, entry.LastCheck)
+		hoursSince := time.Since(lastCheck).Hours()
+		freshnessScore = math.Exp(-hoursSince / 24.0)
+	}
+	return 100.0 * latencyScore * lossScore * speedScore * freshnessScore
+}
+
+// RemoveLowQualityIPs 删除质量分数低于阈值的 IP
+func (l *Library) RemoveLowQualityIPs(threshold float64) (int, error) {
+	entries := l.ListIPs("")
+	removed := 0
+	for _, e := range entries {
+		score := calculateQualityScore(e)
+		if score < threshold {
+			if err := l.store.DeleteIP(e.IP, e.Region); err == nil {
+				removed++
+			}
+		}
+	}
+	if removed > 0 {
+		l.reload()
+	}
+	logging.InfoTo("iplibrary", "低质量 IP 淘汰完成：删除 %d 条（阈值 %.2f）", removed, threshold)
+	return removed, nil
 }
 
 // ListIPs 列出某地区所有 IP
@@ -300,8 +357,9 @@ func (l *Library) RebuildPools(activeSize int, standbyRatio float64) {
 			continue
 		}
 
+		// 按质量分数降序排序
 		sort.Slice(healthy, func(i, j int) bool {
-			return healthy[i].SpeedMbps > healthy[j].SpeedMbps
+			return calculateQualityScore(healthy[i]) > calculateQualityScore(healthy[j])
 		})
 
 		activeCount := activeSize
@@ -338,8 +396,9 @@ func (l *Library) RebuildPoolsForRegion(region string, activeSize int, standbyRa
 		return
 	}
 
+	// 按质量分数降序排序
 	sort.Slice(healthy, func(i, j int) bool {
-		return healthy[i].SpeedMbps > healthy[j].SpeedMbps
+		return calculateQualityScore(healthy[i]) > calculateQualityScore(healthy[j])
 	})
 
 	activeCount := activeSize

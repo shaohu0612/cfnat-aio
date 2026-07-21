@@ -247,6 +247,12 @@ func (s *Scanner) RunOnce() {
 
 	logging.InfoTo("scanner", "✓ 扫描任务 #%d 完成: 候选 %d, 通过 %d", histID, total, speedPassed)
 
+	// 阶段 6: 重建 IP 池
+	s.setProgress("6/6 重建IP池", 0, 0, "")
+	pf := s.cfgMgr.ProxyForward()
+	s.lib.RebuildPools(pf.ActivePoolSize, pf.StandbyPoolRatio)
+	logging.InfoTo("scanner", "  [6/6] IP 池重建完成")
+
 	// 记录到 history
 	hs, _ := s.store.ListScanHistory(50)
 	s.mu.Lock()
@@ -961,6 +967,7 @@ func findRegionByColo(colo string, regions []config.ProxyRegion) string {
 
 func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig) map[string]int {
 	out := make(map[string]int)
+	var entries []config.IPEntry
 	for _, r := range passed {
 		if !r.ok || r.speedMbps < sc.MinSpeedMBps {
 			continue
@@ -970,10 +977,20 @@ func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig)
 		}
 		// colo -> region 映射
 		region := findRegionByColo(r.colo, s.cfgMgr.Regions())
-		err := s.lib.AddIP(r.ip, region, "auto", r.colo, r.speedMbps, r.latency, "scanner")
-		if err == nil {
-			out[region]++
-		}
+		entries = append(entries, config.IPEntry{
+			IP:        r.ip,
+			Region:    region,
+			Colo:      r.colo,
+			SpeedMbps: r.speedMbps,
+			LatencyMs: r.latency,
+			Source:    "auto",
+			LastOK:    true,
+			Note:      "scanner",
+		})
+		out[region]++
+	}
+	if len(entries) > 0 {
+		_ = s.lib.AddIPsBatch(entries)
 	}
 	return out
 }
@@ -981,6 +998,7 @@ func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig)
 func (s *Scanner) saveByRegion(passed []speedResult, sc config.ScannerConfig) map[string]int {
 	out := make(map[string]int)
 	regions := s.cfgMgr.Regions()
+	var entries []config.IPEntry
 	for _, r := range passed {
 		if !r.ok || r.speedMbps < sc.MinSpeedMBps {
 			continue
@@ -989,10 +1007,20 @@ func (s *Scanner) saveByRegion(passed []speedResult, sc config.ScannerConfig) ma
 		if region == r.colo {
 			logging.WarnTo("scanner", "Colo %s 不在任何地区配置中，作为独立 region 入库", r.colo)
 		}
-		err := s.lib.AddIP(r.ip, region, "auto", r.colo, r.speedMbps, r.latency, "scanner")
-		if err == nil {
-			out[region]++
-		}
+		entries = append(entries, config.IPEntry{
+			IP:        r.ip,
+			Region:    region,
+			Colo:      r.colo,
+			SpeedMbps: r.speedMbps,
+			LatencyMs: r.latency,
+			Source:    "auto",
+			LastOK:    true,
+			Note:      "scanner",
+		})
+		out[region]++
+	}
+	if len(entries) > 0 {
+		_ = s.lib.AddIPsBatch(entries)
 	}
 	return out
 }

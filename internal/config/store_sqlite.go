@@ -213,6 +213,34 @@ func (s *SQLiteStore) UpsertIP(e IPEntry) error {
 	return err
 }
 
+func (s *SQLiteStore) UpsertIPsBatch(entries []IPEntry) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`INSERT OR REPLACE INTO iplib_ip
+		(ip,region,colo,speed_mbps,latency_ms,source,added_at,last_check,last_ok,fail_count,note)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, e := range entries {
+		if e.AddedAt == "" {
+			e.AddedAt = NowISO()
+		}
+		_, err := stmt.Exec(e.IP, e.Region, e.Colo, e.SpeedMbps, e.LatencyMs, e.Source,
+			e.AddedAt, e.LastCheck, e.LastOK, e.FailCount, e.Note)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (s *SQLiteStore) DeleteIP(ip, region string) error {
 	_, err := s.db.Exec(`DELETE FROM iplib_ip WHERE ip=? AND region=?`, ip, region)
 	return err

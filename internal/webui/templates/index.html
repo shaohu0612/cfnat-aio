@@ -72,8 +72,11 @@
   --radius-full: var(--cfnat-radius-full);
 }
 </style>
-<style type="text/tailwindcss">
-  @theme inline {
+<style>
+  body { background: var(--cfnat-background); color: var(--cfnat-foreground); font-family: var(--font-body); min-height: 100vh; }
+  td, th { word-break: break-all; word-break: auto-phrase; }
+  th { white-space: nowrap; }
+  :root {
     --color-background: var(--cfnat-background);
     --color-foreground: var(--cfnat-foreground);
     --color-card: var(--cfnat-card);
@@ -94,13 +97,6 @@
     --radius-md: var(--cfnat-radius-md);
     --radius-lg: var(--cfnat-radius-lg);
     --radius-full: var(--cfnat-radius-full);
-    --font-display: var(--font-display);
-    --font-body: var(--font-body);
-  }
-  @layer base {
-    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
-    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
-    th { @apply whitespace-nowrap; }
   }
 </style>
 <style id="semantic-token-fallback">
@@ -177,6 +173,7 @@
     background-color: currentColor;
   }
 </style>
+<style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);

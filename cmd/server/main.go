@@ -189,6 +189,7 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 
 	// 扫描器
 	mux.HandleFunc("/api/scanner", h.HandleAPIScanner)
+	mux.HandleFunc("/api/scanner/config", h.HandleAPIScanner)
 	mux.HandleFunc("/api/scanner/run", h.HandleAPIScannerRun)
 	mux.HandleFunc("/api/scanner/stop", h.HandleAPIScannerStop)
 	mux.HandleFunc("/api/scanner/history", h.HandleAPIScannerHistory)

@@ -353,7 +353,8 @@ func (h *Handlers) HandleAPIIPRebuildPools(w http.ResponseWriter, r *http.Reques
 		ActivePoolSize int    `json:"active_pool_size"`
 		StandbyRatio  float64 `json:"standby_ratio"`
 	}
-	if err := readJSON(r, &req); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024)
+	if err := readJSON(r, &req); err != nil && err.Error() != "EOF" {
 		writeError(w, 400, err.Error())
 		return
 	}

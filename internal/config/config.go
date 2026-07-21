@@ -150,11 +150,12 @@ func (m *Manager) loadAll() error {
 	if rs, err := m.db.LoadRegions(); err == nil && len(rs) > 0 {
 		m.regions = rs
 	} else {
-		// 默认地区列表：HKG、LAX 开启，JP 默认关闭
 		m.regions = []ProxyRegion{
-			{Name: "HKG", Code: "HKG", Port: 1001, Enabled: true, Fallback: true},
-			{Name: "LAX", Code: "LAX", Port: 1002, Enabled: true, Fallback: true},
-			{Name: "JP",  Code: "NRT", Port: 1003, Enabled: false, Fallback: true},
+			{Name: "香港", Code: "HKG", Port: 1001, Enabled: true, Fallback: true},
+			{Name: "美国", Code: "DEN,DFW,DTW,EWR,FSD,HNL,IAD,IAH,IND,JAX,LAS,LAX,MCI,MEM,MFE,MIA,MSP,OKC,OMA,ORD,ORF,PDX,PHL,PHX,PIT,RDU,RIC,SAN,SAT,SEA,SFO,SJC,SLC,SMF,STL,TLH,TPA", Port: 1002, Enabled: true, Fallback: true},
+			{Name: "日本", Code: "KIX,NRT,OKA,FUK", Port: 1003, Enabled: true, Fallback: true},
+			{Name: "新加坡", Code: "SIN", Port: 1004, Enabled: true, Fallback: true},
+			{Name: "越南", Code: "DAD,HAN,SGN", Port: 1005, Enabled: true, Fallback: true},
 		}
 		_ = m.db.SaveRegions(m.regions)
 	}

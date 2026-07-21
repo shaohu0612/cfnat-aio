@@ -241,8 +241,14 @@ func (s *Scanner) RunOnce() {
 	// 更新统计
 	total := len(candidates)
 	savedJSON, _ := json.Marshal(savedByRegion)
-	statsJSON := fmt.Sprintf(`{"cmin2":%s,"saved":%s,"scanned":%d,"speed_passed":%d}`,
-		string(savedJSON), string(savedJSON), total, speedPassed)
+	s.mu.Lock()
+	cidrSource := s.progress.CIDRSource
+	cidrSegments := s.progress.CIDRSegments
+	cidr24Segments := s.progress.CIDR24Segments
+	rateLimitHits := s.progress.RateLimitHits
+	s.mu.Unlock()
+	statsJSON := fmt.Sprintf(`{"cmin2":%s,"saved":%s,"scanned":%d,"speed_passed":%d,"cidr_source":"%s","cidr_segments":%d,"cidr24_segments":%d,"probe_count":%d,"rate_limit_hits":%d}`,
+		string(savedJSON), string(savedJSON), total, speedPassed, cidrSource, cidrSegments, cidr24Segments, okCount, rateLimitHits)
 	s.finishRun(histID, "ok", total, speedPassed, statsJSON)
 
 	logging.InfoTo("scanner", "✓ 扫描任务 #%d 完成: 候选 %d, 通过 %d", histID, total, speedPassed)

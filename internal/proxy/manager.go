@@ -17,9 +17,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"math/rand"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -353,6 +355,23 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 
 	cfg := m.cfgMgr.ProxyForward()
 
+	// 新IP优先调度：预热期内的新IP获得30%概率被优先选中
+	if cfg.NewIPPriority {
+		var newIPs []string
+		for _, code := range codes {
+			for _, entry := range m.lib.ListIPs(code) {
+				if m.isInWarmup(entry) && !m.isIsolated(entry.IP) {
+					if exclude == nil || !exclude[entry.IP] {
+						newIPs = append(newIPs, entry.IP)
+					}
+				}
+			}
+		}
+		if len(newIPs) > 0 && rand.Float64() < 0.3 {
+			return newIPs[rand.Intn(len(newIPs))], false, nil
+		}
+	}
+
 	maxAttempts := 10
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		switch cfg.LoadBalanceMode {
@@ -367,6 +386,12 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 				ip, err = m.pickWeightedRandom(codes, exclude)
 			} else {
 				ip, err = m.pickWeightedRandom(codes, nil)
+			}
+		case "quality-score":
+			if exclude != nil && len(exclude) > 0 {
+				ip, err = m.pickByQualityScore(codes, exclude)
+			} else {
+				ip, err = m.pickByQualityScore(codes, nil)
 			}
 		default:
 			if exclude != nil && len(exclude) > 0 {
@@ -415,6 +440,107 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 
 	ip, _ = m.lib.PickFallback(candidates)
 	return ip, true, nil
+}
+
+// pickByQualityScore 基于综合质量分数的加权随机调度（V2.2）
+func (m *Manager) pickByQualityScore(codes []string, exclude map[string]bool) (string, error) {
+	type candidate struct {
+		IP    string
+		Score float64
+	}
+	var candidates []candidate
+
+	for _, code := range codes {
+		ips := m.lib.ListIPs(code)
+		for _, entry := range ips {
+			if exclude != nil && exclude[entry.IP] {
+				continue
+			}
+			if m.isIsolated(entry.IP) {
+				continue
+			}
+
+			metrics := m.metricsMgr.Get(entry.IP)
+			score := metrics.QualityScore()
+
+			if metrics.GetSampleCount() == 0 {
+				score = m.calculateInitialScore(entry)
+			}
+
+			candidates = append(candidates, candidate{IP: entry.IP, Score: score})
+		}
+	}
+
+	if len(candidates) == 0 {
+		return "", errors.New("no available IPs")
+	}
+
+	totalScore := 0.0
+	for _, c := range candidates {
+		totalScore += c.Score
+	}
+
+	if totalScore <= 0 {
+		return candidates[rand.Intn(len(candidates))].IP, nil
+	}
+
+	r := rand.Float64() * totalScore
+	for _, c := range candidates {
+		r -= c.Score
+		if r <= 0 {
+			return c.IP, nil
+		}
+	}
+
+	return candidates[0].IP, nil
+}
+
+// calculateInitialScore 计算新入库IP的初始质量分数（基于入库时的速度和延迟）
+func (m *Manager) calculateInitialScore(entry config.IPEntry) float64 {
+	latencyScore := 100.0 / (entry.LatencyMs + 100.0)
+	if latencyScore > 1.0 {
+		latencyScore = 1.0
+	}
+
+	speedScore := entry.SpeedMbps / 10.0
+	if speedScore > 1.0 {
+		speedScore = 1.0
+	}
+	if speedScore < 0 {
+		speedScore = 0.1
+	}
+
+	return 100.0 * latencyScore * speedScore * 0.5
+}
+
+// GetAdaptiveThresholds 计算自适应阈值（V2.2）
+func (m *Manager) GetAdaptiveThresholds(codes []string) (p50, p90, adaptiveDelay int) {
+	var delays []float64
+	for _, code := range codes {
+		for _, entry := range m.lib.ListIPs(code) {
+			if entry.LatencyMs > 0 {
+				delays = append(delays, entry.LatencyMs)
+			}
+			metrics := m.metricsMgr.Get(entry.IP)
+			if metrics.GetSampleCount() > 0 {
+				delays = append(delays, metrics.GetDelay())
+			}
+		}
+	}
+
+	if len(delays) < 5 {
+		return 0, 0, 0
+	}
+
+	sort.Float64s(delays)
+	p50Idx := int(float64(len(delays)) * 0.5)
+	p90Idx := int(float64(len(delays)) * 0.9)
+
+	p50 = int(delays[p50Idx])
+	p90 = int(delays[p90Idx])
+	adaptiveDelay = int(math.Min(float64(p50)*2, float64(p90)))
+
+	return p50, p90, adaptiveDelay
 }
 
 // pickLeastConn 选取连接数最少的 IP（V1.2）

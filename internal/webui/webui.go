@@ -819,4 +819,187 @@ func (h *Handlers) RouteRegionsSubpath(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+// === 数据中心字典 API（V2.2.1）===
+
+// HandleAPIDCList 返回所有数据中心列表
+// GET /api/dc/list
+func (h *Handlers) HandleAPIDCList(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	dcs, err := h.CfgMgr.ListDatacenters()
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeAPIResponse(w, 200, dcs)
+}
+
+// HandleAPIDCCountries 返回所有国家列表
+// GET /api/dc/countries
+func (h *Handlers) HandleAPIDCCountries(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	countries, err := h.CfgMgr.ListCountries()
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeAPIResponse(w, 200, countries)
+}
+
+// HandleAPIDCByCountry 返回指定国家的数据中心
+// GET /api/dc/country/{country}
+func (h *Handlers) HandleAPIDCByCountry(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) < 4 || parts[0] != "api" || parts[1] != "dc" || parts[2] != "country" {
+		writeError(w, 400, "invalid path")
+		return
+	}
+	country := parts[3]
+	dcs, err := h.CfgMgr.ListDatacentersByCountry(country)
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeAPIResponse(w, 200, dcs)
+}
+
+// HandleAPIDCSync 触发数据中心字典同步
+// POST /api/dc/sync
+func (h *Handlers) HandleAPIDCSync(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	if err := h.CfgMgr.SyncDatacenters(); err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeAPIResponse(w, 200, map[string]string{"status": "syncing"})
+}
+
+// === IP 历史记录 API（V2.3）===
+
+// HandleAPIIPHistory 返回指定 IP 的历史记录
+// GET /api/ips/history?ip={ip}&region={region}
+func (h *Handlers) HandleAPIIPHistory(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	ip := r.URL.Query().Get("ip")
+	region := r.URL.Query().Get("region")
+	if ip == "" || region == "" {
+		writeError(w, 400, "ip and region are required")
+		return
+	}
+	limitStr := r.URL.Query().Get("limit")
+	limit := 100
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+	history, err := h.Store.ListIPHistory(ip, region, limit)
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeAPIResponse(w, 200, history)
+}
+
+// HandleAPIIPRegionHistory 返回指定地区的 IP 历史记录
+// GET /api/ips/region-history?region={region}
+func (h *Handlers) HandleAPIIPRegionHistory(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	region := r.URL.Query().Get("region")
+	if region == "" {
+		writeError(w, 400, "region is required")
+		return
+	}
+	limitStr := r.URL.Query().Get("limit")
+	limit := 100
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+	history, err := h.Store.ListIPHistoryByRegion(region, limit)
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	writeAPIResponse(w, 200, history)
+}
+
+// HandleAPIIPLowQuality 返回低质量 IP 列表
+// GET /api/ips/low-quality?region={region}&threshold={threshold}
+func (h *Handlers) HandleAPIIPLowQuality(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	region := r.URL.Query().Get("region")
+	thresholdStr := r.URL.Query().Get("threshold")
+	threshold := 30
+	if thresholdStr != "" {
+		if t, err := strconv.Atoi(thresholdStr); err == nil && t > 0 {
+			threshold = t
+		}
+	}
+
+	var ips []config.IPEntry
+	var err error
+	if region != "" {
+		ips, err = h.Store.ListIPs(region)
+	} else {
+		ips, err = h.Store.ListAllIPs()
+	}
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+
+	type lowQualityIP struct {
+		config.IPEntry
+		QualityScore float64 `json:"quality_score"`
+	}
+	var lowQuality []lowQualityIP
+
+	for _, ip := range ips {
+		metrics := h.Proxy.Metrics().Get(ip.IP)
+		score := metrics.QualityScore()
+		if metrics.GetSampleCount() == 0 {
+			latencyScore := 100.0 / (ip.LatencyMs + 100.0)
+			if latencyScore > 1.0 {
+				latencyScore = 1.0
+			}
+			speedScore := ip.SpeedMbps / 10.0
+			if speedScore > 1.0 {
+				speedScore = 1.0
+			}
+			if speedScore < 0 {
+				speedScore = 0.1
+			}
+			score = 100.0 * latencyScore * speedScore * 0.5
+		}
+		if score < float64(threshold) {
+			lowQuality = append(lowQuality, lowQualityIP{IPEntry: ip, QualityScore: score})
+		}
+	}
+
+	writeAPIResponse(w, 200, lowQuality)
+}
+
 

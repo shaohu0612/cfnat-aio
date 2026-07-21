@@ -82,6 +82,8 @@ func main() {
 		log.Fatalf("初始化配置失败: %v", err)
 	}
 
+	cfgMgr.InitDatacenters()
+
 	// 若命令行指定了端口，覆盖配置
 	g := cfgMgr.General()
 	if *port != 1234 {
@@ -211,4 +213,15 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 	// 代理
 	mux.HandleFunc("/api/proxy/status", h.HandleAPIProxyStatus)
 	mux.HandleFunc("/api/proxy/sync", h.HandleAPIProxySync)
+
+	// 数据中心字典（V2.2.1）
+	mux.HandleFunc("/api/dc/list", h.HandleAPIDCList)
+	mux.HandleFunc("/api/dc/countries", h.HandleAPIDCCountries)
+	mux.HandleFunc("/api/dc/country/", h.HandleAPIDCByCountry)
+	mux.HandleFunc("/api/dc/sync", h.HandleAPIDCSync)
+
+	// IP 历史记录（V2.3）
+	mux.HandleFunc("/api/ips/history", h.HandleAPIIPHistory)
+	mux.HandleFunc("/api/ips/region-history", h.HandleAPIIPRegionHistory)
+	mux.HandleFunc("/api/ips/low-quality", h.HandleAPIIPLowQuality)
 }

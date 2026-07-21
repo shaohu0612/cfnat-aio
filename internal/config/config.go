@@ -10,8 +10,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -77,7 +80,7 @@ type GeneralConfig struct {
 // ProxyForwardConfig 代理转发配置（V1.1+）
 type ProxyForwardConfig struct {
 	MaxRetries          int     `json:"max_retries"`           // 最大重试次数（0-5，默认3）
-	LoadBalanceMode     string  `json:"load_balance_mode"`     // 负载均衡策略：random/least-conn/weighted-random
+	LoadBalanceMode     string  `json:"load_balance_mode"`     // 负载均衡策略：random/least-conn/weighted-random/quality-score
 	EWMASampleWindow    int     `json:"ewma_sample_window"`    // EWMA样本窗口（20-200，默认50）
 	HealthCheckInterval int     `json:"health_check_interval"` // 健康检查间隔（30-600s，默认120）
 	MaxDelayMs          int     `json:"max_delay_ms"`          // 最大延迟阈值（100-2000ms，默认500）
@@ -88,6 +91,12 @@ type ProxyForwardConfig struct {
 	StickyTTL           int     `json:"sticky_ttl"`            // 亲和性TTL（5-60s，默认15）
 	ActivePoolSize      int     `json:"active_pool_size"`      // 主池容量（5-100，默认20）
 	StandbyPoolRatio    float64 `json:"standby_pool_ratio"`    // 备选池比例（0.2-1.0，默认0.5）
+	AdaptiveThreshold   bool    `json:"adaptive_threshold"`    // 自适应阈值开关（V2.2）
+	NewIPPriority       bool    `json:"new_ip_priority"`       // 新IP优先调度开关（V2.2）
+	QualityThreshold    int     `json:"quality_threshold"`     // 质量淘汰阈值（V2.2）
+	AutoRebuildPools    bool    `json:"auto_rebuild_pools"`    // 扫描后自动重建IP池（V2.1）
+	TrendRetentionDays  int     `json:"trend_retention_days"`  // IP质量趋势数据保留天数（V2.3）
+	TraceEnabled        bool    `json:"trace_enabled"`         // 全链路追踪开关（V2.3）
 }
 
 // Manager 全局配置管理器（线程安全）
@@ -295,6 +304,12 @@ func defaultProxyForwardConfig() ProxyForwardConfig {
 		StickyTTL:           15,
 		ActivePoolSize:      20,
 		StandbyPoolRatio:    0.5,
+		AdaptiveThreshold:   false,
+		NewIPPriority:       false,
+		QualityThreshold:    30,
+		AutoRebuildPools:    true,
+		TrendRetentionDays:  7,
+		TraceEnabled:        false,
 	}
 }
 
@@ -434,4 +449,167 @@ func hasIPv6Connectivity() bool {
 	}
 	_ = conn.Close()
 	return true
+}
+
+// === 数据中心字典同步（V2.2.1）===
+
+var builtinDatacenters = []DatacenterEntry{
+	{Colo: "HKG", Name: "Hong Kong", Country: "HK", City: "Hong Kong", Continent: "AS", RegionName: "香港"},
+	{Colo: "SIN", Name: "Singapore", Country: "SG", City: "Singapore", Continent: "AS", RegionName: "新加坡"},
+	{Colo: "NRT", Name: "Tokyo", Country: "JP", City: "Tokyo", Continent: "AS", RegionName: "日本"},
+	{Colo: "KIX", Name: "Osaka", Country: "JP", City: "Osaka", Continent: "AS", RegionName: "日本"},
+	{Colo: "OKA", Name: "Okinawa", Country: "JP", City: "Okinawa", Continent: "AS", RegionName: "日本"},
+	{Colo: "FUK", Name: "Fukuoka", Country: "JP", City: "Fukuoka", Continent: "AS", RegionName: "日本"},
+	{Colo: "DEN", Name: "Denver", Country: "US", City: "Denver", Continent: "NA", RegionName: "美国"},
+	{Colo: "DFW", Name: "Dallas", Country: "US", City: "Dallas", Continent: "NA", RegionName: "美国"},
+	{Colo: "LAX", Name: "Los Angeles", Country: "US", City: "Los Angeles", Continent: "NA", RegionName: "美国"},
+	{Colo: "SFO", Name: "San Francisco", Country: "US", City: "San Francisco", Continent: "NA", RegionName: "美国"},
+	{Colo: "SEA", Name: "Seattle", Country: "US", City: "Seattle", Continent: "NA", RegionName: "美国"},
+	{Colo: "SJC", Name: "San Jose", Country: "US", City: "San Jose", Continent: "NA", RegionName: "美国"},
+	{Colo: "EWR", Name: "Newark", Country: "US", City: "Newark", Continent: "NA", RegionName: "美国"},
+	{Colo: "ORD", Name: "Chicago", Country: "US", City: "Chicago", Continent: "NA", RegionName: "美国"},
+	{Colo: "PHL", Name: "Philadelphia", Country: "US", City: "Philadelphia", Continent: "NA", RegionName: "美国"},
+	{Colo: "IAD", Name: "Washington", Country: "US", City: "Washington", Continent: "NA", RegionName: "美国"},
+	{Colo: "MIA", Name: "Miami", Country: "US", City: "Miami", Continent: "NA", RegionName: "美国"},
+	{Colo: "PHX", Name: "Phoenix", Country: "US", City: "Phoenix", Continent: "NA", RegionName: "美国"},
+	{Colo: "LAS", Name: "Las Vegas", Country: "US", City: "Las Vegas", Continent: "NA", RegionName: "美国"},
+	{Colo: "PDX", Name: "Portland", Country: "US", City: "Portland", Continent: "NA", RegionName: "美国"},
+	{Colo: "MEM", Name: "Memphis", Country: "US", City: "Memphis", Continent: "NA", RegionName: "美国"},
+	{Colo: "IND", Name: "Indianapolis", Country: "US", City: "Indianapolis", Continent: "NA", RegionName: "美国"},
+	{Colo: "JAX", Name: "Jacksonville", Country: "US", City: "Jacksonville", Continent: "NA", RegionName: "美国"},
+	{Colo: "DAD", Name: "Da Nang", Country: "VN", City: "Da Nang", Continent: "AS", RegionName: "越南"},
+	{Colo: "HAN", Name: "Hanoi", Country: "VN", City: "Hanoi", Continent: "AS", RegionName: "越南"},
+	{Colo: "SGN", Name: "Ho Chi Minh", Country: "VN", City: "Ho Chi Minh", Continent: "AS", RegionName: "越南"},
+	{Colo: "TPE", Name: "Taipei", Country: "TW", City: "Taipei", Continent: "AS", RegionName: "台湾"},
+	{Colo: "ICN", Name: "Seoul", Country: "KR", City: "Seoul", Continent: "AS", RegionName: "韩国"},
+	{Colo: "MNL", Name: "Manila", Country: "PH", City: "Manila", Continent: "AS", RegionName: "菲律宾"},
+	{Colo: "BKK", Name: "Bangkok", Country: "TH", City: "Bangkok", Continent: "AS", RegionName: "泰国"},
+	{Colo: "FRA", Name: "Frankfurt", Country: "DE", City: "Frankfurt", Continent: "EU", RegionName: "德国"},
+	{Colo: "AMS", Name: "Amsterdam", Country: "NL", City: "Amsterdam", Continent: "EU", RegionName: "荷兰"},
+	{Colo: "LHR", Name: "London", Country: "GB", City: "London", Continent: "EU", RegionName: "英国"},
+	{Colo: "MFM", Name: "Macau", Country: "MO", City: "Macau", Continent: "AS", RegionName: "澳门"},
+	{Colo: "DXB", Name: "Dubai", Country: "AE", City: "Dubai", Continent: "AS", RegionName: "阿联酋"},
+	{Colo: "SYD", Name: "Sydney", Country: "AU", City: "Sydney", Continent: "OC", RegionName: "澳大利亚"},
+	{Colo: "AKL", Name: "Auckland", Country: "NZ", City: "Auckland", Continent: "OC", RegionName: "新西兰"},
+	{Colo: "SCL", Name: "Santiago", Country: "CL", City: "Santiago", Continent: "SA", RegionName: "智利"},
+	{Colo: "GRU", Name: "Sao Paulo", Country: "BR", City: "Sao Paulo", Continent: "SA", RegionName: "巴西"},
+	{Colo: "JNB", Name: "Johannesburg", Country: "ZA", City: "Johannesburg", Continent: "AF", RegionName: "南非"},
+	{Colo: "CAI", Name: "Cairo", Country: "EG", City: "Cairo", Continent: "AF", RegionName: "埃及"},
+}
+
+func (m *Manager) InitDatacenters() {
+	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
+		count := 0
+		if rows, err := sqliteStore.db.Query(`SELECT COUNT(*) FROM cf_datacenter`); err == nil {
+			if rows.Next() {
+				_ = rows.Scan(&count)
+			}
+			rows.Close()
+		}
+
+		if count == 0 {
+			logging.InfoTo("config", "📦 初始化内置数据中心字典")
+			for i := range builtinDatacenters {
+				builtinDatacenters[i].UpdatedAt = NowISO()
+			}
+			if err := sqliteStore.UpsertDatacentersBatch(builtinDatacenters); err != nil {
+				logging.ErrorTo("config", "数据中心字典初始化失败: %v", err)
+			}
+		}
+	}
+}
+
+func (m *Manager) SyncDatacenters() error {
+	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, "GET", "https://raw.githubusercontent.com/cloudflare/cf-speedtest/master/servers.json", nil)
+		if err != nil {
+			logging.WarnTo("config", "数据中心同步请求创建失败: %v", err)
+			return err
+		}
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			logging.WarnTo("config", "数据中心同步请求失败: %v", err)
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			logging.WarnTo("config", "数据中心同步返回异常: %d", resp.StatusCode)
+			return fmt.Errorf("unexpected status: %d", resp.StatusCode)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logging.WarnTo("config", "数据中心同步读取失败: %v", err)
+			return err
+		}
+
+		type remoteDC struct {
+			Code     string  `json:"code"`
+			City     string  `json:"city"`
+			Country  string  `json:"country"`
+			Region   string  `json:"region"`
+			Latitude float64 `json:"lat"`
+			Longitude float64 `json:"lon"`
+		}
+
+		var remoteDCs []remoteDC
+		if err := json.Unmarshal(body, &remoteDCs); err != nil {
+			logging.WarnTo("config", "数据中心同步解析失败: %v", err)
+			return err
+		}
+
+		var entries []DatacenterEntry
+		now := NowISO()
+		for _, dc := range remoteDCs {
+			entries = append(entries, DatacenterEntry{
+				Colo:       dc.Code,
+				Name:       dc.City,
+				Country:    dc.Country,
+				City:       dc.City,
+				Continent:  "",
+				Latitude:   dc.Latitude,
+				Longitude:  dc.Longitude,
+				RegionName: dc.Region,
+				Zone:       "",
+				UpdatedAt:  now,
+			})
+		}
+
+		if len(entries) > 0 {
+			if err := sqliteStore.UpsertDatacentersBatch(entries); err != nil {
+				logging.ErrorTo("config", "数据中心同步写入失败: %v", err)
+				return err
+			}
+			logging.InfoTo("config", "✅ 数据中心字典同步完成: %d 个数据中心", len(entries))
+			_ = sqliteStore.SetDatacenterMeta("last_sync", now)
+		}
+	}
+	return nil
+}
+
+func (m *Manager) ListDatacenters() ([]DatacenterEntry, error) {
+	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
+		return sqliteStore.ListDatacenters()
+	}
+	return nil, fmt.Errorf("not supported")
+}
+
+func (m *Manager) ListDatacentersByCountry(country string) ([]DatacenterEntry, error) {
+	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
+		return sqliteStore.ListDatacentersByCountry(country)
+	}
+	return nil, fmt.Errorf("not supported")
+}
+
+func (m *Manager) ListCountries() ([]string, error) {
+	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
+		return sqliteStore.ListCountries()
+	}
+	return nil, fmt.Errorf("not supported")
 }

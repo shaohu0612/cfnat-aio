@@ -80,6 +80,35 @@ func (s *SQLiteStore) init() error {
 		last_scan   TEXT
 	);
 	CREATE INDEX IF NOT EXISTS idx_colo_region ON colo_scan_state(region);
+	CREATE TABLE IF NOT EXISTS cf_datacenter (
+		colo         TEXT PRIMARY KEY,
+		name         TEXT,
+		country      TEXT,
+		city         TEXT,
+		continent    TEXT,
+		latitude     REAL,
+		longitude    REAL,
+		region_name  TEXT,
+		zone         TEXT,
+		updated_at   TEXT
+	);
+	CREATE INDEX IF NOT EXISTS idx_cf_country ON cf_datacenter(country);
+	CREATE INDEX IF NOT EXISTS idx_cf_region ON cf_datacenter(region_name);
+	CREATE TABLE IF NOT EXISTS cf_datacenter_meta (
+		key         TEXT PRIMARY KEY,
+		value       TEXT NOT NULL,
+		updated_at  TEXT
+	);
+	CREATE TABLE IF NOT EXISTS ip_history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		ip TEXT NOT NULL,
+		region TEXT NOT NULL,
+		event_type TEXT NOT NULL,
+		details TEXT,
+		created_at TEXT
+	);
+	CREATE INDEX IF NOT EXISTS idx_ip_history_ip ON ip_history(ip);
+	CREATE INDEX IF NOT EXISTS idx_ip_history_region ON ip_history(region);
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -373,4 +402,213 @@ func (s *SQLiteStore) DB() *sql.DB { return s.db }
 
 func (s *SQLiteStore) String() string {
 	return fmt.Sprintf("SQLiteStore@%p", s)
+}
+
+// === 数据中心字典 ===
+
+type DatacenterEntry struct {
+	Colo       string  `json:"colo"`
+	Name       string  `json:"name"`
+	Country    string  `json:"country"`
+	City       string  `json:"city"`
+	Continent  string  `json:"continent"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	RegionName string  `json:"region_name"`
+	Zone       string  `json:"zone"`
+	UpdatedAt  string  `json:"updated_at"`
+}
+
+func (s *SQLiteStore) UpsertDatacenter(e DatacenterEntry) error {
+	_, err := s.db.Exec(`INSERT OR REPLACE INTO cf_datacenter
+		(colo,name,country,city,continent,latitude,longitude,region_name,zone,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?)`,
+		e.Colo, e.Name, e.Country, e.City, e.Continent, e.Latitude, e.Longitude,
+		e.RegionName, e.Zone, e.UpdatedAt)
+	return err
+}
+
+func (s *SQLiteStore) UpsertDatacentersBatch(entries []DatacenterEntry) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`INSERT OR REPLACE INTO cf_datacenter
+		(colo,name,country,city,continent,latitude,longitude,region_name,zone,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, e := range entries {
+		if e.UpdatedAt == "" {
+			e.UpdatedAt = NowISO()
+		}
+		_, err := stmt.Exec(e.Colo, e.Name, e.Country, e.City, e.Continent, e.Latitude, e.Longitude,
+			e.RegionName, e.Zone, e.UpdatedAt)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *SQLiteStore) ListDatacenters() ([]DatacenterEntry, error) {
+	rows, err := s.db.Query(`SELECT colo,COALESCE(name,''),COALESCE(country,''),COALESCE(city,''),
+		COALESCE(continent,''),COALESCE(latitude,0),COALESCE(longitude,0),
+		COALESCE(region_name,''),COALESCE(zone,''),COALESCE(updated_at,'')
+		FROM cf_datacenter ORDER BY country, city`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []DatacenterEntry
+	for rows.Next() {
+		var e DatacenterEntry
+		if err := rows.Scan(&e.Colo, &e.Name, &e.Country, &e.City, &e.Continent,
+			&e.Latitude, &e.Longitude, &e.RegionName, &e.Zone, &e.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func (s *SQLiteStore) ListDatacentersByCountry(country string) ([]DatacenterEntry, error) {
+	rows, err := s.db.Query(`SELECT colo,COALESCE(name,''),COALESCE(country,''),COALESCE(city,''),
+		COALESCE(continent,''),COALESCE(latitude,0),COALESCE(longitude,0),
+		COALESCE(region_name,''),COALESCE(zone,''),COALESCE(updated_at,'')
+		FROM cf_datacenter WHERE country=? ORDER BY city`, country)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []DatacenterEntry
+	for rows.Next() {
+		var e DatacenterEntry
+		if err := rows.Scan(&e.Colo, &e.Name, &e.Country, &e.City, &e.Continent,
+			&e.Latitude, &e.Longitude, &e.RegionName, &e.Zone, &e.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func (s *SQLiteStore) GetDatacenter(colo string) (*DatacenterEntry, error) {
+	row := s.db.QueryRow(`SELECT colo,COALESCE(name,''),COALESCE(country,''),COALESCE(city,''),
+		COALESCE(continent,''),COALESCE(latitude,0),COALESCE(longitude,0),
+		COALESCE(region_name,''),COALESCE(zone,''),COALESCE(updated_at,'')
+		FROM cf_datacenter WHERE colo=?`, colo)
+	var e DatacenterEntry
+	err := row.Scan(&e.Colo, &e.Name, &e.Country, &e.City, &e.Continent,
+		&e.Latitude, &e.Longitude, &e.RegionName, &e.Zone, &e.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
+func (s *SQLiteStore) ListCountries() ([]string, error) {
+	rows, err := s.db.Query(`SELECT DISTINCT country FROM cf_datacenter WHERE country!='' ORDER BY country`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var c string
+		if err := rows.Scan(&c); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, nil
+}
+
+func (s *SQLiteStore) SetDatacenterMeta(key, value string) error {
+	_, err := s.db.Exec(`INSERT OR REPLACE INTO cf_datacenter_meta(key,value,updated_at) VALUES(?,?,?)`,
+		key, value, NowISO())
+	return err
+}
+
+func (s *SQLiteStore) GetDatacenterMeta(key string) (string, error) {
+	var v string
+	err := s.db.QueryRow(`SELECT value FROM cf_datacenter_meta WHERE key=?`, key).Scan(&v)
+	return v, err
+}
+
+// === IP 历史记录 ===
+
+type IPHistoryEntry struct {
+	ID        int64  `json:"id"`
+	IP        string `json:"ip"`
+	Region    string `json:"region"`
+	EventType string `json:"event_type"`
+	Details   string `json:"details"`
+	CreatedAt string `json:"created_at"`
+}
+
+func (s *SQLiteStore) AddIPHistory(ip, region, eventType, details string) (int64, error) {
+	res, err := s.db.Exec(`INSERT INTO ip_history(ip,region,event_type,details,created_at) VALUES(?,?,?,?,?)`,
+		ip, region, eventType, details, NowISO())
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (s *SQLiteStore) ListIPHistory(ip, region string, limit int) ([]IPHistoryEntry, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	rows, err := s.db.Query(`SELECT id,ip,region,event_type,COALESCE(details,''),COALESCE(created_at,'')
+		FROM ip_history WHERE ip=? AND region=? ORDER BY id DESC LIMIT ?`, ip, region, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []IPHistoryEntry
+	for rows.Next() {
+		var e IPHistoryEntry
+		if err := rows.Scan(&e.ID, &e.IP, &e.Region, &e.EventType, &e.Details, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func (s *SQLiteStore) ListIPHistoryByRegion(region string, limit int) ([]IPHistoryEntry, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	rows, err := s.db.Query(`SELECT id,ip,region,event_type,COALESCE(details,''),COALESCE(created_at,'')
+		FROM ip_history WHERE region=? ORDER BY id DESC LIMIT ?`, region, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []IPHistoryEntry
+	for rows.Next() {
+		var e IPHistoryEntry
+		if err := rows.Scan(&e.ID, &e.IP, &e.Region, &e.EventType, &e.Details, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func (s *SQLiteStore) PruneIPHistory(days int) (int, error) {
+	res, err := s.db.Exec(`DELETE FROM ip_history WHERE created_at < DATETIME('now', ?)`,
+		fmt.Sprintf("-%d days", days))
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
 }

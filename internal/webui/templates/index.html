@@ -6,34 +6,15 @@
 <title>CFNAT-AIO</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
 <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
-<style type="text/tailwindcss">
-  @theme inline {
-    --color-cfnat-primary: #58a6ff;
-    --color-cfnat-primary-hover: #79b8ff;
-    --color-cfnat-primary-pressed: #1f6feb;
-    --color-cfnat-background: #0a0e14;
-    --color-cfnat-foreground: #e6edf3;
-    --color-cfnat-card: #12161e;
-    --color-cfnat-card-foreground: #c9d1d9;
-    --color-cfnat-popover: #1a1f2e;
-    --color-cfnat-muted: #161b22;
-    --color-cfnat-muted-foreground: #6e7681;
-    --color-cfnat-border: #1e2430;
-    --color-cfnat-input: #0d1117;
-    --color-cfnat-success: #3fb950;
-    --color-cfnat-warning: #d29922;
-    --color-cfnat-error: #f85149;
-    --color-cfnat-info: #58a6ff;
-    --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-  }
-</style>
-<style>
+<style id="theme-vars">
 :root {
   --cfnat-primary: #58a6ff;
   --cfnat-primary-hover: #79b8ff;
   --cfnat-primary-pressed: #1f6feb;
   --cfnat-primary-foreground: #ffffff;
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
   --cfnat-background: #0a0e14;
   --cfnat-foreground: #e6edf3;
   --cfnat-card: #12161e;
@@ -61,7 +42,141 @@
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
 }
+:root {
+  --color-primary: var(--cfnat-primary);
+  --color-primary-hover: var(--cfnat-primary-hover);
+  --color-primary-pressed: var(--cfnat-primary-pressed);
+  --color-accent: var(--cfnat-accent);
+  --color-accent-hover: var(--cfnat-accent-hover);
+  --color-accent-pressed: var(--cfnat-accent-pressed);
+  --background: var(--cfnat-background);
+  --foreground: var(--cfnat-foreground);
+  --color-card: var(--cfnat-card);
+  --color-card-foreground: var(--cfnat-card-foreground);
+  --color-popover: var(--cfnat-popover);
+  --color-popover-foreground: var(--cfnat-popover-foreground);
+  --color-muted: var(--cfnat-muted);
+  --color-muted-foreground: var(--cfnat-muted-foreground);
+  --color-border: var(--cfnat-border);
+  --color-input: var(--cfnat-input);
+  --color-ring: var(--cfnat-ring);
+  --radius-sm: var(--cfnat-radius-sm);
+  --radius-md: var(--cfnat-radius-md);
+  --radius-lg: var(--cfnat-radius-lg);
+  --radius-full: var(--cfnat-radius-full);
+}
+</style>
+<style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cfnat-background);
+    --color-foreground: var(--cfnat-foreground);
+    --color-card: var(--cfnat-card);
+    --color-card-foreground: var(--cfnat-card-foreground);
+    --color-popover: var(--cfnat-popover);
+    --color-popover-foreground: var(--cfnat-popover-foreground);
+    --color-primary: var(--cfnat-primary);
+    --color-primary-foreground: var(--cfnat-primary-foreground);
+    --color-muted: var(--cfnat-muted);
+    --color-muted-foreground: var(--cfnat-muted-foreground);
+    --color-accent: var(--cfnat-accent);
+    --color-accent-hover: var(--cfnat-accent-hover);
+    --color-accent-pressed: var(--cfnat-accent-pressed);
+    --color-border: var(--cfnat-border);
+    --color-input: var(--cfnat-input);
+    --color-ring: var(--cfnat-ring);
+    --radius-sm: var(--cfnat-radius-sm);
+    --radius-md: var(--cfnat-radius-md);
+    --radius-lg: var(--cfnat-radius-lg);
+    --radius-full: var(--cfnat-radius-full);
+    --font-display: var(--font-display);
+    --font-body: var(--font-body);
+  }
+  @layer base {
+    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+</style>
+<style id="semantic-token-fallback">
+  .bg-background { background-color: var(--cfnat-background); }
+  .text-background { color: var(--cfnat-background); }
+  .border-background { border-color: var(--cfnat-background); }
+  .ring-background { --tw-ring-color: var(--cfnat-background); }
+  .bg-foreground { background-color: var(--cfnat-foreground); }
+  .text-foreground { color: var(--cfnat-foreground); }
+  .border-foreground { border-color: var(--cfnat-foreground); }
+  .ring-foreground { --tw-ring-color: var(--cfnat-foreground); }
+  .bg-card { background-color: var(--cfnat-card); }
+  .text-card { color: var(--cfnat-card); }
+  .border-card { border-color: var(--cfnat-card); }
+  .ring-card { --tw-ring-color: var(--cfnat-card); }
+  .bg-card-foreground { background-color: var(--cfnat-card-foreground); }
+  .text-card-foreground { color: var(--cfnat-card-foreground); }
+  .border-card-foreground { border-color: var(--cfnat-card-foreground); }
+  .ring-card-foreground { --tw-ring-color: var(--cfnat-card-foreground); }
+  .bg-popover { background-color: var(--cfnat-popover); }
+  .text-popover { color: var(--cfnat-popover); }
+  .border-popover { border-color: var(--cfnat-popover); }
+  .ring-popover { --tw-ring-color: var(--cfnat-popover); }
+  .bg-popover-foreground { background-color: var(--cfnat-popover-foreground); }
+  .text-popover-foreground { color: var(--cfnat-popover-foreground); }
+  .border-popover-foreground { border-color: var(--cfnat-popover-foreground); }
+  .ring-popover-foreground { --tw-ring-color: var(--cfnat-popover-foreground); }
+  .bg-primary { background-color: var(--cfnat-primary); }
+  .text-primary { color: var(--cfnat-primary); }
+  .border-primary { border-color: var(--cfnat-primary); }
+  .ring-primary { --tw-ring-color: var(--cfnat-primary); }
+  .bg-primary-foreground { background-color: var(--cfnat-primary-foreground); }
+  .text-primary-foreground { color: var(--cfnat-primary-foreground); }
+  .border-primary-foreground { border-color: var(--cfnat-primary-foreground); }
+  .ring-primary-foreground { --tw-ring-color: var(--cfnat-primary-foreground); }
+  .bg-muted { background-color: var(--cfnat-muted); }
+  .text-muted { color: var(--cfnat-muted); }
+  .border-muted { border-color: var(--cfnat-muted); }
+  .ring-muted { --tw-ring-color: var(--cfnat-muted); }
+  .bg-muted-foreground { background-color: var(--cfnat-muted-foreground); }
+  .text-muted-foreground { color: var(--cfnat-muted-foreground); }
+  .border-muted-foreground { border-color: var(--cfnat-muted-foreground); }
+  .ring-muted-foreground { --tw-ring-color: var(--cfnat-muted-foreground); }
+  .bg-accent { background-color: var(--cfnat-accent); }
+  .text-accent { color: var(--cfnat-accent); }
+  .border-accent { border-color: var(--cfnat-accent); }
+  .ring-accent { --tw-ring-color: var(--cfnat-accent); }
+  .bg-border { background-color: var(--cfnat-border); }
+  .text-border { color: var(--cfnat-border); }
+  .border-border { border-color: var(--cfnat-border); }
+  .ring-border { --tw-ring-color: var(--cfnat-border); }
+  .bg-input { background-color: var(--cfnat-input); }
+  .text-input { color: var(--cfnat-input); }
+  .border-input { border-color: var(--cfnat-input); }
+  .ring-input { --tw-ring-color: var(--cfnat-input); }
+  .bg-ring { background-color: var(--cfnat-ring); }
+  .text-ring { color: var(--cfnat-ring); }
+  .border-ring { border-color: var(--cfnat-ring); }
+  .ring-ring { --tw-ring-color: var(--cfnat-ring); }
+</style>
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  [data-icon] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    background-color: currentColor;
+  }
+</style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);
@@ -193,15 +308,15 @@ body {
   margin-bottom: 24px;
 }
 .stat-card {
-  background: var(--cfnat-card);
+  background: color-mix(in srgb, var(--cfnat-accent) 15%, transparent);
   border: 1px solid var(--cfnat-border);
   border-radius: var(--cfnat-radius-lg);
   padding: 20px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .stat-card:hover {
-  border-color: rgba(88,166,255,0.3);
-  box-shadow: 0 0 0 1px rgba(88,166,255,0.1);
+  border-color: rgba(167,139,250,0.3);
+  box-shadow: 0 0 0 1px rgba(167,139,250,0.1);
 }
 .stat-card .stat-header {
   display: flex;
@@ -210,7 +325,7 @@ body {
   margin-bottom: 12px;
 }
 .stat-card .stat-icon {
-  color: var(--cfnat-primary);
+  color: var(--cfnat-accent);
 }
 .stat-card .stat-label {
   font-size: var(--font-size-xs);
@@ -533,19 +648,20 @@ body {
 .table-sortable:hover { color: var(--cfnat-primary); }
 
 /* ====== 标签 ====== */
-.tag {
+.badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--cfnat-radius-sm);
-  font-size: 11px;
-  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--cfnat-radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
 }
-.tag-success { background: rgba(63,185,80,0.15); color: var(--state-success); }
-.tag-info { background: rgba(88,166,255,0.15); color: var(--state-info); }
-.tag-warning { background: rgba(210,153,34,0.15); color: var(--state-warning); }
-.tag-error { background: rgba(248,81,73,0.15); color: var(--state-error); }
-.tag-default { background: rgba(110,118,129,0.15); color: var(--cfnat-muted-foreground); }
+.badge-success { background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.25); }
+.badge-info { background: rgba(88,166,255,0.15); color: var(--state-info); border: 1px solid rgba(88,166,255,0.25); }
+.badge-warning { background: rgba(210,153,34,0.15); color: var(--state-warning); border: 1px solid rgba(210,153,34,0.25); }
+.badge-error { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.25); }
+.badge-default { background: rgba(110,118,129,0.15); color: var(--cfnat-muted-foreground); border: 1px solid rgba(110,118,129,0.25); }
 
 /* ====== 按钮 ====== */
 .btn {
@@ -572,7 +688,7 @@ body {
 .btn-sm { padding: 4px 10px; font-size: var(--font-size-xs); }
 
 /* ====== 表单控件 ====== */
-.input, .select, .textarea {
+.textarea {
   padding: 6px 10px;
   border: 1px solid var(--cfnat-border);
   border-radius: var(--cfnat-radius-sm);
@@ -582,33 +698,26 @@ body {
   outline: none;
   transition: border-color 0.15s;
 }
-.input:focus, .select:focus, .textarea:focus { border-color: var(--cfnat-primary); }
-.input::placeholder, .textarea::placeholder { color: var(--cfnat-muted-foreground); }
-.switch {
-  appearance: none;
-  width: 36px;
-  height: 20px;
-  background: var(--cfnat-muted);
-  border-radius: 10px;
-  position: relative;
-  cursor: pointer;
-  outline: none;
-  border: 1px solid var(--cfnat-border);
-  transition: background 0.2s;
-}
-.switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  background: var(--cfnat-foreground);
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-.switch:checked { background: var(--cfnat-primary); border-color: var(--cfnat-primary); }
-.switch:checked::after { transform: translateX(16px); }
+.textarea:focus { border-color: var(--cfnat-primary); }
+.textarea::placeholder { color: var(--cfnat-muted-foreground); }
+
+.toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: var(--cfnat-muted); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-full); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+.toggle-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--cfnat-muted-foreground); border-radius: var(--cfnat-radius-full); transition: transform 0.2s, background 0.2s; }
+.toggle-switch input:checked + .toggle-track { background: var(--cfnat-primary); border-color: var(--cfnat-primary); }
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(20px); background: #fff; }
+.toggle-accent input:checked + .toggle-track { background: var(--cfnat-accent); border-color: var(--cfnat-accent); box-shadow: 0 0 8px rgba(167,139,250,0.3); }
+
+.num-input { width: 80px; padding: 6px 10px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-family: var(--font-display); font-size: var(--font-size-sm); text-align: center; outline: none; transition: border-color 0.15s; }
+.num-input:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15); }
+
+.text-input { width: 120px; padding: 6px 10px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-family: var(--font-display); font-size: var(--font-size-sm); outline: none; transition: border-color 0.15s; }
+.text-input:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15); }
+
+.custom-select { padding: 7px 32px 7px 12px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-size: var(--font-size-sm); outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e7681' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; transition: border-color 0.15s; }
+.custom-select:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15); }
+
 .checkbox { accent-color: var(--cfnat-primary); width: 14px; height: 14px; cursor: pointer; }
 
 /* ====== 进度面板 ====== */
@@ -618,6 +727,10 @@ body {
   border-radius: var(--cfnat-radius-lg);
   padding: 16px 20px;
   margin-bottom: 14px;
+}
+.progress-panel-gradient {
+  background: linear-gradient(135deg, rgba(88,166,255,0.06) 0%, rgba(31,111,235,0.04) 100%);
+  border-color: rgba(88,166,255,0.15);
 }
 .progress-stage {
   display: flex;
@@ -655,6 +768,17 @@ body {
   font-size: var(--font-size-xs);
   color: var(--cfnat-muted-foreground);
 }
+
+.progress-bar-track { width: 100%; height: 8px; background: var(--cfnat-muted); border-radius: var(--cfnat-radius-full); overflow: hidden; }
+.progress-bar-fill-v3 { height: 100%; border-radius: var(--cfnat-radius-full); background: linear-gradient(90deg, #1f6feb, #58a6ff, #22d3ee); transition: width 0.4s ease; position: relative; }
+.progress-bar-fill-v3::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%); animation: shimmer 2s infinite; }
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+.scan-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+.scan-table thead th { text-align: left; padding: 12px 16px; font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--cfnat-muted-foreground); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--cfnat-border); background: var(--cfnat-muted); }
+.scan-table tbody td { padding: 12px 16px; color: var(--cfnat-card-foreground); border-bottom: 1px solid var(--cfnat-border); font-family: var(--font-display); font-size: var(--font-size-sm); }
+.scan-table tbody tr:last-child td { border-bottom: none; }
+.scan-table tbody tr:hover { background: rgba(88, 166, 255, 0.03); }
 
 /* ====== 日志 ====== */
 .log-viewer {
@@ -808,8 +932,8 @@ body {
       <div class="config-card">
         <div class="config-title">cfnat 运行状态</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px" id="dash-cfnat-status">
-          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">TLS</span><br><span class="tag" id="dash-cfnat-tls">--</span></div>
-          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">随机选取</span><br><span class="tag" id="dash-cfnat-random">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">TLS</span><br><span class="badge" id="dash-cfnat-tls">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">随机选取</span><br><span class="badge" id="dash-cfnat-random">--</span></div>
           <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">IP 池大小</span><br><span style="font-weight:700" id="dash-cfnat-pool">--</span></div>
           <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">转发轮换数</span><br><span style="font-weight:700" id="dash-cfnat-forward">--</span></div>
           <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">测速时长</span><br><span style="font-weight:700" id="dash-cfnat-speed">--</span></div>
@@ -838,9 +962,9 @@ body {
       <div class="config-card">
         <div class="config-title">添加地区</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center">
-          <input id="new-region-name" class="input" placeholder="名称 (HKG/LAX/JP)" style="width:120px">
-          <input id="new-region-code" class="input" placeholder="Colo 代码" style="width:120px">
-          <input id="new-region-port" class="input" placeholder="端口" value="1004" style="width:100px">
+          <input id="new-region-name" class="text-input" placeholder="名称 (HKG/LAX/JP)">
+          <input id="new-region-code" class="text-input" placeholder="Colo 代码">
+          <input type="number" id="new-region-port" class="num-input" placeholder="端口" value="1004">
           <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-size-sm);color:var(--cfnat-muted-foreground);cursor:pointer">
             <input type="checkbox" id="new-region-enabled" class="checkbox" checked> 启用
           </label>
@@ -871,32 +995,32 @@ body {
         <div class="config-subtitle">对应原 cfnat 的环境变量，控制代理转发行为。</div>
         <div class="config-row">
           <span class="config-label">TLS 连接 (tls)</span>
-          <input type="checkbox" id="cfnat-tls" class="switch">
+          <label class="toggle-switch"><input type="checkbox" id="cfnat-tls"><span class="toggle-track"></span></label>
           <span class="config-hint">启用 TLS 加密连接</span>
         </div>
         <div class="config-row">
           <span class="config-label">随机选取 IP (random)</span>
-          <input type="checkbox" id="cfnat-random" class="switch">
+          <label class="toggle-switch"><input type="checkbox" id="cfnat-random"><span class="toggle-track"></span></label>
           <span class="config-hint">随机选择 IP 进行转发</span>
         </div>
         <div class="config-row">
           <span class="config-label">IP 池大小 (ipnum)</span>
-          <input type="number" id="cfnat-pool" class="input" style="width:100px" min="1" max="100">
+          <input type="number" id="cfnat-pool" class="num-input" min="1" max="100">
           <span class="config-hint">每个地区保留的可用 IP 数量</span>
         </div>
         <div class="config-row">
           <span class="config-label">转发轮换数 (num)</span>
-          <input type="number" id="cfnat-forward" class="input" style="width:100px" min="1" max="20">
+          <input type="number" id="cfnat-forward" class="num-input" min="1" max="20">
           <span class="config-hint">同时用于转发的 IP 个数</span>
         </div>
         <div class="config-row">
           <span class="config-label">测速时长 (speedtime)</span>
-          <input type="number" id="cfnat-speed" class="input" style="width:100px" min="1" max="30">
+          <input type="number" id="cfnat-speed" class="num-input" min="1" max="30">
           <span class="config-hint">秒</span>
         </div>
         <div class="config-row">
           <span class="config-label">期望状态码 (code)</span>
-          <input type="number" id="cfnat-code" class="input" style="width:100px" min="100" max="599">
+          <input type="number" id="cfnat-code" class="num-input" min="100" max="599">
           <span class="config-hint">HTTP 请求期望返回的状态码</span>
         </div>
         <button class="btn btn-primary" id="btn-save-cfnat" style="margin-top:14px">保存配置</button>
@@ -910,14 +1034,14 @@ body {
         <p>IP 扫描与 CMIN2 节点探测</p>
       </div>
 
-      <div class="progress-panel" id="cfdata-progress" style="display:none">
+      <div class="progress-panel progress-panel-gradient" id="cfdata-progress" style="display:none">
         <div class="progress-stage">
           <span class="label" id="scan-stage">--</span>
           <span class="ip" id="scan-current-ip"></span>
           <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);margin-left:auto" id="scan-count">0 / 0</span>
         </div>
-        <div class="progress-bar-outer">
-          <div class="progress-bar-inner" id="scan-bar" style="width:0%"></div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill-v3" id="scan-bar" style="width:0%"></div>
         </div>
         <div class="progress-stats">
           <span id="scan-percent">阶段 0%</span>
@@ -926,13 +1050,13 @@ body {
       </div>
 
       <div class="config-card" id="scanner-status-panel">
-        <div class="config-title">扫描引擎状态</div>
+        <div class="config-title">扫描引擎状态 <span class="badge badge-default" style="background:rgba(167,139,250,0.1);color:var(--cfnat-accent);border-color:rgba(167,139,250,0.25)">V2.0</span></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
-          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">Colo-Aware</span><br><span class="tag" id="status-colo-aware">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">Colo-Aware</span><br><span class="badge" id="status-colo-aware">--</span></div>
           <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">映射表记录数</span><br><span style="font-weight:700" id="status-colo-map-count">--</span></div>
           <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">建图进度</span><br><span style="font-weight:700" id="status-colo-progress">--</span></div>
           <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">429 次数</span><br><span style="font-weight:700" id="status-429-count">--</span></div>
-          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">速率限制器</span><br><span class="tag" id="status-rate-limit">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">速率限制器</span><br><span class="badge" id="status-rate-limit">--</span></div>
         </div>
       </div>
 
@@ -945,45 +1069,45 @@ body {
         <div class="config-title">cfdata 扫描配置</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="config-row">
-            <input type="checkbox" id="scanner-enabled" class="switch">
+            <label class="toggle-switch"><input type="checkbox" id="scanner-enabled"><span class="toggle-track"></span></label>
             <span class="config-label">启用后台扫描</span>
-            <input type="number" id="scanner-interval" class="input" style="width:100px" min="1" max="1440">
+            <input type="number" id="scanner-interval" class="num-input" min="1" max="1440">
             <span class="config-hint">分钟/次</span>
           </div>
           <div class="config-row">
             <span class="config-label">合格速度 (minbw)</span>
-            <input type="number" id="scanner-min-speed" class="input" style="width:100px" min="0.1" step="0.5">
+            <input type="number" id="scanner-min-speed" class="num-input" min="0.1" step="0.5">
             <span class="config-hint">MB/s</span>
           </div>
           <div class="config-row">
             <span class="config-label">IP 类型 (ips)</span>
-            <select id="scanner-ip-type" class="select" style="width:100px"><option value="4">IPv4</option><option value="6">IPv6</option></select>
+            <select id="scanner-ip-type" class="custom-select"><option value="4">IPv4</option><option value="6">IPv6</option></select>
             <span class="config-label">端口 (port)</span>
-            <input type="number" id="scanner-port" class="input" style="width:90px" min="1" max="65535">
+            <input type="number" id="scanner-port" class="num-input" min="1" max="65535">
           </div>
           <div class="config-row">
             <span class="config-label">每/24抽样</span>
-            <select id="scanner-samples" class="select" style="width:130px">
+            <select id="scanner-samples" class="custom-select">
               <option value="1">1 (快速)</option><option value="10">10</option><option value="50">50</option>
               <option value="100">100 (推荐)</option><option value="255">255 (全测)</option>
             </select>
             <span class="config-label">延迟阈值 (delay)</span>
-            <input type="number" id="scanner-delay" class="input" style="width:90px" min="10">
+            <input type="number" id="scanner-delay" class="num-input" min="10">
             <span class="config-hint">ms</span>
           </div>
           <div class="config-row">
             <span class="config-label">并发数 (task)</span>
-            <input type="number" id="scanner-threads" class="input" style="width:90px" min="1" max="500">
+            <input type="number" id="scanner-threads" class="num-input" min="1" max="500">
             <span class="config-label">测速网址 (domain)</span>
-            <input type="text" id="scanner-url" class="input" style="width:280px" placeholder="auto">
+            <input type="text" id="scanner-url" class="text-input" placeholder="auto" style="width:200px">
           </div>
           <div class="config-row">
-            <input type="checkbox" id="scanner-only-cmin2" class="switch">
+            <label class="toggle-switch"><input type="checkbox" id="scanner-only-cmin2"><span class="toggle-track"></span></label>
             <span class="config-label">只保留 CMIN2 节点</span>
           </div>
           <div class="config-row">
             <span class="config-label">测速模式 (speed_test_mode)</span>
-            <select id="scanner-speed-test-mode" class="select" style="width:160px">
+            <select id="scanner-speed-test-mode" class="custom-select">
               <option value="speed">speed（下载测速）</option>
               <option value="latency">latency（仅延迟检测）</option>
               <option value="both">both（延迟过滤后测速）</option>
@@ -991,14 +1115,14 @@ body {
             <span class="config-hint">选择 IP 测速方式</span>
           </div>
           <div class="config-row">
-            <input type="checkbox" id="scanner-colo-aware" class="switch">
+            <label class="toggle-switch toggle-accent"><input type="checkbox" id="scanner-colo-aware"><span class="toggle-track"></span></label>
             <span class="config-label">启用 Colo-Aware 建图</span>
             <span class="config-label">重建间隔 (小时)</span>
-            <input type="number" id="scanner-map-interval" class="input" style="width:80px" min="1" max="168">
+            <input type="number" id="scanner-map-interval" class="num-input" min="1" max="168">
             <span class="config-label">每 Colo 目标 IP</span>
-            <input type="number" id="scanner-target-ips" class="input" style="width:80px" min="1" max="50">
+            <input type="number" id="scanner-target-ips" class="num-input" min="1" max="50">
             <span class="config-label">随机探索比例</span>
-            <input type="number" id="scanner-explore-ratio" class="input" style="width:80px" min="0" max="1" step="0.05">
+            <input type="number" id="scanner-explore-ratio" class="num-input" min="0" max="1" step="0.05">
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:14px">
@@ -1028,11 +1152,11 @@ body {
 
       <div class="ip-table-toolbar">
         <div class="filter-row">
-          <select id="ip-filter-region" class="select" style="width:140px"><option value="">全部地区</option></select>
-          <select id="ip-filter-source" class="select" style="width:140px">
+          <select id="ip-filter-region" class="custom-select"><option value="">全部地区</option></select>
+          <select id="ip-filter-source" class="custom-select">
             <option value="">全部来源</option><option value="manual">手动</option><option value="auto">自动扫描</option><option value="import">批量导入</option>
           </select>
-          <input type="text" id="ip-filter-search" class="input" placeholder="搜索 IP..." style="width:180px">
+          <input type="text" id="ip-filter-search" class="text-input" placeholder="搜索 IP..." style="width:180px">
           <button class="btn btn-default" id="btn-refresh-ips">刷新</button>
           <div style="flex:1"></div>
           <button class="btn btn-error btn-sm" id="btn-batch-delete" style="display:none">删除选中</button>
@@ -1044,10 +1168,10 @@ body {
       <div class="config-card">
         <div class="config-title">手动添加 IP</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="add-ip-ip" class="input" placeholder="IP 地址" style="width:160px">
-          <input type="text" id="add-ip-region" class="input" placeholder="Colo (KIX)" style="width:100px">
-          <input type="text" id="add-ip-colo" class="input" placeholder="Colo" style="width:100px">
-          <input type="number" id="add-ip-speed" class="input" placeholder="速度 MB/s" style="width:110px" min="0">
+          <input type="text" id="add-ip-ip" class="text-input" placeholder="IP 地址" style="width:160px">
+          <input type="text" id="add-ip-region" class="text-input" placeholder="Colo (KIX)">
+          <input type="text" id="add-ip-colo" class="text-input" placeholder="Colo">
+          <input type="number" id="add-ip-speed" class="num-input" placeholder="速度 MB/s" min="0">
           <button class="btn btn-primary btn-sm" id="btn-add-ip">添加</button>
         </div>
       </div>
@@ -1122,10 +1246,10 @@ body {
 
       <div class="config-card" style="padding:12px 16px">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="log-filter-source" class="select" style="width:120px">
+          <select id="log-filter-source" class="custom-select">
             <option value="">全部来源</option><option value="system">system</option><option value="proxy">proxy</option><option value="scanner">scanner</option><option value="webui">webui</option>
           </select>
-          <select id="log-filter-level" class="select" style="width:120px">
+          <select id="log-filter-level" class="custom-select">
             <option value="">全部级别</option><option value="info">info+</option><option value="warn">warn+</option><option value="error">error</option>
           </select>
           <button class="btn btn-primary btn-sm" id="btn-log-connect">▶ 连接</button>
@@ -1150,22 +1274,22 @@ body {
         <div style="max-width:500px">
           <div class="config-row">
             <span class="config-label">WebUI 端口</span>
-            <input type="number" id="settings-port" class="input" min="1" max="65535">
+            <input type="number" id="settings-port" class="num-input" min="1" max="65535">
             <span class="config-hint">(修改需重启)</span>
           </div>
           <div class="config-row">
             <span class="config-label">日志级别</span>
-            <select id="settings-log-level" class="select" style="width:120px">
+            <select id="settings-log-level" class="custom-select">
               <option value="debug">debug</option><option value="info">info</option><option value="warn">warn</option><option value="error">error</option>
             </select>
           </div>
           <div class="config-row">
             <span class="config-label">数据目录</span>
-            <input type="text" id="settings-data-dir" class="input" style="width:300px">
+            <input type="text" id="settings-data-dir" class="text-input" style="width:300px">
           </div>
           <div class="config-row">
             <span class="config-label">API Token</span>
-            <input type="password" id="settings-token" class="input" style="width:300px" placeholder="可选，留空不校验">
+            <input type="password" id="settings-token" class="text-input" style="width:300px" placeholder="可选，留空不校验">
           </div>
         </div>
         <button class="btn btn-primary" id="btn-save-settings" style="margin-top:14px">保存</button>
@@ -1178,64 +1302,84 @@ body {
         <div id="proxy-forward-content" style="display:none;margin-top:12px">
           <div class="config-row">
             <span class="config-label">最大重试次数</span>
-            <input type="number" id="pf-max-retries" class="input" style="width:100px" min="0" max="5">
+            <input type="number" id="pf-max-retries" class="num-input" min="0" max="5">
             <span class="config-hint">连接失败后的重试次数，0=不重试</span>
           </div>
           <div class="config-row">
             <span class="config-label">负载均衡策略</span>
-            <select id="pf-lb-mode" class="select" style="width:160px">
+            <select id="pf-lb-mode" class="custom-select">
               <option value="random">纯随机</option><option value="least-conn">最少连接数</option><option value="weighted-random">加权随机</option>
+              <option value="quality-score">质量分数</option>
             </select>
+            <span class="config-hint">基于 EWMA 延迟/丢包的综合质量调度（V2.2）</span>
           </div>
           <div class="config-row">
             <span class="config-label">EWMA 样本窗口</span>
-            <input type="number" id="pf-ewma" class="input" style="width:100px" min="20" max="200">
+            <input type="number" id="pf-ewma" class="num-input" min="20" max="200">
             <span class="config-hint">质量指标平滑窗口大小（20-200）</span>
           </div>
           <div class="config-row">
             <span class="config-label">健康检查间隔</span>
-            <input type="number" id="pf-health-interval" class="input" style="width:100px" min="30" max="600">
+            <input type="number" id="pf-health-interval" class="num-input" min="30" max="600">
             <span class="config-hint">自动健康检查间隔秒（30-600）</span>
           </div>
           <div class="config-row">
             <span class="config-label">最大延迟阈值</span>
-            <input type="number" id="pf-max-delay" class="input" style="width:100px" min="100" max="2000">
+            <input type="number" id="pf-max-delay" class="num-input" min="100" max="2000">
             <span class="config-hint">IP 隔离延迟阈值 ms（100-2000）</span>
           </div>
           <div class="config-row">
             <span class="config-label">最大丢包率</span>
-            <input type="number" id="pf-max-loss" class="input" style="width:100px" min="1" max="50">
+            <input type="number" id="pf-max-loss" class="num-input" min="1" max="50">
             <span class="config-hint">IP 隔离丢包率阈值 %（1-50）</span>
           </div>
           <div class="config-row">
             <span class="config-label">隔离时长</span>
-            <input type="number" id="pf-isolation" class="input" style="width:100px" min="60" max="900">
+            <input type="number" id="pf-isolation" class="num-input" min="60" max="900">
             <span class="config-hint">IP 隔离后保留时间秒（60-900）</span>
           </div>
           <div class="config-row">
             <span class="config-label">预热保护期</span>
-            <input type="number" id="pf-warmup" class="input" style="width:100px" min="0" max="300">
+            <input type="number" id="pf-warmup" class="num-input" min="0" max="300">
             <span class="config-hint">新 IP 入库后免隔离时间秒（0-300）</span>
           </div>
           <div class="config-row">
             <span class="config-label">连接亲和性</span>
-            <input type="checkbox" id="pf-sticky" class="switch">
+            <label class="toggle-switch"><input type="checkbox" id="pf-sticky"><span class="toggle-track"></span></label>
             <span class="config-hint">同一客户端短时间内复用同一 IP</span>
           </div>
           <div class="config-row">
             <span class="config-label">亲和性 TTL</span>
-            <input type="number" id="pf-sticky-ttl" class="input" style="width:100px" min="5" max="60">
+            <input type="number" id="pf-sticky-ttl" class="num-input" min="5" max="60">
             <span class="config-hint">亲和性保持时间秒（5-60）</span>
           </div>
           <div class="config-row">
             <span class="config-label">主池容量</span>
-            <input type="number" id="pf-pool-size" class="input" style="width:100px" min="5" max="100">
+            <input type="number" id="pf-pool-size" class="num-input" min="5" max="100">
             <span class="config-hint">活跃 IP 池大小（5-100）</span>
           </div>
           <div class="config-row">
             <span class="config-label">备选池比例</span>
-            <input type="number" id="pf-standby-ratio" class="input" style="width:100px" min="0.2" max="1.0" step="0.1">
+            <input type="number" id="pf-standby-ratio" class="num-input" min="0.2" max="1.0" step="0.1">
             <span class="config-hint">备选池容量为主池的比例（0.2-1.0）</span>
+          </div>
+          <div class="config-row" style="border-top:1px dashed var(--cfnat-border);margin-top:8px;padding-top:12px">
+            <span class="config-label" style="color:var(--cfnat-accent);font-weight:600">V2.2 增强</span>
+          </div>
+          <div class="config-row">
+            <span class="config-label">自适应阈值</span>
+            <label class="toggle-switch"><input type="checkbox" id="pf-adaptive"><span class="toggle-track"></span></label>
+            <span class="config-hint">基于 P50/P90 动态调整延迟阈值</span>
+          </div>
+          <div class="config-row">
+            <span class="config-label">新 IP 优先调度</span>
+            <label class="toggle-switch"><input type="checkbox" id="pf-new-ip-priority"><span class="toggle-track"></span></label>
+            <span class="config-hint">预热期内新 IP 获得 30% 优先调度概率</span>
+          </div>
+          <div class="config-row">
+            <span class="config-label">质量淘汰阈值</span>
+            <input type="number" id="pf-quality-threshold" class="num-input" min="0" max="100">
+            <span class="config-hint">综合质量分数低于此值的 IP 将被淘汰（0-100）</span>
           </div>
           <button class="btn btn-primary" id="btn-save-pf" style="margin-top:14px">保存配置</button>
         </div>
@@ -1462,9 +1606,9 @@ function renderDash() {
 
   // cfnat 状态
   const cf = State.cfnatConfig;
-  $('dash-cfnat-tls').className = 'tag ' + (cf.tls_mode ? 'tag-success' : 'tag-default');
+  $('dash-cfnat-tls').className = 'badge ' + (cf.tls_mode ? 'badge-success' : 'badge-default');
   $('dash-cfnat-tls').textContent = cf.tls_mode ? '开启' : '关闭';
-  $('dash-cfnat-random').className = 'tag ' + (cf.random_pick ? 'tag-success' : 'tag-default');
+  $('dash-cfnat-random').className = 'badge ' + (cf.random_pick ? 'badge-success' : 'badge-default');
   $('dash-cfnat-random').textContent = cf.random_pick ? '是' : '否';
   $('dash-cfnat-pool').textContent = cf.ip_pool_size || '--';
   $('dash-cfnat-forward').textContent = cf.forward_num || '--';
@@ -1479,7 +1623,7 @@ function renderScanTable(tableId, data) {
   const tbody = $(tableId).querySelector('tbody');
   if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--cfnat-muted-foreground)">暂无数据</td></tr>'; return; }
   tbody.innerHTML = data.map(function(r) {
-    const statusMap = { ok: 'tag-success', error: 'tag-error', running: 'tag-warning' };
+    const statusMap = { ok: 'badge-success', error: 'badge-error', running: 'badge-warning' };
     let cidrSource = '-', cidr24Segments = '-', probeCount = '-';
     if (r.cidr_source) cidrSource = r.cidr_source;
     if (r.cidr24_segments !== undefined && r.cidr24_segments !== null) cidr24Segments = r.cidr24_segments;
@@ -1495,7 +1639,7 @@ function renderScanTable(tableId, data) {
     return '<tr>' +
       '<td>' + (r.id || '-') + '</td>' +
       '<td>' + escapeHtml(r.started_at || '') + '</td>' +
-      '<td><span class="tag ' + (statusMap[r.status] || 'tag-default') + '">' + escapeHtml(r.status) + '</span></td>' +
+      '<td><span class="badge ' + (statusMap[r.status] || 'badge-default') + '">' + escapeHtml(r.status) + '</span></td>' +
       '<td>' + (r.total || 0) + '</td>' +
       '<td>' + (r.passed || 0) + '</td>' +
       '<td>' + escapeHtml(String(cidrSource)) + '</td>' +
@@ -1514,7 +1658,7 @@ function renderRegions() {
       '<td>' + escapeHtml(r.name) + '</td>' +
       '<td>' + escapeHtml(r.code || '') + '</td>' +
       '<td>' + r.port + '</td>' +
-      '<td><span class="tag ' + (r.enabled ? 'tag-success' : 'tag-default') + '">' + (r.enabled ? '开启' : '关闭') + '</span></td>' +
+      '<td><span class="badge ' + (r.enabled ? 'badge-success' : 'badge-default') + '">' + (r.enabled ? '开启' : '关闭') + '</span></td>' +
       '<td>' + (r.ip_count || 0) + '</td>' +
       '<td>' +
         '<button class="btn btn-sm ' + (r.enabled ? 'btn-default' : 'btn-primary') + '" onclick="toggleRegion(\'' + escapeHtml(r.name) + '\')">' + (r.enabled ? '停用' : '启用') + '</button> ' +
@@ -1579,14 +1723,14 @@ function renderScannerError() {
 function renderScannerStatus() {
   const s = State.scannerStatus;
   const coloAwareEl = $('status-colo-aware');
-  coloAwareEl.className = 'tag ' + (s.colo_aware ? 'tag-success' : 'tag-default');
+  coloAwareEl.className = 'badge ' + (s.colo_aware ? 'badge-success' : 'badge-default');
   coloAwareEl.textContent = s.colo_aware ? '开启' : '关闭';
   $('status-colo-map-count').textContent = s.colo_map_count !== undefined && s.colo_map_count !== null ? s.colo_map_count : '--';
   $('status-colo-progress').textContent = s.colo_progress || '--';
   $('status-429-count').textContent = s.rate_limit_count !== undefined && s.rate_limit_count !== null ? s.rate_limit_count : '--';
   const rateLimitEl = $('status-rate-limit');
   const isBackoff = s.rate_limit_status === '退避中' || s.rate_limit_status === 'backoff';
-  rateLimitEl.className = 'tag ' + (isBackoff ? 'tag-warning' : 'tag-success');
+  rateLimitEl.className = 'badge ' + (isBackoff ? 'badge-warning' : 'badge-success');
   rateLimitEl.textContent = s.rate_limit_status || '正常';
 }
 
@@ -1597,15 +1741,15 @@ function renderIPs() {
   const map = getColoToRegionMap();
   tbody.innerHTML = data.map(function(r) {
     const key = r.ip + '@' + r.region;
-    const sourceMap = { manual: 'tag-info', auto: 'tag-warning', import: 'tag-success' };
+    const sourceMap = { manual: 'badge-info', auto: 'badge-warning', import: 'badge-success' };
     return '<tr>' +
       '<td><input type="checkbox" class="checkbox ip-check" data-key="' + escapeHtml(key) + '" ' + (State.checkedIPKeys.includes(key) ? 'checked' : '') + '></td>' +
       '<td><code style="font-size:12px">' + escapeHtml(r.ip) + '</code></td>' +
-      '<td><span class="tag tag-info">' + escapeHtml(r.region) + '</span></td>' +
-      '<td><span class="tag tag-success">' + escapeHtml(map[r.region] || '-') + '</span></td>' +
+      '<td><span class="badge badge-info">' + escapeHtml(r.region) + '</span></td>' +
+      '<td><span class="badge badge-success">' + escapeHtml(map[r.region] || '-') + '</span></td>' +
       '<td>' + (r.speed_mbps ? r.speed_mbps.toFixed(2) + ' MB/s' : '-') + '</td>' +
       '<td>' + (r.latency_ms ? r.latency_ms.toFixed(1) + ' ms' : '-') + '</td>' +
-      '<td><span class="tag ' + (sourceMap[r.source] || 'tag-warning') + '">' + escapeHtml(r.source || '-') + '</span></td>' +
+      '<td><span class="badge ' + (sourceMap[r.source] || 'badge-warning') + '">' + escapeHtml(r.source || '-') + '</span></td>' +
       '<td>' + (r.fail_count || 0) + '</td>' +
       '<td><button class="btn btn-sm btn-error" onclick="removeIP(\'' + escapeHtml(r.ip) + '\', \'' + escapeHtml(r.region) + '\')">删除</button></td>' +
     '</tr>';
@@ -1663,7 +1807,7 @@ function renderImportResult() {
 
   $('import-cmin2-title').textContent = 'CMIN2 (' + cmin2Items.length + ')';
   $('import-cmin2-table').querySelector('tbody').innerHTML = cmin2Items.map(function(r) {
-    return '<tr><td><code style="font-size:12px">' + escapeHtml(r.ip) + '</code></td><td><span class="tag tag-success">' + escapeHtml(r.colo) + '</span></td><td>' + r.latency_ms.toFixed(0) + ' ms</td><td>' + (r.speed_mbps ? r.speed_mbps.toFixed(2) + ' MB/s' : '-') + '</td><td>' + (r.imported ? '✓' : '-') + '</td><td>' + escapeHtml(r.note || '') + '</td></tr>';
+    return '<tr><td><code style="font-size:12px">' + escapeHtml(r.ip) + '</code></td><td><span class="badge badge-success">' + escapeHtml(r.colo) + '</span></td><td>' + r.latency_ms.toFixed(0) + ' ms</td><td>' + (r.speed_mbps ? r.speed_mbps.toFixed(2) + ' MB/s' : '-') + '</td><td>' + (r.imported ? '✓' : '-') + '</td><td>' + escapeHtml(r.note || '') + '</td></tr>';
   }).join('');
 
   $('import-other-toggle').textContent = (State.showOtherItems ? '▼' : '▶') + ' 非 CMIN2 (' + otherItems.length + ')';
@@ -1716,6 +1860,9 @@ function renderProxyForwardForm() {
   $('pf-sticky-ttl').value = pf.sticky_ttl;
   $('pf-pool-size').value = pf.active_pool_size;
   $('pf-standby-ratio').value = pf.standby_pool_ratio;
+  $('pf-adaptive').checked = pf.adaptive_threshold || false;
+  $('pf-new-ip-priority').checked = pf.new_ip_priority || false;
+  $('pf-quality-threshold').value = pf.quality_threshold || 30;
   $('pf-sticky-ttl').disabled = !pf.sticky_enabled;
 }
 
@@ -2011,6 +2158,9 @@ async function saveProxyForward() {
       sticky_ttl: parseInt($('pf-sticky-ttl').value, 10) || 15,
       active_pool_size: parseInt($('pf-pool-size').value, 10) || 20,
       standby_pool_ratio: parseFloat($('pf-standby-ratio').value) || 0.5,
+      adaptive_threshold: $('pf-adaptive').checked,
+      new_ip_priority: $('pf-new-ip-priority').checked,
+      quality_threshold: parseInt($('pf-quality-threshold').value, 10) || 30,
     };
     await api('PUT', '/api/proxy/forward', body);
     Object.assign(State.proxyForwardForm, body);

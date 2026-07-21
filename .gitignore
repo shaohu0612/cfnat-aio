@@ -4,3 +4,11 @@ cfnat-aio.db
 *.exe
 data/
 cmd/probe-test/
+*-design/
+更新记录.md
+使用说明文档.md
+产品设计文档.md
+产品版本迭代方案.md
+产品版本迭代方案v2.md
+测试用例.md
+测试用例v2.md

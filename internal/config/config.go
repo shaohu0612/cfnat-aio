@@ -40,12 +40,17 @@ type ScannerConfig struct {
 	Threads       int     `json:"threads"`         // 并发数
 	ScanMode      string  `json:"scan_mode"`       // tcping / httping
 	SpeedTestURL  string  `json:"speed_test_url"`  // 测速下载 URL（auto=自动选）
-	OnlyCMIN2     bool    `json:"only_cmin2"`      // 是否只保留 CMIN2 节点
-	CMIN2Colos    string  `json:"cmin2_colos"`     // CMIN2 节点列表（逗号分隔）
-	NextRunTime   string  `json:"next_run_time"`   // 下次运行时间（运行时计算）
-	LastRunTime   string  `json:"last_run_time"`   // 上次完成时间
-	LastRunStatus string  `json:"last_run_status"` // 上次状态
-	LastRunStats  string  `json:"last_run_stats"`  // 上次扫描统计 JSON
+	OnlyCMIN2          bool    `json:"only_cmin2"`           // 是否只保留 CMIN2 节点
+	CMIN2Colos         string  `json:"cmin2_colos"`          // CMIN2 节点列表（逗号分隔）
+	SpeedTestMode      string  `json:"speed_test_mode"`      // 测速模式：speed/latency/both
+	ColoAware          bool    `json:"colo_aware"`           // 是否启用分层精准扫描
+	MapRebuildInterval int     `json:"map_rebuild_interval"` // 映射表重建间隔（小时）
+	TargetIPsPerColo   int     `json:"target_ips_per_colo"`  // 每个 colo 目标 IP 数
+	ExploreRatio       float64 `json:"explore_ratio"`        // 随机探索比例
+	NextRunTime        string  `json:"next_run_time"`        // 下次运行时间（运行时计算）
+	LastRunTime        string  `json:"last_run_time"`        // 上次完成时间
+	LastRunStatus      string  `json:"last_run_status"`      // 上次状态
+	LastRunStats       string  `json:"last_run_stats"`       // 上次扫描统计 JSON
 }
 
 // CfnatConfig 代理转发配置（对应原 cfnat-docker-compose 环境变量）
@@ -178,18 +183,23 @@ func (m *Manager) loadAll() error {
 
 func defaultScannerConfig() ScannerConfig {
 	return ScannerConfig{
-		Enabled:      false,
-		Interval:     60,
-		MinSpeedMBps: 3.0,
-		IPType:       4,
-		Port:         443,
-		SamplesPer24: 100,
-		MaxDelayMs:   500,
-		Threads:      100,
-		ScanMode:     "tcping",
-		SpeedTestURL: "auto",
-		OnlyCMIN2:    true,
-		CMIN2Colos:   "HKG,SIN,NRT,KIX,LAX,SJC,SEA,FRA,AMS,LHR,TPE,ICN,MNL,BKK,MFM",
+		Enabled:            false,
+		Interval:           60,
+		MinSpeedMBps:       0.5,
+		IPType:             4,
+		Port:               443,
+		SamplesPer24:       100,
+		MaxDelayMs:         500,
+		Threads:            100,
+		ScanMode:           "tcping",
+		SpeedTestURL:       "auto",
+		OnlyCMIN2:          false,
+		CMIN2Colos:         "HKG,SIN,NRT,KIX,LAX,SJC,SEA,FRA,AMS,LHR,TPE,ICN,MNL,BKK,MFM",
+		SpeedTestMode:      "speed",
+		ColoAware:          true,
+		MapRebuildInterval: 24,
+		TargetIPsPerColo:   5,
+		ExploreRatio:       0.1,
 	}
 }
 

@@ -22,6 +22,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -35,14 +37,18 @@ import (
 
 // ScanProgress 扫描进度（暴露给 WebUI）
 type ScanProgress struct {
-	Running     bool   `json:"running"`
-	Stage       string `json:"stage"`       // 1/5 CIDR加载, 2/5 抽样, 3/5 探活, 4/5 测速, 5/5 入库
-	StageDone   int64  `json:"stage_done"`  // 当前阶段已完成数
-	StageTotal  int64  `json:"stage_total"` // 当前阶段总数
-	CurrentIP   string `json:"current_ip"`  // 当前正在测试的 IP
-	Percent     int    `json:"percent"`     // 当前阶段百分比
-	TotalScanned int64 `json:"total_scanned"` // 总已扫描
-	TotalPassed  int64 `json:"total_passed"`  // 总已通过
+	Running      bool   `json:"running"`
+	Stage        string `json:"stage"`         // 1/5 CIDR加载, 2/5 抽样, 3/5 探活, 4/5 测速, 5/5 入库
+	StageDone    int64  `json:"stage_done"`    // 当前阶段已完成数
+	StageTotal   int64  `json:"stage_total"`   // 当前阶段总数
+	CurrentIP    string `json:"current_ip"`    // 当前正在测试的 IP
+	Percent      int    `json:"percent"`       // 当前阶段百分比
+	TotalScanned int64  `json:"total_scanned"` // 总已扫描
+	TotalPassed  int64  `json:"total_passed"`  // 总已通过
+	CIDRSource     string `json:"cidrSource"`    // CIDR 来源：local / remote / builtin
+	CIDRFile       string `json:"cidrFile"`      // 本地文件名
+	CIDRSegments   int    `json:"cidrSegments"`  // CIDR 段数
+	CIDR24Segments int    `json:"cidr24Segments"` // /24 段数
 }
 
 // Scanner 扫描器
@@ -281,9 +287,59 @@ var builtinCIDRsV6 = []string{
 	"2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
 }
 
+// loadLocalCIDRs 从本地文件加载 CIDR 列表
+// 依次尝试：直接文件名、/data/ 目录、当前目录
+func (s *Scanner) loadLocalCIDRs(filename string) ([]string, error) {
+	paths := []string{
+		filename,
+		filepath.Join("/data", filename),
+		filepath.Join(".", filename),
+	}
+	for _, p := range paths {
+		f, err := os.Open(p)
+		if err != nil {
+			continue
+		}
+		var cidrs []string
+		sc := bufio.NewScanner(f)
+		for sc.Scan() {
+			line := strings.TrimSpace(sc.Text())
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			_, _, err := net.ParseCIDR(line)
+			if err != nil {
+				continue
+			}
+			cidrs = append(cidrs, line)
+		}
+		_ = f.Close()
+		if len(cidrs) > 0 {
+			logging.InfoTo("scanner", "使用本地 IP 库: %s (%d 段)", p, len(cidrs))
+			return cidrs, nil
+		}
+	}
+	return nil, os.ErrNotExist
+}
+
 // loadCIDRs 加载 Cloudflare IP 段列表
-// 优先从远程获取，失败时使用内置列表作为 fallback
+// 优先加载本地文件，不存在时从远程获取，失败时使用内置列表作为 fallback
 func (s *Scanner) loadCIDRs(ipType int) ([]string, error) {
+	localFile := "ip.txt"
+	if ipType == 6 {
+		localFile = "ip6.txt"
+	}
+	cidrs, err := s.loadLocalCIDRs(localFile)
+	if err == nil && len(cidrs) > 0 {
+		s.mu.Lock()
+		s.progress.CIDRSource = "local"
+		s.progress.CIDRFile = localFile
+		s.progress.CIDRSegments = len(cidrs)
+		s.mu.Unlock()
+		return cidrs, nil
+	}
+	logging.InfoTo("scanner", "本地 IP 库不存在，使用远程 URL")
+
 	var sourceURL string
 	var fallback []string
 	if ipType == 4 {
@@ -302,7 +358,7 @@ func (s *Scanner) loadCIDRs(ipType int) ([]string, error) {
 	}
 	defer resp.Body.Close()
 
-	var cidrs []string
+	cidrs = nil
 	sc := bufio.NewScanner(resp.Body)
 	for sc.Scan() {
 		line := strings.TrimSpace(sc.Text())
@@ -319,7 +375,61 @@ func (s *Scanner) loadCIDRs(ipType int) ([]string, error) {
 
 // === 按 /24 抽样 ===
 
-// sampleCIDRs 从每个 CIDR 中抽样若干 IP
+// splitTo24 将大段 CIDR 拆分为 /24 段
+func splitTo24(cidr string) []string {
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil
+	}
+	ones, _ := ipnet.Mask.Size()
+	if ones >= 24 {
+		return []string{cidr}
+	}
+	// IPv6 不拆分，直接返回原 CIDR
+	if ip.To4() == nil {
+		return []string{cidr}
+	}
+	count := 1 << (24 - ones)
+	base := ipnet.IP.To4()
+	baseVal := binary.BigEndian.Uint32(base)
+	var out []string
+	for i := 0; i < count; i++ {
+		subnetVal := baseVal + uint32(i)<<8
+		subnet := make(net.IP, 4)
+		binary.BigEndian.PutUint32(subnet, subnetVal)
+		out = append(out, fmt.Sprintf("%s/24", subnet.String()))
+	}
+	return out
+}
+
+// randomIPInCIDR 从指定 CIDR 中随机抽取一个 IP（避开网络地址和广播地址）
+func randomIPInCIDR(cidr string) string {
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return ""
+	}
+	ones, bits := ipnet.Mask.Size()
+	hostBits := bits - ones
+	if hostBits <= 0 {
+		return ip.String()
+	}
+	// 使用 big.Int 计算网段大小，避免 int 溢出（IPv6 网段可能非常大）
+	size := new(big.Int).Lsh(big.NewInt(1), uint(hostBits))
+	// 避开网络地址(0)和广播地址(size-1)，有效偏移为 [1, size-2]
+	if size.Cmp(big.NewInt(2)) <= 0 {
+		return ip.String()
+	}
+	maxOffset := new(big.Int).Sub(size, big.NewInt(2)) // size - 2
+	if maxOffset.Sign() <= 0 {
+		return ip.String()
+	}
+	offset, _ := rand.Int(rand.Reader, maxOffset)
+	offset.Add(offset, big.NewInt(1)) // 偏移 +1，确保不是网络地址
+	ip = addIPOffset(ipnet.IP, offset.Int64())
+	return ip.String()
+}
+
+// sampleCIDRs 从每个 /24 中抽样若干 IP
 // samplesPer24: 1=原 cfdata 模式, 3=折中, 5=激进, 255=全测
 func (s *Scanner) sampleCIDRs(cidrs []string, samplesPer24, ipType int) []string {
 	var out []string
@@ -330,23 +440,23 @@ func (s *Scanner) sampleCIDRs(cidrs []string, samplesPer24, ipType int) []string
 		samplesPer24 = 255
 	}
 
+	// 先将所有 CIDR 拆分为 /24 段
+	var all24 []string
 	for _, c := range cidrs {
-		_, ipnet, err := net.ParseCIDR(c)
-		if err != nil {
-			continue
-		}
-		ones, bits := ipnet.Mask.Size()
-		hostBits := bits - ones
-		if hostBits <= 0 {
-			continue
-		}
-		// 使用 big.Int 计算网段大小，避免 int 溢出（IPv6 网段可能非常大）
-		size := new(big.Int).Lsh(big.NewInt(1), uint(hostBits))
-		// 抽样 N 个
+		all24 = append(all24, splitTo24(c)...)
+	}
+
+	s.mu.Lock()
+	s.progress.CIDR24Segments = len(all24)
+	s.mu.Unlock()
+
+	// 对每个 /24 段抽样
+	for _, cidr24 := range all24 {
 		for i := 0; i < samplesPer24; i++ {
-			offset, _ := rand.Int(rand.Reader, size)
-			ip := addIPOffset(ipnet.IP, offset.Int64())
-			out = append(out, ip.String())
+			ip := randomIPInCIDR(cidr24)
+			if ip != "" {
+				out = append(out, ip)
+			}
 		}
 		// 调试日志：打印前几个生成的 IP
 		start := len(out) - samplesPer24
@@ -357,9 +467,9 @@ func (s *Scanner) sampleCIDRs(cidrs []string, samplesPer24, ipType int) []string
 		if len(sampleIPs) > 3 {
 			sampleIPs = sampleIPs[:3]
 		}
-		logging.InfoTo("scanner", "    CIDR %s (base=%v, len=%d) → 示例: %v", c, ipnet.IP, len(ipnet.IP), sampleIPs)
-		_ = ipType // 保留参数（未来 IPv6 可能区分）
+		logging.InfoTo("scanner", "    /24 %s → 示例: %v", cidr24, sampleIPs)
 	}
+	_ = ipType // 保留参数（未来 IPv6 可能区分）
 	return out
 }
 
@@ -594,6 +704,39 @@ func (s *Scanner) speedTest(ctx context.Context, probes []ProbeResult, sc config
 		targets = targets[:maxSpeedTest]
 	}
 
+	// latency 模式：只测延迟，不测下载速度
+	if sc.SpeedTestMode == "latency" {
+		results := make([]speedResult, len(targets))
+		for i, t := range targets {
+			results[i] = speedResult{
+				ip:        t.IP,
+				colo:      t.Colo,
+				latency:   t.Latency,
+				speedMbps: 0,
+				ok:        true,
+			}
+		}
+		logging.InfoTo("scanner", "    延迟模式: %d 个 IP 直接标记为合格 (speed=0)", len(targets))
+		return results
+	}
+
+	// both 模式：先过滤延迟超标的
+	if sc.SpeedTestMode == "both" {
+		var filtered []ProbeResult
+		for _, t := range targets {
+			if sc.MaxDelayMs <= 0 || t.Latency <= float64(sc.MaxDelayMs) {
+				filtered = append(filtered, t)
+			}
+		}
+		if len(filtered) == 0 {
+			logging.InfoTo("scanner", "    both模式: 无延迟达标 IP，跳过测速")
+			return nil
+		}
+		logging.InfoTo("scanner", "    both模式: %d/%d 个延迟达标，开始测速", len(filtered), len(targets))
+		targets = filtered
+	}
+
+	// speed 模式（默认）及 both 模式：执行实际测速
 	// 测速并发数独立控制，避免 speed.cloudflare.com 429 速率限制
 	threads := sc.Threads
 	if threads <= 0 {
@@ -611,7 +754,7 @@ func (s *Scanner) speedTest(ctx context.Context, probes []ProbeResult, sc config
 
 	logging.InfoTo("scanner", "    开始测速: %d 个 IP，并发 %d，阈值 %.1fMB/s", total, threads, sc.MinSpeedMBps)
 
-		for i, t := range targets {
+	for i, t := range targets {
 		select {
 		case <-ctx.Done():
 			return results[:i]
@@ -747,6 +890,30 @@ func (s *Scanner) measureSpeed(ip, speedURL string, port int) (float64, bool) {
 
 // === 入库 ===
 
+func parseCodes(codeStr string) []string {
+	parts := strings.Split(codeStr, ",")
+	var out []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func findRegionByColo(colo string, regions []config.ProxyRegion) string {
+	for _, reg := range regions {
+		codes := parseCodes(reg.Code)
+		for _, c := range codes {
+			if c == colo {
+				return reg.Name
+			}
+		}
+	}
+	return colo
+}
+
 func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig) map[string]int {
 	out := make(map[string]int)
 	for _, r := range passed {
@@ -768,11 +935,15 @@ func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig)
 
 func (s *Scanner) saveByRegion(passed []speedResult, sc config.ScannerConfig) map[string]int {
 	out := make(map[string]int)
+	regions := s.cfgMgr.Regions()
 	for _, r := range passed {
 		if !r.ok || r.speedMbps < sc.MinSpeedMBps {
 			continue
 		}
-		region := r.colo
+		region := findRegionByColo(r.colo, regions)
+		if region == r.colo {
+			logging.WarnTo("scanner", "Colo %s 不在任何地区配置中，作为独立 region 入库", r.colo)
+		}
 		err := s.lib.AddIP(r.ip, region, "auto", r.colo, r.speedMbps, r.latency, "scanner")
 		if err == nil {
 			out[region]++

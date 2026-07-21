@@ -62,6 +62,24 @@ func (s *SQLiteStore) init() error {
 		passed INTEGER,
 		stats_json TEXT
 	);
+	CREATE TABLE IF NOT EXISTS cidr_colo_map (
+		cidr24     TEXT PRIMARY KEY,
+		colo       TEXT NOT NULL,
+		probed_at  TEXT,
+		ok_count   INTEGER DEFAULT 0,
+		fail_count INTEGER DEFAULT 0,
+		confidence REAL DEFAULT 0.0
+	);
+	CREATE INDEX IF NOT EXISTS idx_cidr_colo ON cidr_colo_map(colo);
+	CREATE TABLE IF NOT EXISTS colo_scan_state (
+		colo        TEXT PRIMARY KEY,
+		region      TEXT NOT NULL,
+		budget      INTEGER DEFAULT 10,
+		current_ips INTEGER DEFAULT 0,
+		target_ips  INTEGER DEFAULT 5,
+		last_scan   TEXT
+	);
+	CREATE INDEX IF NOT EXISTS idx_colo_region ON colo_scan_state(region);
 	`
 	_, err := s.db.Exec(schema)
 	return err

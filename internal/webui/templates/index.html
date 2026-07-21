@@ -821,7 +821,7 @@ body {
         <div class="config-title">最近扫描</div>
         <div style="overflow-x:auto">
           <table class="data-table" id="dash-scan-table">
-            <thead><tr><th>ID</th><th>开始时间</th><th>状态</th><th>候选</th><th>合格</th><th>备注</th></tr></thead>
+            <thead><tr><th>ID</th><th>开始时间</th><th>状态</th><th>候选</th><th>合格</th><th>CIDR 来源</th><th>/24 段数</th><th>探活数</th><th>备注</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -925,6 +925,17 @@ body {
         </div>
       </div>
 
+      <div class="config-card" id="scanner-status-panel">
+        <div class="config-title">扫描引擎状态</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">Colo-Aware</span><br><span class="tag" id="status-colo-aware">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">映射表记录数</span><br><span style="font-weight:700" id="status-colo-map-count">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">建图进度</span><br><span style="font-weight:700" id="status-colo-progress">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">429 次数</span><br><span style="font-weight:700" id="status-429-count">--</span></div>
+          <div><span style="color:var(--cfnat-muted-foreground);font-size:var(--font-size-xs)">速率限制器</span><br><span class="tag" id="status-rate-limit">--</span></div>
+        </div>
+      </div>
+
       <div class="alert alert-error" id="cfdata-error" style="display:none">
         最近一次扫描失败：<span id="cfdata-error-msg">未知错误</span><br>
         <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground)">请检查容器网络连接，确保能访问外网（Cloudflare IP 段列表源和测速服务器）</span>
@@ -970,6 +981,25 @@ body {
             <input type="checkbox" id="scanner-only-cmin2" class="switch">
             <span class="config-label">只保留 CMIN2 节点</span>
           </div>
+          <div class="config-row">
+            <span class="config-label">测速模式 (speed_test_mode)</span>
+            <select id="scanner-speed-test-mode" class="select" style="width:160px">
+              <option value="speed">speed（下载测速）</option>
+              <option value="latency">latency（仅延迟检测）</option>
+              <option value="both">both（延迟过滤后测速）</option>
+            </select>
+            <span class="config-hint">选择 IP 测速方式</span>
+          </div>
+          <div class="config-row">
+            <input type="checkbox" id="scanner-colo-aware" class="switch">
+            <span class="config-label">启用 Colo-Aware 建图</span>
+            <span class="config-label">重建间隔 (小时)</span>
+            <input type="number" id="scanner-map-interval" class="input" style="width:80px" min="1" max="168">
+            <span class="config-label">每 Colo 目标 IP</span>
+            <input type="number" id="scanner-target-ips" class="input" style="width:80px" min="1" max="50">
+            <span class="config-label">随机探索比例</span>
+            <input type="number" id="scanner-explore-ratio" class="input" style="width:80px" min="0" max="1" step="0.05">
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn btn-primary" id="btn-save-scanner">保存配置</button>
@@ -982,7 +1012,7 @@ body {
         <div class="config-title">扫描历史</div>
         <div style="overflow-x:auto">
           <table class="data-table" id="scanner-history-table">
-            <thead><tr><th>ID</th><th>开始时间</th><th>状态</th><th>候选</th><th>合格</th><th>备注</th></tr></thead>
+            <thead><tr><th>ID</th><th>开始时间</th><th>状态</th><th>候选</th><th>合格</th><th>CIDR 来源</th><th>/24 段数</th><th>探活数</th><th>备注</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -1285,7 +1315,8 @@ const State = {
   logLines: [],
   logFilter: { source: '', level: '' },
   settingsForm: { webui_port: 1234, log_level: 'info', data_dir: '/data', api_token: '', auto_start: true },
-  scannerForm: { enabled: false, interval: 60, min_speed_mbps: 3.0, ip_type: 6, port: 443, samples_per_24: 100, max_delay_ms: 500, threads: 100, scan_mode: 'tcping', speed_test_url: 'auto', only_cmin2: true },
+  scannerForm: { enabled: false, interval: 60, min_speed_mbps: 3.0, ip_type: 6, port: 443, samples_per_24: 100, max_delay_ms: 500, threads: 100, scan_mode: 'tcping', speed_test_url: 'auto', only_cmin2: true, speed_test_mode: 'both', colo_aware: true, map_rebuild_interval: 24, target_ips_per_colo: 5, explore_ratio: 0.1 },
+  scannerStatus: { colo_aware: false, colo_map_count: 0, colo_progress: '-', rate_limit_count: 0, rate_limit_status: '正常' },
   proxyForwardForm: { max_retries: 3, load_balance_mode: 'random', ewma_sample_window: 50, health_check_interval: 120, max_delay_ms: 500, max_loss_rate: 10, isolation_duration: 300, warmup_duration: 60, sticky_enabled: false, sticky_ttl: 15, active_pool_size: 20, standby_pool_ratio: 0.5 },
   proxyForwardExpanded: false,
 };
@@ -1446,15 +1477,30 @@ function renderDash() {
 
 function renderScanTable(tableId, data) {
   const tbody = $(tableId).querySelector('tbody');
-  if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--cfnat-muted-foreground)">暂无数据</td></tr>'; return; }
+  if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--cfnat-muted-foreground)">暂无数据</td></tr>'; return; }
   tbody.innerHTML = data.map(function(r) {
     const statusMap = { ok: 'tag-success', error: 'tag-error', running: 'tag-warning' };
+    let cidrSource = '-', cidr24Segments = '-', probeCount = '-';
+    if (r.cidr_source) cidrSource = r.cidr_source;
+    if (r.cidr24_segments !== undefined && r.cidr24_segments !== null) cidr24Segments = r.cidr24_segments;
+    if (r.probe_count !== undefined && r.probe_count !== null) probeCount = r.probe_count;
+    if ((cidrSource === '-' || cidr24Segments === '-' || probeCount === '-') && r.stats_json) {
+      try {
+        const o = JSON.parse(r.stats_json);
+        if (cidrSource === '-' && o.cidr_source) cidrSource = o.cidr_source;
+        if (cidr24Segments === '-' && o.cidr24_segments !== undefined && o.cidr24_segments !== null) cidr24Segments = o.cidr24_segments;
+        if (probeCount === '-' && o.probe_count !== undefined && o.probe_count !== null) probeCount = o.probe_count;
+      } catch (e) {}
+    }
     return '<tr>' +
       '<td>' + (r.id || '-') + '</td>' +
       '<td>' + escapeHtml(r.started_at || '') + '</td>' +
       '<td><span class="tag ' + (statusMap[r.status] || 'tag-default') + '">' + escapeHtml(r.status) + '</span></td>' +
       '<td>' + (r.total || 0) + '</td>' +
       '<td>' + (r.passed || 0) + '</td>' +
+      '<td>' + escapeHtml(String(cidrSource)) + '</td>' +
+      '<td>' + escapeHtml(String(cidr24Segments)) + '</td>' +
+      '<td>' + escapeHtml(String(probeCount)) + '</td>' +
       '<td>' + formatScanHistoryNote(r) + '</td>' +
     '</tr>';
   }).join('');
@@ -1500,6 +1546,11 @@ function renderScannerForm() {
   $('scanner-threads').value = sc.threads || 100;
   $('scanner-url').value = sc.speed_test_url || 'auto';
   $('scanner-only-cmin2').checked = sc.only_cmin2;
+  $('scanner-speed-test-mode').value = sc.speed_test_mode || 'both';
+  $('scanner-colo-aware').checked = sc.colo_aware;
+  $('scanner-map-interval').value = sc.map_rebuild_interval || 24;
+  $('scanner-target-ips').value = sc.target_ips_per_colo || 5;
+  $('scanner-explore-ratio').value = sc.explore_ratio || 0.1;
 }
 
 function renderScannerProgress() {
@@ -1523,6 +1574,20 @@ function renderScannerError() {
   } else {
     el.style.display = 'none';
   }
+}
+
+function renderScannerStatus() {
+  const s = State.scannerStatus;
+  const coloAwareEl = $('status-colo-aware');
+  coloAwareEl.className = 'tag ' + (s.colo_aware ? 'tag-success' : 'tag-default');
+  coloAwareEl.textContent = s.colo_aware ? '开启' : '关闭';
+  $('status-colo-map-count').textContent = s.colo_map_count !== undefined && s.colo_map_count !== null ? s.colo_map_count : '--';
+  $('status-colo-progress').textContent = s.colo_progress || '--';
+  $('status-429-count').textContent = s.rate_limit_count !== undefined && s.rate_limit_count !== null ? s.rate_limit_count : '--';
+  const rateLimitEl = $('status-rate-limit');
+  const isBackoff = s.rate_limit_status === '退避中' || s.rate_limit_status === 'backoff';
+  rateLimitEl.className = 'tag ' + (isBackoff ? 'tag-warning' : 'tag-success');
+  rateLimitEl.textContent = s.rate_limit_status || '正常';
 }
 
 function renderIPs() {
@@ -1686,8 +1751,12 @@ async function refreshDash() {
     State.scanHistory = (sh || []).slice(0, 8);
     State.scannerConfig = sc;
     State.cfnatConfig = cf;
+    State.scannerStatus.colo_aware = sc.colo_aware || false;
+    State.scannerStatus.colo_map_count = sc.colo_map_count || 0;
+    State.scannerStatus.colo_progress = sc.colo_progress || '-';
     updateUptime();
     renderDash();
+    renderScannerStatus();
   } catch (e) {}
 }
 
@@ -1720,10 +1789,14 @@ async function loadScanner() {
     Object.assign(State.scannerForm, sc);
     State.scannerConfig = sc;
     State.scanHistory = (h || []).slice(0, 8);
+    State.scannerStatus.colo_aware = sc.colo_aware || false;
+    State.scannerStatus.colo_map_count = sc.colo_map_count || 0;
+    State.scannerStatus.colo_progress = sc.colo_progress || '-';
   } catch (e) {}
   renderScannerForm();
   renderScanTable('scanner-history-table', State.scanHistory);
   renderScannerError();
+  renderScannerStatus();
 }
 
 async function loadSettings() {
@@ -1742,7 +1815,10 @@ async function pollProgress() {
     State.scanProgress = p;
     const wasRunning = State.scanRunning;
     State.scanRunning = p.running;
+    State.scannerStatus.rate_limit_count = p.rate_limit_count || 0;
+    State.scannerStatus.rate_limit_status = p.rate_limit_status || (p.rate_limit_backoff ? '退避中' : '正常');
     renderScannerProgress();
+    renderScannerStatus();
     $('btn-run-scan').disabled = State.scanRunning;
     $('btn-stop-scan').disabled = !State.scanRunning;
     if (wasRunning && !p.running) {
@@ -1829,6 +1905,11 @@ async function saveScanner() {
       threads: parseInt($('scanner-threads').value, 10) || 100,
       speed_test_url: $('scanner-url').value || 'auto',
       only_cmin2: $('scanner-only-cmin2').checked,
+      speed_test_mode: $('scanner-speed-test-mode').value,
+      colo_aware: $('scanner-colo-aware').checked,
+      map_rebuild_interval: parseInt($('scanner-map-interval').value, 10) || 24,
+      target_ips_per_colo: parseInt($('scanner-target-ips').value, 10) || 5,
+      explore_ratio: parseFloat($('scanner-explore-ratio').value) || 0.1,
     };
     await api('PUT', '/api/scanner', body);
     Object.assign(State.scannerForm, body);

@@ -385,16 +385,34 @@ func (h *Handlers) HandleAPIScanner(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		writeAPIResponse(w, 200, h.CfgMgr.Scanner())
 	case http.MethodPut, http.MethodPost:
-		var sc config.ScannerConfig
-		if err := readJSON(r, &sc); err != nil {
+		var updates map[string]json.RawMessage
+		if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 			writeError(w, 400, err.Error())
 			return
 		}
-		if err := h.CfgMgr.UpdateScanner(sc); err != nil {
+		current := h.CfgMgr.Scanner()
+		if v, ok := updates["enabled"]; ok { json.Unmarshal(v, &current.Enabled) }
+		if v, ok := updates["interval"]; ok { json.Unmarshal(v, &current.Interval) }
+		if v, ok := updates["min_speed_mbps"]; ok { json.Unmarshal(v, &current.MinSpeedMBps) }
+		if v, ok := updates["ip_type"]; ok { json.Unmarshal(v, &current.IPType) }
+		if v, ok := updates["port"]; ok { json.Unmarshal(v, &current.Port) }
+		if v, ok := updates["samples_per_24"]; ok { json.Unmarshal(v, &current.SamplesPer24) }
+		if v, ok := updates["max_delay_ms"]; ok { json.Unmarshal(v, &current.MaxDelayMs) }
+		if v, ok := updates["threads"]; ok { json.Unmarshal(v, &current.Threads) }
+		if v, ok := updates["scan_mode"]; ok { json.Unmarshal(v, &current.ScanMode) }
+		if v, ok := updates["speed_test_url"]; ok { json.Unmarshal(v, &current.SpeedTestURL) }
+		if v, ok := updates["only_cmin2"]; ok { json.Unmarshal(v, &current.OnlyCMIN2) }
+		if v, ok := updates["cmin2_colos"]; ok { json.Unmarshal(v, &current.CMIN2Colos) }
+		if v, ok := updates["speed_test_mode"]; ok { json.Unmarshal(v, &current.SpeedTestMode) }
+		if v, ok := updates["colo_aware"]; ok { json.Unmarshal(v, &current.ColoAware) }
+		if v, ok := updates["map_rebuild_interval"]; ok { json.Unmarshal(v, &current.MapRebuildInterval) }
+		if v, ok := updates["target_ips_per_colo"]; ok { json.Unmarshal(v, &current.TargetIPsPerColo) }
+		if v, ok := updates["explore_ratio"]; ok { json.Unmarshal(v, &current.ExploreRatio) }
+		if err := h.CfgMgr.UpdateScanner(current); err != nil {
 			writeError(w, 500, err.Error())
 			return
 		}
-		writeAPIResponse(w, 200, sc)
+		writeAPIResponse(w, 200, current)
 	default:
 		writeError(w, 405, "method not allowed")
 	}

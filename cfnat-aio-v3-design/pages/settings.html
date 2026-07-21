@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用设置 - CFNAT-AIO V3</title>
+    <style id="theme-vars">
+/* CFNAT-AIO V3 Design System — Brand CSS */
+/* Dark tech theme: deep navy + blue accent + green status */
+/* V3 extends V2 with purple accent for new features */
+
+/* === Brand Prefix Variables === */
+:root {
+  /* Primary Scale — Indigo Blue */
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+
+  /* Accent — Purple for V3 new features */
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
+
+  /* Background & Surface */
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+
+  /* Muted */
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+
+  /* Border & Input */
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+
+  /* Radius */
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+
+  /* State Colors */
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+}
+
+/* === Typography === */
+:root {
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+}
+
+/* === Semantic Aliases (Tailwind-compatible) === */
+:root {
+  --color-primary: var(--cfnat-primary);
+  --color-primary-hover: var(--cfnat-primary-hover);
+  --color-primary-pressed: var(--cfnat-primary-pressed);
+  --background: var(--cfnat-background);
+  --foreground: var(--cfnat-foreground);
+  --color-card: var(--cfnat-card);
+  --color-card-foreground: var(--cfnat-card-foreground);
+  --color-popover: var(--cfnat-popover);
+  --color-popover-foreground: var(--cfnat-popover-foreground);
+  --color-muted: var(--cfnat-muted);
+  --color-muted-foreground: var(--cfnat-muted-foreground);
+  --color-border: var(--cfnat-border);
+  --color-input: var(--cfnat-input);
+  --color-ring: var(--cfnat-ring);
+  --radius-sm: var(--cfnat-radius-sm);
+  --radius-md: var(--cfnat-radius-md);
+  --radius-lg: var(--cfnat-radius-lg);
+  --radius-full: var(--cfnat-radius-full);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cfnat-background);
+    --color-foreground: var(--cfnat-foreground);
+    --color-card: var(--cfnat-card);
+    --color-card-foreground: var(--cfnat-card-foreground);
+    --color-popover: var(--cfnat-popover);
+    --color-popover-foreground: var(--cfnat-popover-foreground);
+    --color-primary: var(--cfnat-primary);
+    --color-primary-foreground: var(--cfnat-primary-foreground);
+    --color-muted: var(--cfnat-muted);
+    --color-muted-foreground: var(--cfnat-muted-foreground);
+    --color-accent: var(--cfnat-accent);
+    --color-border: var(--cfnat-border);
+    --color-input: var(--cfnat-input);
+    --color-ring: var(--cfnat-ring);
+    --radius-sm: var(--cfnat-radius-sm);
+    --radius-md: var(--cfnat-radius-md);
+    --radius-lg: var(--cfnat-radius-lg);
+  }
+  @layer base {
+    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--cfnat-background); }
+      .text-background { color: var(--cfnat-background); }
+      .border-background { border-color: var(--cfnat-background); }
+      .ring-background { --tw-ring-color: var(--cfnat-background); }
+      .bg-foreground { background-color: var(--cfnat-foreground); }
+      .text-foreground { color: var(--cfnat-foreground); }
+      .border-foreground { border-color: var(--cfnat-foreground); }
+      .ring-foreground { --tw-ring-color: var(--cfnat-foreground); }
+      .bg-card { background-color: var(--cfnat-card); }
+      .text-card { color: var(--cfnat-card); }
+      .border-card { border-color: var(--cfnat-card); }
+      .ring-card { --tw-ring-color: var(--cfnat-card); }
+      .bg-card-foreground { background-color: var(--cfnat-card-foreground); }
+      .text-card-foreground { color: var(--cfnat-card-foreground); }
+      .border-card-foreground { border-color: var(--cfnat-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--cfnat-card-foreground); }
+      .bg-popover { background-color: var(--cfnat-popover); }
+      .text-popover { color: var(--cfnat-popover); }
+      .border-popover { border-color: var(--cfnat-popover); }
+      .ring-popover { --tw-ring-color: var(--cfnat-popover); }
+      .bg-popover-foreground { background-color: var(--cfnat-popover-foreground); }
+      .text-popover-foreground { color: var(--cfnat-popover-foreground); }
+      .border-popover-foreground { border-color: var(--cfnat-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--cfnat-popover-foreground); }
+      .bg-primary { background-color: var(--cfnat-primary); }
+      .text-primary { color: var(--cfnat-primary); }
+      .border-primary { border-color: var(--cfnat-primary); }
+      .ring-primary { --tw-ring-color: var(--cfnat-primary); }
+      .bg-primary-foreground { background-color: var(--cfnat-primary-foreground); }
+      .text-primary-foreground { color: var(--cfnat-primary-foreground); }
+      .border-primary-foreground { border-color: var(--cfnat-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--cfnat-primary-foreground); }
+      .bg-muted { background-color: var(--cfnat-muted); }
+      .text-muted { color: var(--cfnat-muted); }
+      .border-muted { border-color: var(--cfnat-muted); }
+      .ring-muted { --tw-ring-color: var(--cfnat-muted); }
+      .bg-muted-foreground { background-color: var(--cfnat-muted-foreground); }
+      .text-muted-foreground { color: var(--cfnat-muted-foreground); }
+      .border-muted-foreground { border-color: var(--cfnat-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--cfnat-muted-foreground); }
+      .bg-accent { background-color: var(--cfnat-accent); }
+      .text-accent { color: var(--cfnat-accent); }
+      .border-accent { border-color: var(--cfnat-accent); }
+      .ring-accent { --tw-ring-color: var(--cfnat-accent); }
+      .bg-border { background-color: var(--cfnat-border); }
+      .text-border { color: var(--cfnat-border); }
+      .border-border { border-color: var(--cfnat-border); }
+      .ring-border { --tw-ring-color: var(--cfnat-border); }
+      .bg-input { background-color: var(--cfnat-input); }
+      .text-input { color: var(--cfnat-input); }
+      .border-input { border-color: var(--cfnat-input); }
+      .ring-input { --tw-ring-color: var(--cfnat-input); }
+      .bg-ring { background-color: var(--cfnat-ring); }
+      .text-ring { color: var(--cfnat-ring); }
+      .border-ring { border-color: var(--cfnat-ring); }
+      .ring-ring { --tw-ring-color: var(--cfnat-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+        <!-- 导航栏 -->
+        <nav class="sticky top-0 z-50 flex items-center justify-between px-6 h-14 border-b" style="background: var(--cfnat-card); border-color: var(--cfnat-border);">
+            <div class="flex items-center gap-3">
+                <span class="text-lg font-bold" style="color: var(--cfnat-primary);">CFNAT-AIO</span>
+                <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="color: var(--cfnat-accent); background: color-mix(in srgb, var(--cfnat-accent) 15%, transparent);">V3 智能代理控制台</span>
+            </div>
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md" style="color: var(--cfnat-muted-foreground);">仪表盘</a>
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md" style="color: var(--cfnat-muted-foreground);">IP 库</a>
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md" style="color: var(--cfnat-muted-foreground);">日志</a>
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md" style="color: var(--cfnat-muted-foreground);">策略</a>
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md font-medium" style="color: var(--cfnat-primary); background: color-mix(in srgb, var(--cfnat-primary) 12%, transparent);">设置</a>
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md" style="color: var(--cfnat-muted-foreground);">监控</a>
+                <a class="px-3 py-2 text-sm whitespace-nowrap rounded-md" style="color: var(--cfnat-muted-foreground);">关于</a>
+            </div>
+        </nav>
+
+        <div class="px-6 py-6 max-w-2xl mx-auto space-y-6">
+            <!-- 基础设置面板 -->
+            <section class="rounded-lg border p-5" style="background: var(--cfnat-card); border-color: var(--cfnat-border);">
+                <h2 class="text-base font-medium mb-4" style="color: var(--cfnat-foreground);">基础设置</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-28 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">WebUI 端口</label>
+                        <input type="number" value="1234" class="h-8 px-3 text-sm rounded-md border outline-none w-40 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-28 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">日志级别</label>
+                        <select class="h-8 px-3 text-sm rounded-md border outline-none w-40" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                            <option>debug</option>
+                            <option selected>info</option>
+                            <option>warn</option>
+                            <option>error</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-28 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">数据目录</label>
+                        <input type="text" value="/data" class="h-8 px-3 text-sm rounded-md border outline-none flex-1 min-w-0 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-28 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">API Token</label>
+                        <input type="password" value="xxxxxxxx" class="h-8 px-3 text-sm rounded-md border outline-none flex-1 min-w-0 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    </div>
+                    <div class="flex justify-end pt-1">
+                        <button class="h-8 px-5 text-sm rounded-md font-medium" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">保存</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- V3 扫描引擎高级配置 -->
+            <section class="rounded-lg border p-5" style="background: var(--cfnat-card); border-color: var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-base font-medium" style="color: var(--cfnat-foreground);">扫描引擎高级配置</h2>
+                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap font-medium" style="color: var(--cfnat-accent); background: color-mix(in srgb, var(--cfnat-accent) 15%, transparent);">V2.0</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">本地 IP 文件路径</label>
+                        <input type="text" value="/data/ip.txt" class="h-8 px-3 text-sm rounded-md border outline-none flex-1 min-w-0 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                        <button class="h-8 px-3 text-sm rounded-md border whitespace-nowrap shrink-0" style="border-color: var(--cfnat-border); color: var(--cfnat-foreground); background: var(--cfnat-muted);">浏览</button>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <label class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">Colo-Aware Scanning</label>
+                        <div class="w-10 h-5 rounded-full relative shrink-0 cursor-pointer" style="background: var(--cfnat-accent);">
+                            <div class="absolute top-0.5 right-0.5 w-4 h-4 rounded-full" style="background: var(--cfnat-primary-foreground);"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">映射表重建间隔</label>
+                        <input type="number" value="24" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                        <span class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">小时</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">每 Colo 目标 IP 数</label>
+                        <input type="number" value="5" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">随机探索比例</label>
+                        <input type="number" value="10" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                        <span class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">%</span>
+                    </div>
+                    <div class="flex justify-end pt-1">
+                        <button class="h-8 px-5 text-sm rounded-md font-medium" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">保存</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- V3 IP 池管理配置 -->
+            <section class="rounded-lg border p-5" style="background: var(--cfnat-card); border-color: var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-base font-medium" style="color: var(--cfnat-foreground);">IP 池管理</h2>
+                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap font-medium" style="color: var(--cfnat-accent); background: color-mix(in srgb, var(--cfnat-accent) 15%, transparent);">V2.1</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">主池容量</label>
+                        <input type="number" value="20" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">备选池比例</label>
+                        <input type="number" value="0.5" step="0.1" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">质量淘汰阈值</label>
+                        <input type="number" value="30" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                        <span class="text-xs whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">低于此分数自动淘汰</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <label class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">扫描后自动重建 IP 池</label>
+                        <div class="w-10 h-5 rounded-full relative shrink-0 cursor-pointer" style="background: var(--state-success);">
+                            <div class="absolute top-0.5 right-0.5 w-4 h-4 rounded-full" style="background: var(--cfnat-primary-foreground);"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-1">
+                        <button class="h-8 px-5 text-sm rounded-md font-medium" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">保存</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- V3 可观测性配置 -->
+            <section class="rounded-lg border p-5" style="background: var(--cfnat-card); border-color: var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-base font-medium" style="color: var(--cfnat-foreground);">可观测性</h2>
+                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap font-medium" style="color: var(--cfnat-accent); background: color-mix(in srgb, var(--cfnat-accent) 15%, transparent);">V2.3</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <label class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">IP 质量趋势记录</label>
+                        <div class="w-10 h-5 rounded-full relative shrink-0 cursor-pointer" style="background: var(--state-success);">
+                            <div class="absolute top-0.5 right-0.5 w-4 h-4 rounded-full" style="background: var(--cfnat-primary-foreground);"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <label class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">全链路追踪</label>
+                        <div class="w-10 h-5 rounded-full relative shrink-0 cursor-pointer" style="background: var(--cfnat-muted);">
+                            <div class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full" style="background: var(--cfnat-muted-foreground);"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm w-40 shrink-0 whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">趋势数据保留天数</label>
+                        <input type="number" value="7" class="h-8 px-3 text-sm rounded-md border outline-none w-24 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                        <span class="text-sm whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">天</span>
+                    </div>
+                    <div class="flex justify-end pt-1">
+                        <button class="h-8 px-5 text-sm rounded-md font-medium" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">保存</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

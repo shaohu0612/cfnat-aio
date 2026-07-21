@@ -45,10 +45,14 @@ type ScanProgress struct {
 	Percent      int    `json:"percent"`       // 当前阶段百分比
 	TotalScanned int64  `json:"total_scanned"` // 总已扫描
 	TotalPassed  int64  `json:"total_passed"`  // 总已通过
-	CIDRSource     string `json:"cidrSource"`    // CIDR 来源：local / remote / builtin
-	CIDRFile       string `json:"cidrFile"`      // 本地文件名
-	CIDRSegments   int    `json:"cidrSegments"`  // CIDR 段数
+	CIDRSource     string `json:"cidrSource"`     // CIDR 来源：local / remote / builtin
+	CIDRFile       string `json:"cidrFile"`       // 本地文件名
+	CIDRSegments   int    `json:"cidrSegments"`   // CIDR 段数
 	CIDR24Segments int    `json:"cidr24Segments"` // /24 段数
+	RateLimitHits  int    `json:"rate_limit_hits"`  // 429 命中次数
+	RateLimitBackoff bool `json:"rate_limit_backoff"` // 是否处于退避中
+	ColoMapCount   int    `json:"colo_map_count"`   // 映射表记录数
+	ColoProgress   string `json:"colo_progress"`    // 建图进度
 }
 
 // Scanner 扫描器
@@ -133,8 +137,8 @@ func (s *Scanner) RunOnce() {
 		sc.Interval = 60
 	}
 
-	logging.InfoTo("scanner", "▶ 扫描任务 #%d 启动 (IPv%d, 抽样数=%d/24, 速度阈值=%.1fMB/s)",
-		histID, sc.IPType, sc.SamplesPer24, sc.MinSpeedMBps)
+	logging.InfoTo("scanner", "▶ 扫描任务 #%d 启动 (IPv%d, 抽样数=%d/24, 速度阈值=%.1fMB/s, 模式=%s, ColoAware=%v)",
+		histID, sc.IPType, sc.SamplesPer24, sc.MinSpeedMBps, sc.SpeedTestMode, sc.ColoAware)
 
 	// 注意：不再自动检测 IPv6 可用性，由用户在 UI 中选择 IP 类型
 	// 如果选择了 IPv6 但环境不支持，TCP 连接会超时，扫描结果为 0，用户可切换到 IPv4
@@ -147,11 +151,28 @@ func (s *Scanner) RunOnce() {
 		s.finishRun(histID, "error", 0, 0, fmt.Sprintf("加载CIDR失败: %v", err))
 		return
 	}
-	logging.InfoTo("scanner", "  [1/5] 加载 CIDR: %d 段", len(cidrs))
+	srcLabel := s.progress.CIDRSource
+	if srcLabel == "" {
+		srcLabel = "builtin"
+	}
+	logging.InfoTo("scanner", "  [1/5] 加载 CIDR: %d 段 (来源: %s)", len(cidrs), srcLabel)
+
+	// 先将所有 CIDR 拆分为 /24 段（供建图和抽样共用）
+	var all24 []string
+	for _, c := range cidrs {
+		all24 = append(all24, splitTo24(c)...)
+	}
+
+	// 阶段 1.5: Colo-Aware 建图（如果启用）
+	if sc.ColoAware {
+		s.setProgress("1.5/5 建图中", 0, 0, "")
+		mapCount := s.buildColoMap(all24, sc)
+		logging.InfoTo("scanner", "  Colo-Aware 模式启动，加载映射表 %d 条", mapCount)
+	}
 
 	// 阶段 2: 按 /24 抽样
 	s.setProgress("2/5 抽样中", 0, 0, "")
-	candidates := s.sampleCIDRs(cidrs, sc.SamplesPer24, sc.IPType)
+	candidates := s.sampleFrom24(all24, sc.SamplesPer24, sc.IPType)
 	if len(candidates) == 0 {
 		logging.ErrorTo("scanner", "✗ 抽样后无候选 IP")
 		s.finishRun(histID, "error", 0, 0, "抽样后候选IP为空")
@@ -180,6 +201,11 @@ func (s *Scanner) RunOnce() {
 	logging.InfoTo("scanner", "  [3/5] TCP+TLS 探活: %d/%d 个通过", okCount, len(stats))
 	if okCount == 0 && errSample != "" {
 		logging.ErrorTo("scanner", "    探活失败示例: %s", errSample)
+	}
+
+	// Colo-Aware: 根据探活结果动态更新映射表
+	if sc.ColoAware {
+		s.updateColoMapFromProbes(stats)
 	}
 
 	// 阶段 4: 测速（针对通过探活的 IP，按延迟取 top 100）
@@ -354,23 +380,35 @@ func (s *Scanner) loadCIDRs(ipType int) ([]string, error) {
 	resp, err := client.Get(sourceURL)
 	if err != nil {
 		logging.WarnTo("scanner", "远程 CIDR 列表获取失败，使用内置列表: %v", err)
+		s.mu.Lock()
+		s.progress.CIDRSource = "builtin"
+		s.progress.CIDRSegments = len(fallback)
+		s.mu.Unlock()
 		return fallback, nil
 	}
 	defer resp.Body.Close()
 
 	cidrs = nil
-	sc := bufio.NewScanner(resp.Body)
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
 		if line != "" && !strings.HasPrefix(line, "#") {
 			cidrs = append(cidrs, line)
 		}
 	}
 	if len(cidrs) == 0 {
 		logging.WarnTo("scanner", "远程 CIDR 列表为空，使用内置列表")
+		s.mu.Lock()
+		s.progress.CIDRSource = "builtin"
+		s.progress.CIDRSegments = len(fallback)
+		s.mu.Unlock()
 		return fallback, nil
 	}
-	return cidrs, sc.Err()
+	s.mu.Lock()
+	s.progress.CIDRSource = "remote"
+	s.progress.CIDRSegments = len(cidrs)
+	s.mu.Unlock()
+	return cidrs, scanner.Err()
 }
 
 // === 按 /24 抽样 ===
@@ -429,21 +467,15 @@ func randomIPInCIDR(cidr string) string {
 	return ip.String()
 }
 
-// sampleCIDRs 从每个 /24 中抽样若干 IP
+// sampleFrom24 从每个 /24 中抽样若干 IP
 // samplesPer24: 1=原 cfdata 模式, 3=折中, 5=激进, 255=全测
-func (s *Scanner) sampleCIDRs(cidrs []string, samplesPer24, ipType int) []string {
+func (s *Scanner) sampleFrom24(all24 []string, samplesPer24, ipType int) []string {
 	var out []string
 	if samplesPer24 <= 0 {
 		samplesPer24 = 1
 	}
 	if samplesPer24 > 255 {
 		samplesPer24 = 255
-	}
-
-	// 先将所有 CIDR 拆分为 /24 段
-	var all24 []string
-	for _, c := range cidrs {
-		all24 = append(all24, splitTo24(c)...)
 	}
 
 	s.mu.Lock()
@@ -846,6 +878,10 @@ func (s *Scanner) measureSpeed(ip, speedURL string, port int) (float64, bool) {
 		// 429 速率限制：等待后重试
 		if resp.StatusCode == 429 && retry < maxRetries {
 			resp.Body.Close()
+			s.mu.Lock()
+			s.progress.RateLimitHits++
+			s.progress.RateLimitBackoff = true
+			s.mu.Unlock()
 			time.Sleep(time.Duration(2*(1<<retry)) * time.Second)
 			continue
 		}
@@ -858,11 +894,20 @@ func (s *Scanner) measureSpeed(ip, speedURL string, port int) (float64, bool) {
 
 	if resp.StatusCode != 200 {
 		// 429 不逐条日志，避免刷屏（统计在 speedTest 层汇总）
-		if resp.StatusCode != 429 {
+		if resp.StatusCode == 429 {
+			s.mu.Lock()
+			s.progress.RateLimitHits++
+			s.mu.Unlock()
+		} else {
 			logging.ErrorTo("scanner", "测速 HTTP 状态码异常 %s: %d", ip, resp.StatusCode)
 		}
 		return 0, false
 	}
+
+	// 请求成功，重置退避状态
+	s.mu.Lock()
+	s.progress.RateLimitBackoff = false
+	s.mu.Unlock()
 
 	// 下载 2MB 测速
 	target := 2 * 1024 * 1024
@@ -923,8 +968,8 @@ func (s *Scanner) saveByCMIN2Colo(passed []speedResult, sc config.ScannerConfig)
 		if !IsCMIN2Colo(r.colo) {
 			continue
 		}
-		// colo -> region 映射（默认 colo 名即 region 名）
-		region := r.colo
+		// colo -> region 映射
+		region := findRegionByColo(r.colo, s.cfgMgr.Regions())
 		err := s.lib.AddIP(r.ip, region, "auto", r.colo, r.speedMbps, r.latency, "scanner")
 		if err == nil {
 			out[region]++
@@ -950,6 +995,165 @@ func (s *Scanner) saveByRegion(passed []speedResult, sc config.ScannerConfig) ma
 		}
 	}
 	return out
+}
+
+// === Colo-Aware 建图 ===
+
+// isColoMapStale 检查映射表是否需要重建
+func (s *Scanner) isColoMapStale(rebuildInterval int) bool {
+	if rebuildInterval <= 0 {
+		rebuildInterval = 24
+	}
+	db := s.store.DB()
+	var count int
+	_ = db.QueryRow(`SELECT COUNT(*) FROM cidr_colo_map`).Scan(&count)
+	if count == 0 {
+		return true
+	}
+	var latest string
+	_ = db.QueryRow(`SELECT MAX(probed_at) FROM cidr_colo_map`).Scan(&latest)
+	if latest == "" {
+		return true
+	}
+	t, err := time.Parse(time.RFC3339, latest)
+	if err != nil {
+		return true
+	}
+	return time.Since(t) > time.Duration(rebuildInterval)*time.Hour
+}
+
+// getColoMapCount 获取当前映射表记录数
+func (s *Scanner) getColoMapCount() int {
+	var count int
+	_ = s.store.DB().QueryRow(`SELECT COUNT(*) FROM cidr_colo_map`).Scan(&count)
+	return count
+}
+
+// buildColoMap 对候选 /24 段进行轻量探活，建立 /24 -> colo 映射
+func (s *Scanner) buildColoMap(all24 []string, sc config.ScannerConfig) int {
+	if !s.isColoMapStale(sc.MapRebuildInterval) {
+		count := s.getColoMapCount()
+		s.mu.Lock()
+		s.progress.ColoMapCount = count
+		s.progress.ColoProgress = "使用已有映射表"
+		s.mu.Unlock()
+		return count
+	}
+
+	// 从每个 /24 段选 1 个 IP，最多 500 个
+	type probePair struct {
+		cidr24 string
+		ip     string
+	}
+	var probes []probePair
+	for _, cidr24 := range all24 {
+		ip := randomIPInCIDR(cidr24)
+		if ip != "" {
+			probes = append(probes, probePair{cidr24: cidr24, ip: ip})
+		}
+		if len(probes) >= 500 {
+			break
+		}
+	}
+
+	s.mu.Lock()
+	s.progress.ColoProgress = fmt.Sprintf("探活 %d 个 /24 样本", len(probes))
+	s.mu.Unlock()
+
+	// 并发探活
+	results := make([]ProbeResult, len(probes))
+	threads := sc.Threads
+	if threads <= 0 {
+		threads = 100
+	}
+	if threads > 100 {
+		threads = 100
+	}
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, threads)
+	for i, p := range probes {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int, ip string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			results[idx] = ProbeOne(ip, sc)
+		}(i, p.ip)
+	}
+	wg.Wait()
+
+	// 更新映射表
+	db := s.store.DB()
+	now := config.NowISO()
+	inserted := 0
+	for i, r := range results {
+		if !r.OK || r.Colo == "" {
+			continue
+		}
+		cidr24 := probes[i].cidr24
+		_, _ = db.Exec(`INSERT INTO cidr_colo_map(cidr24, colo, probed_at, ok_count, fail_count, confidence)
+			VALUES(?,?,?,1,0,1.0)
+			ON CONFLICT(cidr24) DO UPDATE SET
+				colo=excluded.colo, probed_at=excluded.probed_at,
+				ok_count=ok_count+1, confidence=MAX(0.0, MIN(1.0, ok_count*1.0/(ok_count+fail_count+1)))`,
+			cidr24, r.Colo, now)
+		inserted++
+	}
+
+	// 初始化 colo_scan_state
+	regions := s.cfgMgr.Regions()
+	for _, reg := range regions {
+		codes := parseCodes(reg.Code)
+		for _, colo := range codes {
+			_, _ = db.Exec(`INSERT INTO colo_scan_state(colo, region, budget, current_ips, target_ips, last_scan)
+				VALUES(?,?,10,0,?,?)
+				ON CONFLICT(colo) DO UPDATE SET region=excluded.region, target_ips=excluded.target_ips`,
+				colo, reg.Name, sc.TargetIPsPerColo, now)
+		}
+	}
+
+	s.mu.Lock()
+	s.progress.ColoMapCount = s.getColoMapCount()
+	s.progress.ColoProgress = fmt.Sprintf("新建图 %d 条", inserted)
+	s.mu.Unlock()
+
+	logging.InfoTo("scanner", "    建图完成: 探活 %d 个 /24, 有效映射 %d 条", len(probes), inserted)
+	return s.progress.ColoMapCount
+}
+
+// ipTo24 将 IP 转换为其所在 /24 段
+func ipTo24(ip string) string {
+	parsed := net.ParseIP(ip)
+	if parsed == nil {
+		return ""
+	}
+	v4 := parsed.To4()
+	if v4 == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d.%d.%d.0/24", v4[0], v4[1], v4[2])
+}
+
+// updateColoMapFromProbes 根据探活结果动态更新映射表
+func (s *Scanner) updateColoMapFromProbes(results []ProbeResult) {
+	db := s.store.DB()
+	now := config.NowISO()
+	updated := 0
+	for _, r := range results {
+		cidr24 := ipTo24(r.IP)
+		if cidr24 == "" || r.Colo == "" {
+			continue
+		}
+		if r.OK {
+			_, _ = db.Exec(`UPDATE cidr_colo_map SET ok_count=ok_count+1, probed_at=?, confidence=MAX(0.0, MIN(1.0, ok_count*1.0/(ok_count+fail_count+1))) WHERE cidr24=?`, now, cidr24)
+		} else {
+			_, _ = db.Exec(`UPDATE cidr_colo_map SET fail_count=fail_count+1, probed_at=?, confidence=MAX(0.0, MIN(1.0, ok_count*1.0/(ok_count+fail_count+1))) WHERE cidr24=?`, now, cidr24)
+		}
+		updated++
+	}
+	if updated > 0 {
+		logging.InfoTo("scanner", "    映射表动态更新: %d 条 /24 记录", updated)
+	}
 }
 
 // === 后台调度 ===

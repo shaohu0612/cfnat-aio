@@ -8,9 +8,11 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -119,7 +121,61 @@ func New(store ConfigStore) (*Manager, error) {
 	if err := m.loadAll(); err != nil {
 		return nil, err
 	}
+	// 旧数据 region 迁移：将 colo 代码映射为地区名称
+	if sqliteStore, ok := store.(*SQLiteStore); ok {
+		_ = migrateOldRegion(sqliteStore.DB(), m.regions)
+	}
 	return m, nil
+}
+
+// migrateOldRegion 将 iplib_ip 表中旧 colo 代码 region 迁移为地区名称
+func migrateOldRegion(db *sql.DB, regions []ProxyRegion) error {
+	rows, err := db.Query(`SELECT DISTINCT region FROM iplib_ip`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	// 构建 colo -> regionName 映射
+	coloToRegion := make(map[string]string)
+	for _, reg := range regions {
+		codes := strings.Split(reg.Code, ",")
+		for _, c := range codes {
+			c = strings.TrimSpace(c)
+			if c != "" {
+				coloToRegion[c] = reg.Name
+			}
+		}
+	}
+
+	var toMigrate []struct{ old, new string }
+	for rows.Next() {
+		var oldRegion string
+		if err := rows.Scan(&oldRegion); err != nil {
+			continue
+		}
+		newRegion, ok := coloToRegion[oldRegion]
+		if !ok || newRegion == oldRegion {
+			continue
+		}
+		toMigrate = append(toMigrate, struct{ old, new string }{oldRegion, newRegion})
+	}
+
+	var migrated int
+	for _, item := range toMigrate {
+		res, err := db.Exec(`UPDATE iplib_ip SET region=? WHERE region=?`, item.new, item.old)
+		if err != nil {
+			logging.WarnTo("config", "旧数据 region 迁移失败 %s->%s: %v", item.old, item.new, err)
+			continue
+		}
+		if n, _ := res.RowsAffected(); n > 0 {
+			migrated++
+		}
+	}
+	if migrated > 0 {
+		logging.InfoTo("config", "✅ 旧数据 region 迁移完成: %d 个 colo 代码已映射为地区名称", migrated)
+	}
+	return nil
 }
 
 func (m *Manager) loadAll() error {
@@ -141,6 +197,17 @@ func (m *Manager) loadAll() error {
 
 	if s, err := m.db.LoadScanner(); err == nil {
 		m.scanner = s
+		// V2.0 配置迁移：speed_test_mode 为空说明是旧配置，用新默认值填充
+		if m.scanner.SpeedTestMode == "" {
+			m.scanner.SpeedTestMode = "speed"
+			m.scanner.ColoAware = true
+			m.scanner.MapRebuildInterval = 24
+			m.scanner.TargetIPsPerColo = 5
+			m.scanner.ExploreRatio = 0.1
+			m.scanner.MinSpeedMBps = 0.5
+			m.scanner.OnlyCMIN2 = false
+			_ = m.db.SaveScanner(m.scanner)
+		}
 	} else {
 		m.scanner = defaultScannerConfig()
 		_ = m.db.SaveScanner(m.scanner)

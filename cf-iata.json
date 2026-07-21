@@ -1,0 +1,2842 @@
+{
+  "AAE": {
+    "place": "Annaba, Algeria",
+    "place_zh": "阿尔及利亚安纳巴",
+    "lat": 36.822201,
+    "lng": 7.80917,
+    "cca2": "DZ",
+    "region": "Africa"
+  },
+  "ABJ": {
+    "place": "Abidjan, Ivory Coast",
+    "place_zh": "科特迪瓦阿比让",
+    "lat": 5.26139,
+    "lng": -3.92629,
+    "cca2": "CI",
+    "region": "Africa"
+  },
+  "ABQ": {
+    "place": "Albuquerque, United States",
+    "place_zh": "美国阿尔伯克基",
+    "lat": 35.040199,
+    "lng": -106.609001,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ACC": {
+    "place": "Accra, Ghana",
+    "place_zh": "加纳阿克拉",
+    "lat": 5.60519,
+    "lng": -0.166786,
+    "cca2": "GH",
+    "region": "Africa"
+  },
+  "ACX": {
+    "place": "Xingyi, China",
+    "place_zh": "中国兴义",
+    "lat": 25.083423,
+    "lng": 104.960804,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "ADB": {
+    "place": "Izmir, Turkey",
+    "place_zh": "土耳其伊兹密尔",
+    "lat": 38.2924,
+    "lng": 27.157,
+    "cca2": "TR",
+    "region": "Europe"
+  },
+  "ADD": {
+    "place": "Addis Ababa, Ethiopia",
+    "place_zh": "埃塞俄比亚亚的斯亚贝巴",
+    "lat": 8.97789,
+    "lng": 38.799301,
+    "cca2": "ET",
+    "region": "Africa"
+  },
+  "ADL": {
+    "place": "Adelaide, Australia",
+    "place_zh": "澳大利亚阿德莱德",
+    "lat": -34.945,
+    "lng": 138.531006,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "AGR": {
+    "place": "Agra, India",
+    "place_zh": "印度阿格拉",
+    "lat": 27.1558,
+    "lng": 77.960899,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "AKL": {
+    "place": "Auckland, New Zealand",
+    "place_zh": "新西兰奥克兰",
+    "lat": -37.008099,
+    "lng": 174.792007,
+    "cca2": "NZ",
+    "region": "Oceania"
+  },
+  "AKX": {
+    "place": "Aktobe, Kazakhstan",
+    "place_zh": "哈萨克斯坦阿克托别",
+    "lat": 50.2458,
+    "lng": 57.206699,
+    "cca2": "KZ",
+    "region": "Europe"
+  },
+  "ALA": {
+    "place": "Almaty, Kazakhstan",
+    "place_zh": "哈萨克斯坦阿拉木图",
+    "lat": 43.3521,
+    "lng": 77.040497,
+    "cca2": "KZ",
+    "region": "Europe"
+  },
+  "ALG": {
+    "place": "Algiers, Algeria",
+    "place_zh": "阿尔及利亚阿尔及尔",
+    "lat": 36.691002,
+    "lng": 3.21541,
+    "cca2": "DZ",
+    "region": "Africa"
+  },
+  "AMD": {
+    "place": "Ahmedabad, India",
+    "place_zh": "印度艾哈迈达巴德",
+    "lat": 23.0772,
+    "lng": 72.634697,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "AMM": {
+    "place": "Amman, Jordan",
+    "place_zh": "约旦安曼",
+    "lat": 31.722601,
+    "lng": 35.993198,
+    "cca2": "JO",
+    "region": "Middle East"
+  },
+  "AMS": {
+    "place": "Amsterdam, Netherlands",
+    "place_zh": "荷兰阿姆斯特丹",
+    "lat": 52.308601,
+    "lng": 4.76389,
+    "cca2": "NL",
+    "region": "Europe"
+  },
+  "ANC": {
+    "place": "Anchorage, United States",
+    "place_zh": "美国安克雷奇",
+    "lat": 61.1744,
+    "lng": -149.996002,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ARI": {
+    "place": "Arica, Chile",
+    "place_zh": "智利阿里卡",
+    "lat": -18.348499,
+    "lng": -70.338699,
+    "cca2": "CL",
+    "region": "South America"
+  },
+  "ARN": {
+    "place": "Stockholm, Sweden",
+    "place_zh": "瑞典斯德哥尔摩",
+    "lat": 59.651901,
+    "lng": 17.9186,
+    "cca2": "SE",
+    "region": "Europe"
+  },
+  "ARU": {
+    "place": "Aracatuba, Brazil",
+    "place_zh": "巴西阿拉萨图巴",
+    "lat": -21.1413,
+    "lng": -50.424702,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "ASK": {
+    "place": "Yamoussoukro, Ivory Coast",
+    "place_zh": "科特迪瓦亚穆苏克罗",
+    "lat": 6.90317,
+    "lng": -5.36558,
+    "cca2": "CI",
+    "region": "Africa"
+  },
+  "ASU": {
+    "place": "Asunción, Paraguay",
+    "place_zh": "巴拉圭亚松森",
+    "lat": -25.24,
+    "lng": -57.52,
+    "cca2": "PY",
+    "region": "South America"
+  },
+  "ATH": {
+    "place": "Athens, Greece",
+    "place_zh": "希腊雅典",
+    "lat": 37.936401,
+    "lng": 23.9445,
+    "cca2": "GR",
+    "region": "Europe"
+  },
+  "ATL": {
+    "place": "Atlanta, United States",
+    "place_zh": "美国亚特兰大",
+    "lat": 33.6367,
+    "lng": -84.428101,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "AUS": {
+    "place": "Austin, United States",
+    "place_zh": "美国奥斯汀",
+    "lat": 30.1945,
+    "lng": -97.669899,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "BAH": {
+    "place": "Manama, Bahrain",
+    "place_zh": "巴林麦纳麦",
+    "lat": 26.2708,
+    "lng": 50.633598,
+    "cca2": "BH",
+    "region": "Middle East"
+  },
+  "BAQ": {
+    "place": "Barranquilla, Colombia",
+    "place_zh": "哥伦比亚巴兰基亚",
+    "lat": 10.8896,
+    "lng": -74.7808,
+    "cca2": "CO",
+    "region": "South America"
+  },
+  "BBI": {
+    "place": "Bhubaneswar, India",
+    "place_zh": "印度布巴内斯瓦尔",
+    "lat": 20.2444,
+    "lng": 85.817802,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "BCN": {
+    "place": "Barcelona, Spain",
+    "place_zh": "西班牙巴塞罗那",
+    "lat": 41.2971,
+    "lng": 2.07846,
+    "cca2": "ES",
+    "region": "Europe"
+  },
+  "BEG": {
+    "place": "Belgrade, Serbia",
+    "place_zh": "塞尔维亚贝尔格莱德",
+    "lat": 44.818401,
+    "lng": 20.309099,
+    "cca2": "RS",
+    "region": "Europe"
+  },
+  "BEL": {
+    "place": "Belém, Brazil",
+    "place_zh": "巴西贝伦",
+    "lat": -1.37925,
+    "lng": -48.476299,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "BEY": {
+    "place": "Beirut, Lebanon",
+    "place_zh": "黎巴嫩贝鲁特",
+    "lat": 33.8209,
+    "lng": 35.4884,
+    "cca2": "LB",
+    "region": "Middle East"
+  },
+  "BGI": {
+    "place": "Bridgetown, Barbados",
+    "place_zh": "巴巴多斯布里奇敦",
+    "lat": 13.0746,
+    "lng": -59.4925,
+    "cca2": "BB",
+    "region": "North America"
+  },
+  "BGR": {
+    "place": "Bangor, United States",
+    "place_zh": "美国班戈",
+    "lat": 44.8074,
+    "lng": -68.828102,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "BGW": {
+    "place": "Baghdad, Iraq",
+    "place_zh": "伊拉克巴格达",
+    "lat": 33.262501,
+    "lng": 44.2346,
+    "cca2": "IQ",
+    "region": "Middle East"
+  },
+  "BHY": {
+    "place": "Beihai, China",
+    "place_zh": "中国北海",
+    "lat": 21.538659,
+    "lng": 109.293683,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "BKK": {
+    "place": "Bangkok, Thailand",
+    "place_zh": "泰国曼谷",
+    "lat": 13.6811,
+    "lng": 100.747002,
+    "cca2": "TH",
+    "region": "Asia Pacific"
+  },
+  "BLR": {
+    "place": "Bangalore, India",
+    "place_zh": "印度班加罗尔",
+    "lat": 13.1979,
+    "lng": 77.706299,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "BNA": {
+    "place": "Nashville, United States",
+    "place_zh": "美国纳什维尔",
+    "lat": 36.1245,
+    "lng": -86.6782,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "BNE": {
+    "place": "Brisbane, Australia",
+    "place_zh": "澳大利亚布里斯班",
+    "lat": -27.384199,
+    "lng": 153.117004,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "BNU": {
+    "place": "Blumenau, Brazil",
+    "place_zh": "巴西布卢梅瑙",
+    "lat": -26.831661,
+    "lng": -49.093569,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "BOD": {
+    "place": "Bordeaux, France",
+    "place_zh": "法国波尔多",
+    "lat": 44.8283,
+    "lng": -0.715556,
+    "cca2": "FR",
+    "region": "Europe"
+  },
+  "BOG": {
+    "place": "Bogotá, Colombia",
+    "place_zh": "哥伦比亚波哥大",
+    "lat": 4.70159,
+    "lng": -74.1469,
+    "cca2": "CO",
+    "region": "South America"
+  },
+  "BOM": {
+    "place": "Mumbai, India",
+    "place_zh": "印度孟买",
+    "lat": 19.088699,
+    "lng": 72.867897,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "BOS": {
+    "place": "Boston, United States",
+    "place_zh": "美国波士顿",
+    "lat": 42.3643,
+    "lng": -71.005203,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "BRU": {
+    "place": "Brussels, Belgium",
+    "place_zh": "比利时布鲁塞尔",
+    "lat": 50.901402,
+    "lng": 4.48444,
+    "cca2": "BE",
+    "region": "Europe"
+  },
+  "BSB": {
+    "place": "Brasilia, Brazil",
+    "place_zh": "巴西巴西利亚",
+    "lat": -15.869167,
+    "lng": -47.920834,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "BSR": {
+    "place": "Basra, Iraq",
+    "place_zh": "伊拉克巴士拉",
+    "lat": 30.549101,
+    "lng": 47.662102,
+    "cca2": "IQ",
+    "region": "Middle East"
+  },
+  "BTS": {
+    "place": "Bratislava, Slovakia",
+    "place_zh": "斯洛伐克布拉迪斯拉发",
+    "lat": 48.1702,
+    "lng": 17.2127,
+    "cca2": "SK",
+    "region": "Europe"
+  },
+  "BUD": {
+    "place": "Budapest, Hungary",
+    "place_zh": "匈牙利布达佩斯",
+    "lat": 47.436901,
+    "lng": 19.2556,
+    "cca2": "HU",
+    "region": "Europe"
+  },
+  "BUF": {
+    "place": "Buffalo, United States",
+    "place_zh": "美国布法罗",
+    "lat": 42.940498,
+    "lng": -78.732201,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "BWN": {
+    "place": "Bandar Seri Begawan, Brunei",
+    "place_zh": "文莱斯里巴加湾市",
+    "lat": 4.9442,
+    "lng": 114.928001,
+    "cca2": "BN",
+    "region": "Asia Pacific"
+  },
+  "CAI": {
+    "place": "Cairo, Egypt",
+    "place_zh": "埃及开罗",
+    "lat": 30.121901,
+    "lng": 31.4056,
+    "cca2": "EG",
+    "region": "Africa"
+  },
+  "CAN": {
+    "place": "Guangzhou, China",
+    "place_zh": "中国广州",
+    "lat": 23.392401,
+    "lng": 113.299004,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "CAW": {
+    "place": "Campos dos Goytacazes, Brazil",
+    "place_zh": "巴西坎波斯多斯戈伊塔卡泽斯",
+    "lat": -21.698299,
+    "lng": -41.301701,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "CBR": {
+    "place": "Canberra, Australia",
+    "place_zh": "澳大利亚堪培拉",
+    "lat": -35.3069,
+    "lng": 149.195007,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "CCP": {
+    "place": "Concepción, Chile",
+    "place_zh": "智利康塞普西翁",
+    "lat": -36.77235,
+    "lng": -73.062828,
+    "cca2": "CL",
+    "region": "South America"
+  },
+  "CCU": {
+    "place": "Kolkata, India",
+    "place_zh": "印度加尔各答",
+    "lat": 22.654699,
+    "lng": 88.446701,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "CDG": {
+    "place": "Paris, France",
+    "place_zh": "法国巴黎",
+    "lat": 49.012798,
+    "lng": 2.55,
+    "cca2": "FR",
+    "region": "Europe"
+  },
+  "CEB": {
+    "place": "Cebu, Philippines",
+    "place_zh": "菲律宾宿务",
+    "lat": 10.3075,
+    "lng": 123.978996,
+    "cca2": "PH",
+    "region": "Asia Pacific"
+  },
+  "CFC": {
+    "place": "Caçador, Brazil",
+    "place_zh": "巴西卡萨多尔",
+    "lat": -26.7762,
+    "lng": -51.0125,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "CGB": {
+    "place": "Cuiaba, Brazil",
+    "place_zh": "巴西库亚巴",
+    "lat": -15.6529,
+    "lng": -56.116699,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "CGD": {
+    "place": "Changde, China",
+    "place_zh": "中国常德",
+    "lat": 28.9189,
+    "lng": 111.639999,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "CGK": {
+    "place": "Jakarta, Indonesia",
+    "place_zh": "印度尼西亚雅加达",
+    "lat": -6.12557,
+    "lng": 106.655998,
+    "cca2": "ID",
+    "region": "Asia Pacific"
+  },
+  "CGO": {
+    "place": "Zhengzhou, China",
+    "place_zh": "中国郑州",
+    "lat": 34.526497,
+    "lng": 113.849165,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "CGP": {
+    "place": "Chittagong, Bangladesh",
+    "place_zh": "孟加拉国吉大港",
+    "lat": 22.249599,
+    "lng": 91.813301,
+    "cca2": "BD",
+    "region": "Asia Pacific"
+  },
+  "CGY": {
+    "place": "Cagayan de Oro, Philippines",
+    "place_zh": "菲律宾卡加延德奥罗",
+    "lat": 8.41562,
+    "lng": 124.611,
+    "cca2": "PH",
+    "region": "Asia Pacific"
+  },
+  "CHC": {
+    "place": "Christchurch, New Zealand",
+    "place_zh": "新西兰基督城",
+    "lat": -43.489399,
+    "lng": 172.531998,
+    "cca2": "NZ",
+    "region": "Oceania"
+  },
+  "CJB": {
+    "place": "Coimbatore, India",
+    "place_zh": "印度哥印拜陀",
+    "lat": 11.03,
+    "lng": 77.043404,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "CKG": {
+    "place": "Chongqing, China",
+    "place_zh": "中国重庆",
+    "lat": 29.712254,
+    "lng": 106.651895,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "CLE": {
+    "place": "Cleveland, United States",
+    "place_zh": "美国克利夫兰",
+    "lat": 41.411701,
+    "lng": -81.8498,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "CLO": {
+    "place": "Cali, Colombia",
+    "place_zh": "哥伦比亚卡利",
+    "lat": 3.54322,
+    "lng": -76.3816,
+    "cca2": "CO",
+    "region": "South America"
+  },
+  "CLT": {
+    "place": "Charlotte, United States",
+    "place_zh": "美国夏洛特",
+    "lat": 35.214001,
+    "lng": -80.9431,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "CMB": {
+    "place": "Colombo, Sri Lanka",
+    "place_zh": "斯里兰卡科伦坡",
+    "lat": 7.18076,
+    "lng": 79.884102,
+    "cca2": "LK",
+    "region": "Asia Pacific"
+  },
+  "CMH": {
+    "place": "Columbus, United States",
+    "place_zh": "美国哥伦布",
+    "lat": 39.998001,
+    "lng": -82.891899,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "CNF": {
+    "place": "Belo Horizonte, Brazil",
+    "place_zh": "巴西贝洛奥里藏特",
+    "lat": -19.624443,
+    "lng": -43.971943,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "CNN": {
+    "place": "Kannur, India",
+    "place_zh": "印度坎努尔",
+    "lat": 11.92,
+    "lng": 75.55,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "CNX": {
+    "place": "Chiang Mai, Thailand",
+    "place_zh": "泰国清迈",
+    "lat": 18.7668,
+    "lng": 98.962601,
+    "cca2": "TH",
+    "region": "Asia Pacific"
+  },
+  "COK": {
+    "place": "Kochi, India",
+    "place_zh": "印度科钦",
+    "lat": 10.152,
+    "lng": 76.401901,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "COR": {
+    "place": "Córdoba, Argentina",
+    "place_zh": "阿根廷科尔多瓦",
+    "lat": -31.323601,
+    "lng": -64.208,
+    "cca2": "AR",
+    "region": "South America"
+  },
+  "CPH": {
+    "place": "Copenhagen, Denmark",
+    "place_zh": "丹麦哥本哈根",
+    "lat": 55.617901,
+    "lng": 12.656,
+    "cca2": "DK",
+    "region": "Europe"
+  },
+  "CPT": {
+    "place": "Cape Town, South Africa",
+    "place_zh": "南非开普敦",
+    "lat": -33.964802,
+    "lng": 18.6017,
+    "cca2": "ZA",
+    "region": "Africa"
+  },
+  "CRK": {
+    "place": "Tarlac City, Philippines",
+    "place_zh": "菲律宾塔拉克市",
+    "lat": 15.186,
+    "lng": 120.559998,
+    "cca2": "PH",
+    "region": "Asia Pacific"
+  },
+  "CSX": {
+    "place": "Changsha, China",
+    "place_zh": "中国长沙",
+    "lat": 28.189199,
+    "lng": 113.220001,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "CTU": {
+    "place": "Chengdu, China",
+    "place_zh": "中国成都",
+    "lat": 30.558257,
+    "lng": 103.945966,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "CVG": {
+    "place": "Cincinnati, United States",
+    "place_zh": "美国辛辛那提",
+    "lat": 39.048801,
+    "lng": -84.667801,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "CWB": {
+    "place": "Curitiba, Brazil",
+    "place_zh": "巴西库里提巴",
+    "lat": -25.5285,
+    "lng": -49.1758,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "CZL": {
+    "place": "Constantine, Algeria",
+    "place_zh": "阿尔及利亚康斯坦丁",
+    "lat": 36.276001,
+    "lng": 6.62039,
+    "cca2": "DZ",
+    "region": "Africa"
+  },
+  "CZX": {
+    "place": "Changzhou, China",
+    "place_zh": "中国常州",
+    "lat": 31.920485,
+    "lng": 119.77546,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "DAC": {
+    "place": "Dhaka, Bangladesh",
+    "place_zh": "孟加拉国达卡",
+    "lat": 23.843347,
+    "lng": 90.397783,
+    "cca2": "BD",
+    "region": "Asia Pacific"
+  },
+  "DAD": {
+    "place": "Da Nang, Vietnam",
+    "place_zh": "越南岘港",
+    "lat": 16.0439,
+    "lng": 108.198997,
+    "cca2": "VN",
+    "region": "Asia Pacific"
+  },
+  "DAR": {
+    "place": "Dar Es Salaam, Tanzania",
+    "place_zh": "坦桑尼亚达累斯萨拉姆",
+    "lat": -6.87811,
+    "lng": 39.202599,
+    "cca2": "TZ",
+    "region": "Africa"
+  },
+  "DEL": {
+    "place": "New Delhi, India",
+    "place_zh": "印度新德里",
+    "lat": 28.5665,
+    "lng": 77.103104,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "DEN": {
+    "place": "Denver, United States",
+    "place_zh": "美国丹佛",
+    "lat": 39.861698,
+    "lng": -104.672997,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "DFW": {
+    "place": "Dallas, United States",
+    "place_zh": "美国达拉斯",
+    "lat": 32.896801,
+    "lng": -97.038002,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "DKR": {
+    "place": "Dakar, Senegal",
+    "place_zh": "塞内加尔达喀尔",
+    "lat": 14.7397,
+    "lng": -17.4902,
+    "cca2": "SN",
+    "region": "Africa"
+  },
+  "DLA": {
+    "place": "Douala, Cameroon",
+    "place_zh": "喀麦隆杜阿拉",
+    "lat": 4.00608,
+    "lng": 9.71948,
+    "cca2": "CM",
+    "region": "Africa"
+  },
+  "DLC": {
+    "place": "Dalian, China",
+    "place_zh": "中国大连",
+    "lat": 38.965719,
+    "lng": 121.538477,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "DME": {
+    "place": "Moscow, Russia",
+    "place_zh": "俄罗斯莫斯科",
+    "lat": 55.408798,
+    "lng": 37.9063,
+    "cca2": "RU",
+    "region": "Europe"
+  },
+  "DMM": {
+    "place": "Dammam, Saudi Arabia",
+    "place_zh": "沙特阿拉伯达曼",
+    "lat": 26.471201,
+    "lng": 49.797901,
+    "cca2": "SA",
+    "region": "Middle East"
+  },
+  "DOH": {
+    "place": "Doha, Qatar",
+    "place_zh": "卡塔尔多哈",
+    "lat": 25.260595,
+    "lng": 51.613767,
+    "cca2": "QA",
+    "region": "Middle East"
+  },
+  "DPS": {
+    "place": "Denpasar, Indonesia",
+    "place_zh": "印度尼西亚登巴萨",
+    "lat": -8.74817,
+    "lng": 115.167,
+    "cca2": "ID",
+    "region": "Asia Pacific"
+  },
+  "DTW": {
+    "place": "Detroit, United States",
+    "place_zh": "美国底特律",
+    "lat": 42.212399,
+    "lng": -83.353401,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "DUB": {
+    "place": "Dublin, Ireland",
+    "place_zh": "爱尔兰都柏林",
+    "lat": 53.421299,
+    "lng": -6.27007,
+    "cca2": "IE",
+    "region": "Europe"
+  },
+  "DUR": {
+    "place": "Durban, South Africa",
+    "place_zh": "南非德班",
+    "lat": -29.614444,
+    "lng": 31.119722,
+    "cca2": "ZA",
+    "region": "Africa"
+  },
+  "DUS": {
+    "place": "Düsseldorf, Germany",
+    "place_zh": "德国杜塞尔多夫",
+    "lat": 51.289501,
+    "lng": 6.76678,
+    "cca2": "DE",
+    "region": "Europe"
+  },
+  "DXB": {
+    "place": "Dubai, United Arab Emirates",
+    "place_zh": "阿联酋迪拜",
+    "lat": 25.2528,
+    "lng": 55.364399,
+    "cca2": "AE",
+    "region": "Middle East"
+  },
+  "EBB": {
+    "place": "Kampala, Uganda",
+    "place_zh": "乌干达坎帕拉",
+    "lat": 0.042386,
+    "lng": 32.443501,
+    "cca2": "UG",
+    "region": "Africa"
+  },
+  "EBL": {
+    "place": "Erbil, Iraq",
+    "place_zh": "伊拉克埃尔比勒",
+    "lat": 36.237598,
+    "lng": 43.9632,
+    "cca2": "IQ",
+    "region": "Middle East"
+  },
+  "EDI": {
+    "place": "Edinburgh, United Kingdom",
+    "place_zh": "英国爱丁堡",
+    "lat": 55.950145,
+    "lng": -3.372288,
+    "cca2": "GB",
+    "region": "Europe"
+  },
+  "EVN": {
+    "place": "Yerevan, Armenia",
+    "place_zh": "亚美尼亚埃里温",
+    "lat": 40.147301,
+    "lng": 44.395901,
+    "cca2": "AM",
+    "region": "Middle East"
+  },
+  "EWR": {
+    "place": "Newark, United States",
+    "place_zh": "美国纽瓦克",
+    "lat": 40.692501,
+    "lng": -74.168701,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "EZE": {
+    "place": "Buenos Aires, Argentina",
+    "place_zh": "阿根廷布宜诺斯艾利斯",
+    "lat": -34.8222,
+    "lng": -58.5358,
+    "cca2": "AR",
+    "region": "South America"
+  },
+  "FCO": {
+    "place": "Rome, Italy",
+    "place_zh": "意大利罗马",
+    "lat": 41.804501,
+    "lng": 12.2508,
+    "cca2": "IT",
+    "region": "Europe"
+  },
+  "FIH": {
+    "place": "Kinshasa, DR Congo",
+    "place_zh": "刚果民主共和国金沙萨",
+    "lat": -4.38575,
+    "lng": 15.4446,
+    "cca2": "CD",
+    "region": "Africa"
+  },
+  "FLN": {
+    "place": "Florianopolis, Brazil",
+    "place_zh": "巴西弗洛里亚诺波利斯",
+    "lat": -27.670279,
+    "lng": -48.552502,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "FOC": {
+    "place": "Fuzhou, China",
+    "place_zh": "中国福州",
+    "lat": 25.929254,
+    "lng": 119.672524,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "FOR": {
+    "place": "Fortaleza, Brazil",
+    "place_zh": "巴西福塔莱萨",
+    "lat": -3.77628,
+    "lng": -38.5326,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "FRA": {
+    "place": "Frankfurt, Germany",
+    "place_zh": "德国法兰克福",
+    "lat": 50.026402,
+    "lng": 8.54313,
+    "cca2": "DE",
+    "region": "Europe"
+  },
+  "FRU": {
+    "place": "Bishkek, Kyrgyzstan",
+    "place_zh": "吉尔吉斯斯坦比什凯克",
+    "lat": 43.061272,
+    "lng": 74.477508,
+    "cca2": "KG",
+    "region": "Asia Pacific"
+  },
+  "FSD": {
+    "place": "Sioux Falls, United States",
+    "place_zh": "美国苏福尔斯",
+    "lat": 43.582001,
+    "lng": -96.741898,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "FUK": {
+    "place": "Fukuoka, Japan",
+    "place_zh": "日本福冈",
+    "lat": 33.585899,
+    "lng": 130.451004,
+    "cca2": "JP",
+    "region": "Asia Pacific"
+  },
+  "FUO": {
+    "place": "Foshan, China",
+    "place_zh": "中国佛山",
+    "lat": 23.0825,
+    "lng": 113.070833,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "GBE": {
+    "place": "Gaborone, Botswana",
+    "place_zh": "博茨瓦纳哈博罗内",
+    "lat": -24.555201,
+    "lng": 25.9182,
+    "cca2": "BW",
+    "region": "Africa"
+  },
+  "GDL": {
+    "place": "Guadalajara, Mexico",
+    "place_zh": "墨西哥瓜达拉哈拉",
+    "lat": 20.521799,
+    "lng": -103.310997,
+    "cca2": "MX",
+    "region": "North America"
+  },
+  "GEO": {
+    "place": "Georgetown, Guyana",
+    "place_zh": "圭亚那乔治敦",
+    "lat": 6.49855,
+    "lng": -58.254101,
+    "cca2": "GY",
+    "region": "South America"
+  },
+  "GIG": {
+    "place": "Rio de Janeiro, Brazil",
+    "place_zh": "巴西里约热内卢",
+    "lat": -22.809999,
+    "lng": -43.250557,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "GND": {
+    "place": "St. George's, Grenada",
+    "place_zh": "格林纳达圣乔治",
+    "lat": 12.0042,
+    "lng": -61.786201,
+    "cca2": "GD",
+    "region": "South America"
+  },
+  "GOT": {
+    "place": "Gothenburg, Sweden",
+    "place_zh": "瑞典哥德堡",
+    "lat": 57.6628,
+    "lng": 12.2798,
+    "cca2": "SE",
+    "region": "Europe"
+  },
+  "GRU": {
+    "place": "São Paulo, Brazil",
+    "place_zh": "巴西圣保罗",
+    "lat": -23.435556,
+    "lng": -46.473057,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "GUA": {
+    "place": "Guatemala City, Guatemala",
+    "place_zh": "危地马拉危地马拉城",
+    "lat": 14.5833,
+    "lng": -90.527496,
+    "cca2": "GT",
+    "region": "North America"
+  },
+  "GUM": {
+    "place": "Hagatna, Guam",
+    "place_zh": "关岛哈加特纳",
+    "lat": 13.4834,
+    "lng": 144.796005,
+    "cca2": "GU",
+    "region": "Asia Pacific"
+  },
+  "GVA": {
+    "place": "Geneva, Switzerland",
+    "place_zh": "瑞士日内瓦",
+    "lat": 46.238098,
+    "lng": 6.10895,
+    "cca2": "CH",
+    "region": "Europe"
+  },
+  "GYD": {
+    "place": "Baku, Azerbaijan",
+    "place_zh": "阿塞拜疆巴库",
+    "lat": 40.467499,
+    "lng": 50.0467,
+    "cca2": "AZ",
+    "region": "Middle East"
+  },
+  "GYE": {
+    "place": "Guayaquil, Ecuador",
+    "place_zh": "厄瓜多尔瓜亚基尔",
+    "lat": -2.15742,
+    "lng": -79.883598,
+    "cca2": "EC",
+    "region": "South America"
+  },
+  "GYN": {
+    "place": "Goiânia, Brazil",
+    "place_zh": "巴西戈亚尼亚",
+    "lat": -16.632,
+    "lng": -49.220699,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "HAK": {
+    "place": "Haikou, China",
+    "place_zh": "中国海口",
+    "lat": 19.9349,
+    "lng": 110.459,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "HAM": {
+    "place": "Hamburg, Germany",
+    "place_zh": "德国汉堡",
+    "lat": 53.630402,
+    "lng": 9.98823,
+    "cca2": "DE",
+    "region": "Europe"
+  },
+  "HAN": {
+    "place": "Hanoi, Vietnam",
+    "place_zh": "越南河内",
+    "lat": 21.221201,
+    "lng": 105.806999,
+    "cca2": "VN",
+    "region": "Asia Pacific"
+  },
+  "HBA": {
+    "place": "Hobart, Australia",
+    "place_zh": "澳大利亚霍巴特",
+    "lat": -42.836102,
+    "lng": 147.509995,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "HEL": {
+    "place": "Helsinki, Finland",
+    "place_zh": "芬兰赫尔辛基",
+    "lat": 60.3172,
+    "lng": 24.963301,
+    "cca2": "FI",
+    "region": "Europe"
+  },
+  "HFA": {
+    "place": "Haifa, Israel",
+    "place_zh": "以色列海法",
+    "lat": 32.809399,
+    "lng": 35.043098,
+    "cca2": "IL",
+    "region": "Middle East"
+  },
+  "HFE": {
+    "place": "Huainan, China",
+    "place_zh": "中国淮南",
+    "lat": 31.98779,
+    "lng": 116.9769,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "HGH": {
+    "place": "Shaoxing, China",
+    "place_zh": "中国绍兴",
+    "lat": 30.23609,
+    "lng": 120.428865,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "HKG": {
+    "place": "Hong Kong",
+    "place_zh": "中国香港",
+    "lat": 22.308901,
+    "lng": 113.915001,
+    "cca2": "HK",
+    "region": "Asia Pacific"
+  },
+  "HNL": {
+    "place": "Honolulu, United States",
+    "place_zh": "美国檀香山",
+    "lat": 21.318701,
+    "lng": -157.921997,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "HRE": {
+    "place": "Harare, Zimbabwe",
+    "place_zh": "津巴布韦哈拉雷",
+    "lat": -17.931801,
+    "lng": 31.0928,
+    "cca2": "ZW",
+    "region": "Africa"
+  },
+  "HYD": {
+    "place": "Hyderabad, India",
+    "place_zh": "印度海得拉巴",
+    "lat": 17.231318,
+    "lng": 78.429855,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "HYN": {
+    "place": "Taizhou, China",
+    "place_zh": "中国台州",
+    "lat": 28.562201,
+    "lng": 121.429001,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "IAD": {
+    "place": "Ashburn, United States",
+    "place_zh": "美国阿什本",
+    "lat": 38.9445,
+    "lng": -77.455803,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "IAH": {
+    "place": "Houston, United States",
+    "place_zh": "美国休斯顿",
+    "lat": 29.9844,
+    "lng": -95.3414,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ICN": {
+    "place": "Seoul, South Korea",
+    "place_zh": "韩国首尔",
+    "lat": 37.469101,
+    "lng": 126.450996,
+    "cca2": "KR",
+    "region": "Asia Pacific"
+  },
+  "IND": {
+    "place": "Indianapolis, United States",
+    "place_zh": "美国印第安纳波利斯",
+    "lat": 39.7173,
+    "lng": -86.294403,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ISB": {
+    "place": "Islamabad, Pakistan",
+    "place_zh": "巴基斯坦伊斯兰堡",
+    "lat": 33.616699,
+    "lng": 73.099197,
+    "cca2": "PK",
+    "region": "Asia Pacific"
+  },
+  "IST": {
+    "place": "Istanbul, Turkey",
+    "place_zh": "土耳其伊斯坦布尔",
+    "lat": 41.262222,
+    "lng": 28.727778,
+    "cca2": "TR",
+    "region": "Europe"
+  },
+  "ISU": {
+    "place": "Sulaymaniyah, Iraq",
+    "place_zh": "伊拉克苏莱曼尼亚",
+    "lat": 35.561749,
+    "lng": 45.316738,
+    "cca2": "IQ",
+    "region": "Middle East"
+  },
+  "ITJ": {
+    "place": "Itajai, Brazil",
+    "place_zh": "巴西伊塔雅伊",
+    "lat": -26.983055,
+    "lng": -48.816387,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "IXC": {
+    "place": "Chandigarh, India",
+    "place_zh": "印度昌迪加尔",
+    "lat": 30.6735,
+    "lng": 76.788498,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "JAX": {
+    "place": "Jacksonville, United States",
+    "place_zh": "美国杰克逊维尔",
+    "lat": 30.494101,
+    "lng": -81.687897,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "JDO": {
+    "place": "Juazeiro do Norte, Brazil",
+    "place_zh": "巴西北茹阿泽鲁",
+    "lat": -7.21896,
+    "lng": -39.2701,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "JED": {
+    "place": "Jeddah, Saudi Arabia",
+    "place_zh": "沙特阿拉伯吉达",
+    "lat": 21.6796,
+    "lng": 39.156502,
+    "cca2": "SA",
+    "region": "Middle East"
+  },
+  "JHB": {
+    "place": "Johor Bahru, Malaysia",
+    "place_zh": "马来西亚新山",
+    "lat": 1.64131,
+    "lng": 103.669998,
+    "cca2": "MY",
+    "region": "Asia Pacific"
+  },
+  "JIB": {
+    "place": "Djibouti City",
+    "place_zh": "吉布提市",
+    "lat": 11.5473,
+    "lng": 43.1595,
+    "cca2": "DJ",
+    "region": "Africa"
+  },
+  "JNB": {
+    "place": "Johannesburg, South Africa",
+    "place_zh": "南非约翰内斯堡",
+    "lat": -26.133333,
+    "lng": 28.25,
+    "cca2": "ZA",
+    "region": "Africa"
+  },
+  "JOG": {
+    "place": "Yogyakarta, Indonesia",
+    "place_zh": "印度尼西亚日惹",
+    "lat": -7.78818,
+    "lng": 110.431999,
+    "cca2": "ID",
+    "region": "Asia Pacific"
+  },
+  "JOI": {
+    "place": "Joinville, Brazil",
+    "place_zh": "巴西若因维利",
+    "lat": -26.224501,
+    "lng": -48.797401,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "JRG": {
+    "place": "Sambalpur, India",
+    "place_zh": "印度桑巴尔普尔",
+    "lat": 21.9135,
+    "lng": 84.0504,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "JSR": {
+    "place": "Jashore, Bangladesh",
+    "place_zh": "孟加拉国杰索尔",
+    "lat": 23.1838,
+    "lng": 89.160797,
+    "cca2": "BD",
+    "region": "Asia Pacific"
+  },
+  "JXG": {
+    "place": "Jiaxing, China",
+    "place_zh": "中国嘉兴",
+    "lat": 30.698056,
+    "lng": 120.663056,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "KBP": {
+    "place": "Kyiv, Ukraine",
+    "place_zh": "乌克兰基辅",
+    "lat": 50.345001,
+    "lng": 30.894699,
+    "cca2": "UA",
+    "region": "Europe"
+  },
+  "KCH": {
+    "place": "Kuching, Malaysia",
+    "place_zh": "马来西亚古晋",
+    "lat": 1.4847,
+    "lng": 110.347,
+    "cca2": "MY",
+    "region": "Asia Pacific"
+  },
+  "KEF": {
+    "place": "Reykjavík, Iceland",
+    "place_zh": "冰岛雷克雅未克",
+    "lat": 63.985001,
+    "lng": -22.6056,
+    "cca2": "IS",
+    "region": "Europe"
+  },
+  "KGL": {
+    "place": "Kigali, Rwanda",
+    "place_zh": "卢旺达基加利",
+    "lat": -1.96863,
+    "lng": 30.1395,
+    "cca2": "RW",
+    "region": "Africa"
+  },
+  "KHH": {
+    "place": "Kaohsiung City",
+    "place_zh": "中国台湾高雄",
+    "lat": 22.577101,
+    "lng": 120.349998,
+    "cca2": "TW",
+    "region": "Asia Pacific"
+  },
+  "KHI": {
+    "place": "Karachi, Pakistan",
+    "place_zh": "巴基斯坦卡拉奇",
+    "lat": 24.9065,
+    "lng": 67.160797,
+    "cca2": "PK",
+    "region": "Asia Pacific"
+  },
+  "KHN": {
+    "place": "Xinyu, China",
+    "place_zh": "中国新余",
+    "lat": 28.864815,
+    "lng": 115.90271,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "KIN": {
+    "place": "Kingston, Jamaica",
+    "place_zh": "牙买加金斯敦",
+    "lat": 17.935699,
+    "lng": -76.787498,
+    "cca2": "JM",
+    "region": "North America"
+  },
+  "KIV": {
+    "place": "Chișinău, Moldova",
+    "place_zh": "摩尔多瓦基希讷乌",
+    "lat": 46.92774,
+    "lng": 28.931704,
+    "cca2": "MD",
+    "region": "Europe"
+  },
+  "KIX": {
+    "place": "Osaka, Japan",
+    "place_zh": "日本大阪",
+    "lat": 34.427299,
+    "lng": 135.244003,
+    "cca2": "JP",
+    "region": "Asia Pacific"
+  },
+  "KJA": {
+    "place": "Krasnoyarsk, Russia",
+    "place_zh": "俄罗斯克拉斯诺亚尔斯克",
+    "lat": 56.172901,
+    "lng": 92.493301,
+    "cca2": "RU",
+    "region": "Europe"
+  },
+  "KMG": {
+    "place": "Kunming, China",
+    "place_zh": "中国昆明",
+    "lat": 25.110313,
+    "lng": 102.936743,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "KNU": {
+    "place": "Kanpur, India",
+    "place_zh": "印度坎普尔",
+    "lat": 26.399462,
+    "lng": 80.42695,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "KTM": {
+    "place": "Kathmandu, Nepal",
+    "place_zh": "尼泊尔加德满都",
+    "lat": 27.6966,
+    "lng": 85.3591,
+    "cca2": "NP",
+    "region": "Asia Pacific"
+  },
+  "KUL": {
+    "place": "Kuala Lumpur, Malaysia",
+    "place_zh": "马来西亚吉隆坡",
+    "lat": 2.74558,
+    "lng": 101.709999,
+    "cca2": "MY",
+    "region": "Asia Pacific"
+  },
+  "KWE": {
+    "place": "Guiyang, China",
+    "place_zh": "中国贵阳",
+    "lat": 26.541805,
+    "lng": 106.80402,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "KWI": {
+    "place": "Kuwait City, Kuwait",
+    "place_zh": "科威特科威特城",
+    "lat": 29.226601,
+    "lng": 47.968899,
+    "cca2": "KW",
+    "region": "Middle East"
+  },
+  "LAD": {
+    "place": "Luanda, Angola",
+    "place_zh": "安哥拉罗安达",
+    "lat": -8.85837,
+    "lng": 13.2312,
+    "cca2": "AO",
+    "region": "Africa"
+  },
+  "LAS": {
+    "place": "Las Vegas, United States",
+    "place_zh": "美国拉斯维加斯",
+    "lat": 36.080101,
+    "lng": -115.152,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "LAX": {
+    "place": "Los Angeles, United States",
+    "place_zh": "美国洛杉矶",
+    "lat": 33.942501,
+    "lng": -118.407997,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "LCA": {
+    "place": "Nicosia, Cyprus",
+    "place_zh": "塞浦路斯尼科西亚",
+    "lat": 34.875099,
+    "lng": 33.624901,
+    "cca2": "CY",
+    "region": "Europe"
+  },
+  "LED": {
+    "place": "Saint Petersburg, Russia",
+    "place_zh": "俄罗斯圣彼得堡",
+    "lat": 59.800301,
+    "lng": 30.262501,
+    "cca2": "RU",
+    "region": "Europe"
+  },
+  "LHE": {
+    "place": "Lahore, Pakistan",
+    "place_zh": "巴基斯坦拉合尔",
+    "lat": 31.521601,
+    "lng": 74.403603,
+    "cca2": "PK",
+    "region": "Asia Pacific"
+  },
+  "LHR": {
+    "place": "London, United Kingdom",
+    "place_zh": "英国伦敦",
+    "lat": 51.4706,
+    "lng": -0.461941,
+    "cca2": "GB",
+    "region": "Europe"
+  },
+  "LHW": {
+    "place": "Lanzhou, China",
+    "place_zh": "中国兰州",
+    "lat": 36.515202,
+    "lng": 103.620003,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "LIM": {
+    "place": "Lima, Peru",
+    "place_zh": "秘鲁利马",
+    "lat": -12.0219,
+    "lng": -77.114304,
+    "cca2": "PE",
+    "region": "South America"
+  },
+  "LIS": {
+    "place": "Lisbon, Portugal",
+    "place_zh": "葡萄牙里斯本",
+    "lat": 38.7813,
+    "lng": -9.13592,
+    "cca2": "PT",
+    "region": "Europe"
+  },
+  "LJU": {
+    "place": "Ljubljana, Slovenia",
+    "place_zh": "斯洛文尼亚卢布尔雅那",
+    "lat": 46.223701,
+    "lng": 14.4576,
+    "cca2": "SI",
+    "region": "Europe"
+  },
+  "LLK": {
+    "place": "Astara, Azerbaijan",
+    "place_zh": "阿塞拜疆阿斯塔拉",
+    "lat": 38.746399,
+    "lng": 48.818001,
+    "cca2": "AZ",
+    "region": "Middle East"
+  },
+  "LLW": {
+    "place": "Lilongwe, Malawi",
+    "place_zh": "马拉维利隆圭",
+    "lat": -13.7894,
+    "lng": 33.780998,
+    "cca2": "MW",
+    "region": "Africa"
+  },
+  "LOCAL": {
+    "place": "LOCAL",
+    "place_zh": "本地网络",
+    "lat": null,
+    "lng": null,
+    "cca2": null,
+    "region": null
+  },
+  "LOS": {
+    "place": "Lagos, Nigeria",
+    "place_zh": "尼日利亚拉各斯",
+    "lat": 6.57737,
+    "lng": 3.32116,
+    "cca2": "NG",
+    "region": "Africa"
+  },
+  "LPB": {
+    "place": "La Paz, Bolivia",
+    "place_zh": "玻利维亚拉巴斯",
+    "lat": -16.5133,
+    "lng": -68.192299,
+    "cca2": "BO",
+    "region": "South America"
+  },
+  "LUN": {
+    "place": "Lusaka, Zambia",
+    "place_zh": "赞比亚卢萨卡",
+    "lat": -15.3308,
+    "lng": 28.4526,
+    "cca2": "ZM",
+    "region": "Africa"
+  },
+  "LUX": {
+    "place": "Luxembourg City, Luxembourg",
+    "place_zh": "卢森堡卢森堡市",
+    "lat": 49.626598,
+    "lng": 6.21152,
+    "cca2": "LU",
+    "region": "Europe"
+  },
+  "LYA": {
+    "place": "Luoyang, China",
+    "place_zh": "中国洛阳",
+    "lat": 34.7411,
+    "lng": 112.388,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "LYS": {
+    "place": "Lyon, France",
+    "place_zh": "法国里昂",
+    "lat": 45.726398,
+    "lng": 5.09083,
+    "cca2": "FR",
+    "region": "Europe"
+  },
+  "MAA": {
+    "place": "Chennai, India",
+    "place_zh": "印度钦奈",
+    "lat": 12.990005,
+    "lng": 80.169296,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "MAD": {
+    "place": "Madrid, Spain",
+    "place_zh": "西班牙马德里",
+    "lat": 40.4936,
+    "lng": -3.56676,
+    "cca2": "ES",
+    "region": "Europe"
+  },
+  "MAN": {
+    "place": "Manchester, United Kingdom",
+    "place_zh": "英国曼彻斯特",
+    "lat": 53.353699,
+    "lng": -2.27495,
+    "cca2": "GB",
+    "region": "Europe"
+  },
+  "MAO": {
+    "place": "Manaus, Brazil",
+    "place_zh": "巴西马瑙斯",
+    "lat": -3.03861,
+    "lng": -60.049702,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "MBA": {
+    "place": "Mombasa, Kenya",
+    "place_zh": "肯尼亚蒙巴萨",
+    "lat": -4.03483,
+    "lng": 39.5942,
+    "cca2": "KE",
+    "region": "Africa"
+  },
+  "MCI": {
+    "place": "Kansas City, United States",
+    "place_zh": "美国堪萨斯城",
+    "lat": 39.2976,
+    "lng": -94.713898,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "MCT": {
+    "place": "Muscat, Oman",
+    "place_zh": "阿曼马斯喀特",
+    "lat": 23.5933,
+    "lng": 58.284401,
+    "cca2": "OM",
+    "region": "Middle East"
+  },
+  "MDE": {
+    "place": "Medellín, Colombia",
+    "place_zh": "哥伦比亚麦德林",
+    "lat": 6.16454,
+    "lng": -75.4231,
+    "cca2": "CO",
+    "region": "South America"
+  },
+  "MEL": {
+    "place": "Melbourne, Australia",
+    "place_zh": "澳大利亚墨尔本",
+    "lat": -37.673302,
+    "lng": 144.843002,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "MEM": {
+    "place": "Memphis, United States",
+    "place_zh": "美国孟菲斯",
+    "lat": 35.0424,
+    "lng": -89.9767,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "MEX": {
+    "place": "Mexico City, Mexico",
+    "place_zh": "墨西哥墨西哥城",
+    "lat": 19.4363,
+    "lng": -99.072098,
+    "cca2": "MX",
+    "region": "North America"
+  },
+  "MFE": {
+    "place": "McAllen, United States",
+    "place_zh": "美国麦卡伦",
+    "lat": 26.176141,
+    "lng": -98.237965,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "MFM": {
+    "place": "Macau",
+    "place_zh": "中国澳门",
+    "lat": 22.149599,
+    "lng": 113.592003,
+    "cca2": "MO",
+    "region": "Asia Pacific"
+  },
+  "MIA": {
+    "place": "Miami, United States",
+    "place_zh": "美国迈阿密",
+    "lat": 25.7932,
+    "lng": -80.290604,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "MLA": {
+    "place": "Santa Venera, Malta",
+    "place_zh": "马耳他圣韦内拉",
+    "lat": 35.857498,
+    "lng": 14.4775,
+    "cca2": "MT",
+    "region": "Europe"
+  },
+  "MLE": {
+    "place": "Malé, Maldives",
+    "place_zh": "马尔代夫马累",
+    "lat": 4.19183,
+    "lng": 73.529099,
+    "cca2": "MV",
+    "region": "Asia Pacific"
+  },
+  "MLG": {
+    "place": "Malang, Indonesia",
+    "place_zh": "印度尼西亚玛琅",
+    "lat": -7.92656,
+    "lng": 112.714996,
+    "cca2": "ID",
+    "region": "Asia Pacific"
+  },
+  "MNL": {
+    "place": "Manila, Philippines",
+    "place_zh": "菲律宾马尼拉",
+    "lat": 14.5086,
+    "lng": 121.019997,
+    "cca2": "PH",
+    "region": "Asia Pacific"
+  },
+  "MPM": {
+    "place": "Maputo, Mozambique",
+    "place_zh": "莫桑比克马普托",
+    "lat": -25.920799,
+    "lng": 32.572601,
+    "cca2": "MZ",
+    "region": "Africa"
+  },
+  "MRS": {
+    "place": "Marseille, France",
+    "place_zh": "法国马赛",
+    "lat": 43.439272,
+    "lng": 5.221424,
+    "cca2": "FR",
+    "region": "Europe"
+  },
+  "MRU": {
+    "place": "Port Louis, Mauritius",
+    "place_zh": "毛里求斯路易港",
+    "lat": -20.430201,
+    "lng": 57.683601,
+    "cca2": "MU",
+    "region": "Africa"
+  },
+  "MSP": {
+    "place": "Minneapolis, United States",
+    "place_zh": "美国明尼阿波利斯",
+    "lat": 44.882,
+    "lng": -93.221802,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "MSQ": {
+    "place": "Minsk, Belarus",
+    "place_zh": "白俄罗斯明斯克",
+    "lat": 53.8825,
+    "lng": 28.030701,
+    "cca2": "BY",
+    "region": "Europe"
+  },
+  "MUC": {
+    "place": "Munich, Germany",
+    "place_zh": "德国慕尼黑",
+    "lat": 48.353802,
+    "lng": 11.7861,
+    "cca2": "DE",
+    "region": "Europe"
+  },
+  "MXP": {
+    "place": "Milan, Italy",
+    "place_zh": "意大利米兰",
+    "lat": 45.6306,
+    "lng": 8.72811,
+    "cca2": "IT",
+    "region": "Europe"
+  },
+  "NAG": {
+    "place": "Nagpur, India",
+    "place_zh": "印度那格浦尔",
+    "lat": 21.092199,
+    "lng": 79.047203,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "NBO": {
+    "place": "Nairobi, Kenya",
+    "place_zh": "肯尼亚内罗毕",
+    "lat": -1.31924,
+    "lng": 36.927799,
+    "cca2": "KE",
+    "region": "Africa"
+  },
+  "NJF": {
+    "place": "Najaf, Iraq",
+    "place_zh": "伊拉克纳杰夫",
+    "lat": 31.989722,
+    "lng": 44.404167,
+    "cca2": "IQ",
+    "region": "Middle East"
+  },
+  "NNG": {
+    "place": "Nanning, China",
+    "place_zh": "中国南宁",
+    "lat": 22.598071,
+    "lng": 108.181922,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "NOU": {
+    "place": "Noumea, New Caledonia",
+    "place_zh": "新喀里多尼亚努美阿",
+    "lat": -22.014601,
+    "lng": 166.212997,
+    "cca2": "NC",
+    "region": "Oceania"
+  },
+  "NQN": {
+    "place": "Neuquén, Argentina",
+    "place_zh": "阿根廷内乌肯",
+    "lat": -38.949001,
+    "lng": -68.155701,
+    "cca2": "AR",
+    "region": "South America"
+  },
+  "NQZ": {
+    "place": "Astana, Kazakhstan",
+    "place_zh": "哈萨克斯坦阿斯塔纳",
+    "lat": 51.022202,
+    "lng": 71.466904,
+    "cca2": "KZ",
+    "region": "Europe"
+  },
+  "NRT": {
+    "place": "Tokyo, Japan",
+    "place_zh": "日本东京",
+    "lat": 35.764702,
+    "lng": 140.386002,
+    "cca2": "JP",
+    "region": "Asia Pacific"
+  },
+  "NVT": {
+    "place": "Timbó, Brazil",
+    "place_zh": "巴西蒂姆博",
+    "lat": -26.879999,
+    "lng": -48.651402,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "OKA": {
+    "place": "Naha, Japan",
+    "place_zh": "日本那霸",
+    "lat": 26.195801,
+    "lng": 127.646004,
+    "cca2": "JP",
+    "region": "Asia Pacific"
+  },
+  "OKC": {
+    "place": "Oklahoma City, United States",
+    "place_zh": "美国俄克拉荷马城",
+    "lat": 35.393101,
+    "lng": -97.6007,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "OMA": {
+    "place": "Omaha, United States",
+    "place_zh": "美国奥马哈",
+    "lat": 41.3032,
+    "lng": -95.894096,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ORD": {
+    "place": "Chicago, United States",
+    "place_zh": "美国芝加哥",
+    "lat": 41.9786,
+    "lng": -87.9048,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ORF": {
+    "place": "Norfolk, United States",
+    "place_zh": "美国诺福克",
+    "lat": 36.8946,
+    "lng": -76.201202,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "ORK": {
+    "place": "Cork, Ireland",
+    "place_zh": "爱尔兰科克",
+    "lat": 51.841301,
+    "lng": -8.49111,
+    "cca2": "IE",
+    "region": "Europe"
+  },
+  "ORN": {
+    "place": "Oran, Algeria",
+    "place_zh": "阿尔及利亚奥兰",
+    "lat": 35.623901,
+    "lng": -0.621183,
+    "cca2": "DZ",
+    "region": "Africa"
+  },
+  "OSL": {
+    "place": "Oslo, Norway",
+    "place_zh": "挪威奥斯陆",
+    "lat": 60.193901,
+    "lng": 11.1004,
+    "cca2": "NO",
+    "region": "Europe"
+  },
+  "OTP": {
+    "place": "Bucharest, Romania",
+    "place_zh": "罗马尼亚布加勒斯特",
+    "lat": 44.572201,
+    "lng": 26.1022,
+    "cca2": "RO",
+    "region": "Europe"
+  },
+  "OUA": {
+    "place": "Ouagadougou, Burkina Faso",
+    "place_zh": "布基纳法索瓦加杜古",
+    "lat": 12.3532,
+    "lng": -1.51242,
+    "cca2": "BF",
+    "region": "Africa"
+  },
+  "PAT": {
+    "place": "Patna, India",
+    "place_zh": "印度巴特那",
+    "lat": 25.591299,
+    "lng": 85.087997,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "PBH": {
+    "place": "Thimphu, Bhutan",
+    "place_zh": "不丹廷布",
+    "lat": 27.4032,
+    "lng": 89.424599,
+    "cca2": "BT",
+    "region": "Asia Pacific"
+  },
+  "PBM": {
+    "place": "Paramaribo, Suriname",
+    "place_zh": "苏里南帕拉马里博",
+    "lat": 5.45283,
+    "lng": -55.187801,
+    "cca2": "SR",
+    "region": "South America"
+  },
+  "PDX": {
+    "place": "Portland, United States",
+    "place_zh": "美国波特兰",
+    "lat": 45.588699,
+    "lng": -122.598,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "PER": {
+    "place": "Perth, Australia",
+    "place_zh": "澳大利亚珀斯",
+    "lat": -31.9403,
+    "lng": 115.967003,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "PHL": {
+    "place": "Philadelphia, United States",
+    "place_zh": "美国费城",
+    "lat": 39.871899,
+    "lng": -75.241096,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "PHX": {
+    "place": "Phoenix, United States",
+    "place_zh": "美国菲尼克斯",
+    "lat": 33.434299,
+    "lng": -112.012001,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "PIT": {
+    "place": "Pittsburgh, United States",
+    "place_zh": "美国匹兹堡",
+    "lat": 40.491501,
+    "lng": -80.232903,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "PKX": {
+    "place": "Langfang, China",
+    "place_zh": "中国廊坊",
+    "lat": 39.501289,
+    "lng": 116.413967,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "PMO": {
+    "place": "Palermo, Italy",
+    "place_zh": "意大利巴勒莫",
+    "lat": 38.175999,
+    "lng": 13.091,
+    "cca2": "IT",
+    "region": "Europe"
+  },
+  "PMW": {
+    "place": "Palmas, Brazil",
+    "place_zh": "巴西帕尔马斯",
+    "lat": -10.2915,
+    "lng": -48.356998,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "PNH": {
+    "place": "Phnom Penh, Cambodia",
+    "place_zh": "柬埔寨金边",
+    "lat": 11.5466,
+    "lng": 104.844002,
+    "cca2": "KH",
+    "region": "Asia Pacific"
+  },
+  "PNQ": {
+    "place": "Pune, India",
+    "place_zh": "印度浦那",
+    "lat": 18.5821,
+    "lng": 73.919701,
+    "cca2": "IN",
+    "region": "Asia Pacific"
+  },
+  "POA": {
+    "place": "Porto Alegre, Brazil",
+    "place_zh": "巴西阿雷格里港",
+    "lat": -29.9944,
+    "lng": -51.171398,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "POS": {
+    "place": "Port of Spain, Trinidad and Tobago",
+    "place_zh": "特立尼达和多巴哥西班牙港",
+    "lat": 10.5954,
+    "lng": -61.3372,
+    "cca2": "TT",
+    "region": "South America"
+  },
+  "PPT": {
+    "place": "Tahiti, French Polynesia",
+    "place_zh": "法属波利尼西亚塔希提",
+    "lat": -17.553699,
+    "lng": -149.606995,
+    "cca2": "PF",
+    "region": "Oceania"
+  },
+  "PRG": {
+    "place": "Prague, Czech Republic",
+    "place_zh": "捷克共和国布拉格",
+    "lat": 50.1008,
+    "lng": 14.26,
+    "cca2": "CZ",
+    "region": "Europe"
+  },
+  "PTY": {
+    "place": "Panama City, Panama",
+    "place_zh": "巴拿马巴拿马城",
+    "lat": 9.07136,
+    "lng": -79.383499,
+    "cca2": "PA",
+    "region": "South America"
+  },
+  "QRO": {
+    "place": "Queretaro, Mexico",
+    "place_zh": "墨西哥克雷塔罗",
+    "lat": 20.6173,
+    "lng": -100.185997,
+    "cca2": "MX",
+    "region": "North America"
+  },
+  "QWJ": {
+    "place": "Americana, Brazil",
+    "place_zh": "巴西阿美利卡纳",
+    "lat": -22.738,
+    "lng": -47.334,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "RAO": {
+    "place": "Ribeirao Preto, Brazil",
+    "place_zh": "巴西里贝朗普雷图",
+    "lat": -21.136389,
+    "lng": -47.776669,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "RDU": {
+    "place": "Durham, United States",
+    "place_zh": "美国达勒姆",
+    "lat": 35.877602,
+    "lng": -78.787498,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "REC": {
+    "place": "Recife, Brazil",
+    "place_zh": "巴西累西腓",
+    "lat": -8.12649,
+    "lng": -34.923599,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "RIC": {
+    "place": "Richmond, United States",
+    "place_zh": "美国里士满",
+    "lat": 37.505199,
+    "lng": -77.319702,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "RIX": {
+    "place": "Riga, Latvia",
+    "place_zh": "拉脱维亚里加",
+    "lat": 56.923599,
+    "lng": 23.9711,
+    "cca2": "LV",
+    "region": "Europe"
+  },
+  "RUH": {
+    "place": "Riyadh, Saudi Arabia",
+    "place_zh": "沙特阿拉伯利雅得",
+    "lat": 24.9576,
+    "lng": 46.698799,
+    "cca2": "SA",
+    "region": "Middle East"
+  },
+  "RUN": {
+    "place": "Saint-Denis, Réunion",
+    "place_zh": "法国留尼汪圣丹尼",
+    "lat": -20.8871,
+    "lng": 55.5103,
+    "cca2": "RE",
+    "region": "Africa"
+  },
+  "SAN": {
+    "place": "San Diego, United States",
+    "place_zh": "美国圣迭戈",
+    "lat": 32.733601,
+    "lng": -117.190002,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SAP": {
+    "place": "San Pedro Sula, Honduras",
+    "place_zh": "洪都拉斯圣佩德罗苏拉",
+    "lat": 15.4526,
+    "lng": -87.923599,
+    "cca2": "HN",
+    "region": "South America"
+  },
+  "SAT": {
+    "place": "San Antonio, United States",
+    "place_zh": "美国圣安东尼奥",
+    "lat": 29.533701,
+    "lng": -98.469803,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SCL": {
+    "place": "Santiago, Chile",
+    "place_zh": "智利圣地亚哥",
+    "lat": -33.393002,
+    "lng": -70.785797,
+    "cca2": "CL",
+    "region": "South America"
+  },
+  "SDQ": {
+    "place": "Santo Domingo, Dominican Republic",
+    "place_zh": "多米尼加共和国圣多明各",
+    "lat": 18.429701,
+    "lng": -69.6689,
+    "cca2": "DO",
+    "region": "North America"
+  },
+  "SEA": {
+    "place": "Seattle, United States",
+    "place_zh": "美国西雅图",
+    "lat": 47.449001,
+    "lng": -122.308998,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SFO": {
+    "place": "San Francisco, United States",
+    "place_zh": "美国旧金山",
+    "lat": 37.618999,
+    "lng": -122.375,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SGN": {
+    "place": "Ho Chi Minh City, Vietnam",
+    "place_zh": "越南胡志明市",
+    "lat": 10.8188,
+    "lng": 106.652,
+    "cca2": "VN",
+    "region": "Asia Pacific"
+  },
+  "SHA": {
+    "place": "Shanghai, China",
+    "place_zh": "中国上海",
+    "lat": 31.198104,
+    "lng": 121.33426,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "SIN": {
+    "place": "Singapore",
+    "place_zh": "新加坡",
+    "lat": 1.35019,
+    "lng": 103.994003,
+    "cca2": "SG",
+    "region": "Asia Pacific"
+  },
+  "SJC": {
+    "place": "San Jose, United States",
+    "place_zh": "美国圣何塞",
+    "lat": 37.362598,
+    "lng": -121.929001,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SJK": {
+    "place": "São José dos Campos, Brazil",
+    "place_zh": "巴西圣若泽杜斯坎普斯",
+    "lat": -23.2292,
+    "lng": -45.8615,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "SJO": {
+    "place": "San José, Costa Rica",
+    "place_zh": "哥斯达黎加圣何塞",
+    "lat": 9.99386,
+    "lng": -84.208801,
+    "cca2": "CR",
+    "region": "South America"
+  },
+  "SJP": {
+    "place": "São José do Rio Preto, Brazil",
+    "place_zh": "巴西圣若泽杜里奥普雷图",
+    "lat": -20.816601,
+    "lng": -49.406502,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "SJU": {
+    "place": "San Juan, Puerto Rico",
+    "place_zh": "波多黎各圣胡安",
+    "lat": 18.4394,
+    "lng": -66.001801,
+    "cca2": "PR",
+    "region": "North America"
+  },
+  "SJW": {
+    "place": "Hengshui, China",
+    "place_zh": "中国衡水",
+    "lat": 38.280701,
+    "lng": 114.696999,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "SKG": {
+    "place": "Thessaloniki, Greece",
+    "place_zh": "希腊塞萨洛尼基",
+    "lat": 40.519699,
+    "lng": 22.9709,
+    "cca2": "GR",
+    "region": "Europe"
+  },
+  "SKP": {
+    "place": "Skopje, North Macedonia",
+    "place_zh": "北马其顿斯科普里",
+    "lat": 41.961601,
+    "lng": 21.621401,
+    "cca2": "MK",
+    "region": "Europe"
+  },
+  "SLC": {
+    "place": "Salt Lake City, United States",
+    "place_zh": "美国盐湖城",
+    "lat": 40.788399,
+    "lng": -111.977997,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SMF": {
+    "place": "Sacramento, United States",
+    "place_zh": "美国萨克拉门托",
+    "lat": 38.6954,
+    "lng": -121.591003,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "SOD": {
+    "place": "Sorocaba, Brazil",
+    "place_zh": "巴西索罗卡巴",
+    "lat": -23.478001,
+    "lng": -47.490002,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "SOF": {
+    "place": "Sofia, Bulgaria",
+    "place_zh": "保加利亚索非亚",
+    "lat": 42.696693,
+    "lng": 23.411436,
+    "cca2": "BG",
+    "region": "Europe"
+  },
+  "SSA": {
+    "place": "Salvador, Brazil",
+    "place_zh": "巴西萨尔瓦多",
+    "lat": -12.068355,
+    "lng": -45.711454,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "STI": {
+    "place": "Santiago de los Caballeros, Dominican Republic",
+    "place_zh": "多米尼加共和国圣地亚哥德洛斯卡巴耶罗斯",
+    "lat": 19.406099,
+    "lng": -70.604698,
+    "cca2": "DO",
+    "region": "North America"
+  },
+  "STL": {
+    "place": "St. Louis, United States",
+    "place_zh": "美国圣路易斯",
+    "lat": 38.748699,
+    "lng": -90.370003,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "STR": {
+    "place": "Stuttgart, Germany",
+    "place_zh": "德国斯图加特",
+    "lat": 48.689899,
+    "lng": 9.22196,
+    "cca2": "DE",
+    "region": "Europe"
+  },
+  "SUV": {
+    "place": "Suva, Fiji",
+    "place_zh": "斐济苏瓦",
+    "lat": -18.043301,
+    "lng": 178.559006,
+    "cca2": "FJ",
+    "region": "Oceania"
+  },
+  "SVX": {
+    "place": "Yekaterinburg, Russia",
+    "place_zh": "俄罗斯叶卡捷琳堡",
+    "lat": 56.743099212646,
+    "lng": 60.802700042725,
+    "cca2": "RU",
+    "region": "Europe"
+  },
+  "SYD": {
+    "place": "Sydney, Australia",
+    "place_zh": "澳大利亚悉尼",
+    "lat": -33.946098,
+    "lng": 151.177002,
+    "cca2": "AU",
+    "region": "Oceania"
+  },
+  "SZX": {
+    "place": "Shenzhen, China",
+    "place_zh": "中国深圳",
+    "lat": 22.639474,
+    "lng": 113.803262,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "TAO": {
+    "place": "Qingdao, China",
+    "place_zh": "中国青岛",
+    "lat": 36.361953,
+    "lng": 120.088171,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "TAS": {
+    "place": "Tashkent, Uzbekistan",
+    "place_zh": "乌兹别克斯坦塔什干",
+    "lat": 41.2579,
+    "lng": 69.281197,
+    "cca2": "UZ",
+    "region": "Asia Pacific"
+  },
+  "TBS": {
+    "place": "Tbilisi, Georgia",
+    "place_zh": "格鲁吉亚第比利斯",
+    "lat": 41.669201,
+    "lng": 44.9547,
+    "cca2": "GE",
+    "region": "Europe"
+  },
+  "TEN": {
+    "place": "Tongren, China",
+    "place_zh": "中国铜仁",
+    "lat": 27.883333,
+    "lng": 109.308889,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "TGU": {
+    "place": "Tegucigalpa, Honduras",
+    "place_zh": "洪都拉斯特古西加尔巴",
+    "lat": 14.0609,
+    "lng": -87.217201,
+    "cca2": "HN",
+    "region": "South America"
+  },
+  "TIA": {
+    "place": "Tirana, Albania",
+    "place_zh": "阿尔巴尼亚地拉那",
+    "lat": 41.4147,
+    "lng": 19.7206,
+    "cca2": "AL",
+    "region": "Europe"
+  },
+  "TLH": {
+    "place": "Tallahassee, United States",
+    "place_zh": "美国塔拉哈西",
+    "lat": 30.3965,
+    "lng": -84.350304,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "TLL": {
+    "place": "Tallinn, Estonia",
+    "place_zh": "爱沙尼亚塔林",
+    "lat": 59.4133,
+    "lng": 24.8328,
+    "cca2": "EE",
+    "region": "Europe"
+  },
+  "TLV": {
+    "place": "Tel Aviv, Israel",
+    "place_zh": "以色列特拉维夫",
+    "lat": 32.011398,
+    "lng": 34.8867,
+    "cca2": "IL",
+    "region": "Middle East"
+  },
+  "TNA": {
+    "place": "Jinan, China",
+    "place_zh": "中国济南",
+    "lat": 36.857201,
+    "lng": 117.216003,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "TNR": {
+    "place": "Antananarivo, Madagascar",
+    "place_zh": "马达加斯加塔那那利佛",
+    "lat": -18.7969,
+    "lng": 47.478802,
+    "cca2": "MG",
+    "region": "Africa"
+  },
+  "TPA": {
+    "place": "Tampa, United States",
+    "place_zh": "美国坦帕",
+    "lat": 27.9755,
+    "lng": -82.533203,
+    "cca2": "US",
+    "region": "North America"
+  },
+  "TPE": {
+    "place": "Taipei",
+    "place_zh": "中国台北",
+    "lat": 25.0777,
+    "lng": 121.233002,
+    "cca2": "TW",
+    "region": "Asia Pacific"
+  },
+  "TSN": {
+    "place": "Tianjin, China",
+    "place_zh": "中国天津",
+    "lat": 39.124401092499994,
+    "lng": 117.346000671,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "TUN": {
+    "place": "Tunis, Tunisia",
+    "place_zh": "突尼斯突尼斯",
+    "lat": 36.851002,
+    "lng": 10.2272,
+    "cca2": "TN",
+    "region": "Africa"
+  },
+  "TXL": {
+    "place": "Berlin, Germany",
+    "place_zh": "德国柏林",
+    "lat": 52.5597,
+    "lng": 13.2877,
+    "cca2": "DE",
+    "region": "Europe"
+  },
+  "TYN": {
+    "place": "Yangquan, China",
+    "place_zh": "中国阳泉",
+    "lat": 37.746899,
+    "lng": 112.627998,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "UDI": {
+    "place": "Uberlândia, Brazil",
+    "place_zh": "巴西乌贝兰迪亚",
+    "lat": -18.883612,
+    "lng": -48.225277,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "UIO": {
+    "place": "Quito, Ecuador",
+    "place_zh": "厄瓜多尔基多",
+    "lat": -0.129167,
+    "lng": -78.3575,
+    "cca2": "EC",
+    "region": "South America"
+  },
+  "ULN": {
+    "place": "Ulaanbaatar, Mongolia",
+    "place_zh": "蒙古乌兰巴托",
+    "lat": 47.843102,
+    "lng": 106.766998,
+    "cca2": "MN",
+    "region": "Asia Pacific"
+  },
+  "URT": {
+    "place": "Surat Thani, Thailand",
+    "place_zh": "泰国素叻他尼",
+    "lat": 9.1326,
+    "lng": 99.135597,
+    "cca2": "TH",
+    "region": "Asia Pacific"
+  },
+  "VCP": {
+    "place": "Campinas, Brazil",
+    "place_zh": "巴西坎皮纳斯",
+    "lat": -23.007401,
+    "lng": -47.134499,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "VIE": {
+    "place": "Vienna, Austria",
+    "place_zh": "奥地利维也纳",
+    "lat": 48.110298,
+    "lng": 16.5697,
+    "cca2": "AT",
+    "region": "Europe"
+  },
+  "VIX": {
+    "place": "Vitoria, Brazil",
+    "place_zh": "巴西维多利亚",
+    "lat": -20.258057,
+    "lng": -40.286388,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "VNO": {
+    "place": "Vilnius, Lithuania",
+    "place_zh": "立陶宛维尔纽斯",
+    "lat": 54.634102,
+    "lng": 25.285801,
+    "cca2": "LT",
+    "region": "Europe"
+  },
+  "VTE": {
+    "place": "Vientiane, Laos",
+    "place_zh": "老挝万象",
+    "lat": 17.9883,
+    "lng": 102.563004,
+    "cca2": "LA",
+    "region": "Asia Pacific"
+  },
+  "WAW": {
+    "place": "Warsaw, Poland",
+    "place_zh": "波兰华沙",
+    "lat": 52.165699,
+    "lng": 20.9671,
+    "cca2": "PL",
+    "region": "Europe"
+  },
+  "WDH": {
+    "place": "Windhoek, Namibia",
+    "place_zh": "纳米比亚温得和克",
+    "lat": -22.4799,
+    "lng": 17.4709,
+    "cca2": "NA",
+    "region": "Africa"
+  },
+  "WHU": {
+    "place": "Wuhu, China",
+    "place_zh": "中国芜湖",
+    "lat": 31.3906,
+    "lng": 118.408997,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "WLG": {
+    "place": "Wellington, New Zealand",
+    "place_zh": "新西兰惠灵顿",
+    "lat": -41.327202,
+    "lng": 174.804993,
+    "cca2": "NZ",
+    "region": "Oceania"
+  },
+  "WRO": {
+    "place": "Wroclaw, Poland",
+    "place_zh": "波兰弗罗茨瓦夫",
+    "lat": 51.102699,
+    "lng": 16.885799,
+    "cca2": "PL",
+    "region": "Europe"
+  },
+  "XAP": {
+    "place": "Chapeco, Brazil",
+    "place_zh": "巴西沙佩科",
+    "lat": -27.134199,
+    "lng": -52.656601,
+    "cca2": "BR",
+    "region": "South America"
+  },
+  "XFN": {
+    "place": "Xiangyang, China",
+    "place_zh": "中国襄阳",
+    "lat": 32.152222,
+    "lng": 112.291666,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "XIY": {
+    "place": "Baoji, China",
+    "place_zh": "中国宝鸡",
+    "lat": 34.442207,
+    "lng": 108.762385,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "XNH": {
+    "place": "Nasiriyah, Iraq",
+    "place_zh": "伊拉克纳西里耶",
+    "lat": 30.935801,
+    "lng": 46.090099,
+    "cca2": "IQ",
+    "region": "Middle East"
+  },
+  "XNN": {
+    "place": "Xining, China",
+    "place_zh": "中国西宁",
+    "lat": 36.52775,
+    "lng": 102.040215,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "YHZ": {
+    "place": "Halifax, Canada",
+    "place_zh": "加拿大哈利法克斯",
+    "lat": 44.880798,
+    "lng": -63.508598,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "YOW": {
+    "place": "Ottawa, Canada",
+    "place_zh": "加拿大渥太华",
+    "lat": 45.322498,
+    "lng": -75.669197,
+    "cca2": "CA",
+    "region": null
+  },
+  "YUL": {
+    "place": "Montréal, Canada",
+    "place_zh": "加拿大蒙特利尔",
+    "lat": 45.4706,
+    "lng": -73.740799,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "YVR": {
+    "place": "Vancouver, Canada",
+    "place_zh": "加拿大温哥华",
+    "lat": 49.193901,
+    "lng": -123.183998,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "YWG": {
+    "place": "Winnipeg, Canada",
+    "place_zh": "加拿大温尼伯",
+    "lat": 49.91,
+    "lng": -97.239899,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "YXE": {
+    "place": "Saskatoon, Canada",
+    "place_zh": "加拿大萨斯卡通",
+    "lat": 52.170799,
+    "lng": -106.699997,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "YYC": {
+    "place": "Calgary, Canada",
+    "place_zh": "加拿大卡尔加里",
+    "lat": 51.113899,
+    "lng": -114.019997,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "YYZ": {
+    "place": "Toronto, Canada",
+    "place_zh": "加拿大多伦多",
+    "lat": 43.6772,
+    "lng": -79.6306,
+    "cca2": "CA",
+    "region": "North America"
+  },
+  "ZAG": {
+    "place": "Zagreb, Croatia",
+    "place_zh": "克罗地亚萨格勒布",
+    "lat": 45.742901,
+    "lng": 16.0688,
+    "cca2": "HR",
+    "region": "Europe"
+  },
+  "ZDM": {
+    "place": "Ramallah",
+    "place_zh": "拉马拉",
+    "lat": 32.2719,
+    "lng": 35.0194,
+    "cca2": "PS",
+    "region": "Middle East"
+  },
+  "ZGN": {
+    "place": "Zhongshan, China",
+    "place_zh": "中国中山",
+    "lat": 22.519296,
+    "lng": 113.361307,
+    "cca2": "CN",
+    "region": "Asia Pacific"
+  },
+  "ZRH": {
+    "place": "Zurich, Switzerland",
+    "place_zh": "瑞士苏黎世",
+    "lat": 47.464699,
+    "lng": 8.54917,
+    "cca2": "CH",
+    "region": "Europe"
+  }
+}

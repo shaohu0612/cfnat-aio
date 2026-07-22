@@ -711,9 +711,9 @@ func (m *Manager) SyncDatacenters() error {
 			}
 			entries = append(entries, DatacenterEntry{
 				Colo:       colo,
-				Name:       dc.Place,
+				Name:       dc.PlaceZh,
 				Country:    dc.CCA2,
-				City:       dc.Place,
+				City:       dc.PlaceZh,
 				Continent:  dc.Region,
 				Latitude:   dc.Lat,
 				Longitude:  dc.Lng,

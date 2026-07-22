@@ -4,7 +4,8 @@
 
 ## 特性
 
-- **多地区代理**：每个地区独立 SOCKS5/HTTP 端口，WebUI 动态增删改，配置变更无需重启
+- **多地区代理**：每个地区独立 SOCKS5/HTTP/WebSocket 端口，WebUI 动态增删改，配置变更无需重启
+- **多协议支持**：支持 SOCKS5、HTTP CONNECT、WebSocket、TCP 透传四种代理协议
 - **CMIN2 IP 库**：按 Cloudflare colo 代码分库存储，双层 IP 池（主池/备选池），支持健康检查淘汰和自动隔离
 - **扫描器**：继承 cfdata 扫描管线，5 阶段处理（加载 CIDR → 抽样 → 探活 → 测速 → 入库），自动检测 IPv6 可用性
 - **批量导入探测**：粘贴 IP 列表（FOFA/CF-Workers 导出结果），自动探活识别 colo、CMIN2 筛选、测速入库
@@ -42,11 +43,13 @@ docker compose up -d
 
 **qBittorrent**：设置 → 连接 → 代理类型 SOCKS5，主机 `<服务器IP>`，端口 `2003`（日本）
 
-**v2rayN**：添加 SOCKS5 服务器，地址 `<服务器IP>`，端口 `2003`，无需认证
+**v2rayN**：
+- SOCKS5 模式：添加 SOCKS5 服务器，地址 `<服务器IP>`，端口 `2003`，无需认证
+- WebSocket 模式：支持 WebSocket + TLS + cfnat 协议，代理端口 `2003`，系统自动识别握手并返回 101 响应
 
 **Transmission**：编辑配置文件 `proxy` 段，类型 socks5，地址 `<服务器IP>`，端口 `2002`（美国）
 
-任何支持 SOCKS5 或 HTTP CONNECT 代理的客户端均可使用。
+支持 SOCKS5、HTTP CONNECT、WebSocket、TCP 透传四种代理协议。
 
 ## WebUI 模块
 
@@ -69,8 +72,8 @@ cfnat-aio/
 │   ├── config/          # 配置管理 + SQLite 存储
 │   ├── iplibrary/       # CMIN2 IP 库（双层池 + 缓存 + DB）
 │   ├── scanner/         # IP 扫描器（cfdata 继承）
-│   ├── proxy/           # 代理转发（cfnat 继承，SOCKS5/HTTP/透传）
-│   │   ├── manager.go   # 代理管理核心（重试、负载均衡）
+│   ├── proxy/           # 代理转发（cfnat 继承，SOCKS5/HTTP/WebSocket/透传）
+│   │   ├── manager.go   # 代理管理核心（重试、负载均衡、WebSocket 支持）
 │   │   ├── metrics.go   # EWMA 质量监控
 │   │   └── sticky.go    # 连接亲和性
 │   ├── logging/         # 统一日志（内存 ring buffer + SSE）
@@ -99,12 +102,21 @@ TCP 探活 + TLS 握手 + /cdn-cgi/trace 识别 colo
    ↓
 CMIN2 IP 库（双层池：主池活跃转发 + 备选池待命补充）
    ↓ 加权随机选取（考虑速度、延迟、连接数）
-代理监听（每地区一个端口，SOCKS5/HTTP/透传）
+代理监听（每地区一个端口，自动协议检测：SOCKS5/HTTP/WebSocket/透传）
    ↓
 客户端（qBittorrent / v2rayN / Transmission 等）
 ```
 
 外部 IP 来源（FOFA / CF-Workers 导出）可通过"批量导入探测"直接注入上述数据流。
+
+**支持协议**：
+
+| 协议 | 特点 | 适用场景 |
+|------|------|---------|
+| SOCKS5 | 标准 SOCKS5 协议，无需认证 | qBittorrent、浏览器代理插件等 |
+| HTTP CONNECT | 标准 HTTP 代理 | 浏览器、wget、curl 等 |
+| WebSocket | 基于 HTTP 的 WebSocket 握手 | v2rayN 等 WebSocket 客户端 |
+| TCP 透传 | 直接 TCP 转发 | 自定义协议、特殊客户端 |
 
 ## 文档
 

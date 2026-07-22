@@ -946,23 +946,23 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
         <div style="display:flex;align-items:center;gap:10px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cfnat-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span style="font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--cfnat-foreground);">扫描进度</span>
-          <span style="font-size:var(--font-size-xs);padding:2px 8px;border-radius:var(--cfnat-radius-full);background:rgba(88,166,255,0.15);color:var(--cfnat-primary);border:1px solid rgba(88,166,255,0.25);white-space:nowrap;">运行中</span>
+          <span id="scan-status-badge" style="font-size:var(--font-size-xs);padding:2px 8px;border-radius:var(--cfnat-radius-full);background:rgba(88,166,255,0.15);color:var(--cfnat-primary);border:1px solid rgba(88,166,255,0.25);white-space:nowrap;">运行中</span>
         </div>
         <div style="display:flex;align-items:center;gap:16px;">
-          <span style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-primary);">阶段 68%</span>
-          <span style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">已测: <span style="color:var(--cfnat-foreground);font-weight:var(--font-weight-bold);">442,352</span></span>
+          <span id="scan-phase-percent" style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-primary);">阶段 68%</span>
+          <span style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">已测: <span id="scan-tested-count" style="color:var(--cfnat-foreground);font-weight:var(--font-weight-bold);">442,352</span></span>
         </div>
       </div>
       <div style="padding:20px 24px;">
         <div style="margin-bottom:10px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
             <span style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">当前阶段:</span>
-            <span style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-primary);font-weight:var(--font-weight-bold);">3/6 Colo定向扫描</span>
+            <span id="scan-current-phase" style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-primary);font-weight:var(--font-weight-bold);">3/6 Colo定向扫描</span>
             <span style="color:var(--cfnat-border);margin:0 4px;">|</span>
-            <span style="font-family:var(--font-display);font-size:var(--font-size-sm);color:#d29922;font-weight:var(--font-weight-medium);">1.2.3.45</span>
+            <span id="scan-current-ip" style="font-family:var(--font-display);font-size:var(--font-size-sm);color:#d29922;font-weight:var(--font-weight-medium);">1.2.3.45</span>
           </div>
           <div class="progress-bar-track">
-            <div class="progress-bar-fill-v3" style="width:68%;"></div>
+            <div id="scan-progress-bar" class="progress-bar-fill-v3" style="width:68%;"></div>
           </div>
         </div>
       </div>
@@ -981,19 +981,19 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">CIDR 来源</label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span class="badge badge-success">本地 ip.txt (6534 段)</span>
+              <span id="scan-cidr-source" class="badge badge-success">本地 ip.txt (6534 段)</span>
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">远程 URL 备用</span>
             </div>
           </div>
           <!-- /24 拆分统计 -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">/24 拆分统计</label>
-            <span style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-foreground);font-weight:var(--font-weight-bold);">6,534 个 /24 段</span>
+            <span id="scan-cidr-count" style="font-family:var(--font-display);font-size:var(--font-size-sm);color:var(--cfnat-foreground);font-weight:var(--font-weight-bold);">6,534 个 /24 段</span>
           </div>
           <!-- 测速模式 -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">测速模式</label>
-            <select class="custom-select" style="width:120px;">
+            <select id="scanner-speed-mode" class="custom-select" style="width:120px;">
               <option value="speed" selected>speed (速度优先)</option>
               <option value="latency">latency (延迟优先)</option>
               <option value="both">both (两者)</option>
@@ -1003,16 +1003,16 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">429 速率限制器</label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span class="badge badge-success">正常</span>
-              <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">1次/2秒</span>
+              <span id="scan-rate-limit-status" class="badge badge-success">正常</span>
+              <span id="scan-rate-limit-detail" style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">1次/2秒</span>
             </div>
           </div>
           <!-- Colo-Aware Scanning -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">Colo-Aware Scanning</label>
             <div style="display:flex;align-items:center;gap:12px;">
-              <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">映射表 6,534 条</span>
-              <label class="toggle-switch toggle-accent"><input type="checkbox" checked /><span class="toggle-track"></span></label>
+              <span id="scan-colo-map-count" style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">映射表 6,534 条</span>
+              <label class="toggle-switch toggle-accent"><input id="scanner-colo-aware" type="checkbox" checked /><span class="toggle-track"></span></label>
             </div>
           </div>
         </div>
@@ -1031,9 +1031,9 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">启用后台扫描</label>
             <div style="display:flex;align-items:center;gap:12px;">
-              <label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-track"></span></label>
+              <label class="toggle-switch"><input id="scanner-enabled" type="checkbox" checked /><span class="toggle-track"></span></label>
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);margin-left:4px;">间隔</span>
-              <input type="number" class="num-input" value="60" min="1" max="1440" style="width:72px;" />
+              <input id="scanner-interval" type="number" class="num-input" value="60" min="1" max="1440" style="width:72px;" />
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">分钟</span>
             </div>
           </div>
@@ -1041,7 +1041,7 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">合格速度</label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" class="num-input" value="0.5" min="0.1" step="0.1" style="width:80px;" />
+              <input id="scanner-speed" type="number" class="num-input" value="0.5" min="0.1" step="0.1" style="width:80px;" />
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">MB/s</span>
             </div>
           </div>
@@ -1049,19 +1049,19 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">IP 类型</label>
             <div style="display:flex;align-items:center;gap:12px;">
-              <select class="custom-select" style="width:110px;">
+              <select id="scanner-ip-type" class="custom-select" style="width:110px;">
                 <option>IPv4</option>
                 <option selected>IPv6</option>
               </select>
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">端口</span>
-              <input type="number" class="num-input" value="443" min="1" max="65535" style="width:80px;" />
+              <input id="scanner-port" type="number" class="num-input" value="443" min="1" max="65535" style="width:80px;" />
             </div>
           </div>
           <!-- 每/24抽样 + 延迟阈值 -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">每/24抽样</label>
             <div style="display:flex;align-items:center;gap:12px;">
-              <select class="custom-select" style="width:90px;">
+              <select id="scanner-samples" class="custom-select" style="width:90px;">
                 <option>1</option>
                 <option>10</option>
                 <option>50</option>
@@ -1069,7 +1069,7 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
                 <option>255</option>
               </select>
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">延迟阈值</span>
-              <input type="number" class="num-input" value="500" min="1" style="width:80px;" />
+              <input id="scanner-delay" type="number" class="num-input" value="500" min="1" style="width:80px;" />
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">ms</span>
             </div>
           </div>
@@ -1077,9 +1077,9 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">并发数</label>
             <div style="display:flex;align-items:center;gap:12px;">
-              <input type="number" class="num-input" value="100" min="1" max="1000" style="width:80px;" />
+              <input id="scanner-threads" type="number" class="num-input" value="100" min="1" max="1000" style="width:80px;" />
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);">测速网址</span>
-              <input type="text" class="text-input" value="auto" style="width:100px;" />
+              <input id="scanner-speed-url" type="text" class="text-input" value="auto" style="width:100px;" />
             </div>
           </div>
           <!-- OnlyCMIN2 (V3 改动: 默认关闭 + 紫色标注) -->
@@ -1087,7 +1087,7 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
             <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);font-weight:var(--font-weight-medium);white-space:nowrap;">OnlyCMIN2</label>
             <div style="display:flex;align-items:center;gap:12px;">
               <span style="font-size:var(--font-size-xs);color:var(--cfnat-accent);background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);border-radius:var(--cfnat-radius-sm);padding:1px 8px;white-space:nowrap;">已默认关闭</span>
-              <label class="toggle-switch"><input type="checkbox" /><span class="toggle-track"></span></label>
+              <label class="toggle-switch"><input id="scanner-cmin2" type="checkbox" /><span class="toggle-track"></span></label>
             </div>
           </div>
         </div>
@@ -1105,9 +1105,9 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
 
         <!-- 操作按钮 -->
         <div style="display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--cfnat-border);">
-          <button style="padding:8px 24px;background:var(--cfnat-primary);color:#fff;border:none;border-radius:var(--cfnat-radius-md);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);cursor:pointer;transition:background 0.15s;">保存配置</button>
-          <button style="padding:8px 24px;background:var(--cfnat-primary);color:#fff;border:none;border-radius:var(--cfnat-radius-md);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);cursor:pointer;transition:background 0.15s;">立即扫描</button>
-          <button style="padding:8px 24px;background:rgba(248,81,73,0.12);color:#f85149;border:1px solid rgba(248,81,73,0.3);border-radius:var(--cfnat-radius-md);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);cursor:pointer;transition:background 0.15s;">停止</button>
+          <button onclick="saveScannerConfig()" style="padding:8px 24px;background:var(--cfnat-primary);color:#fff;border:none;border-radius:var(--cfnat-radius-md);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);cursor:pointer;transition:background 0.15s;">保存配置</button>
+          <button onclick="startScan()" style="padding:8px 24px;background:var(--cfnat-primary);color:#fff;border:none;border-radius:var(--cfnat-radius-md);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);cursor:pointer;transition:background 0.15s;">立即扫描</button>
+          <button onclick="stopScan()" style="padding:8px 24px;background:rgba(248,81,73,0.12);color:#f85149;border:1px solid rgba(248,81,73,0.3);border-radius:var(--cfnat-radius-md);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);cursor:pointer;transition:background 0.15s;">停止</button>
         </div>
       </div>
     </div>
@@ -1180,61 +1180,54 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
 </div>
 
 <div id="page-ips" class="page">
-<!-- 导航栏 -->
-        
 
         <!-- 工具栏 -->
         <div class="px-6 py-3 flex items-center gap-3 flex-wrap border-b" style="background: var(--cfnat-card); border-color: var(--cfnat-border);">
-            <select class="h-8 px-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
-                <option>全部地区</option>
-                <option>香港</option>
-                <option>美国</option>
-                <option>日本</option>
-                <option>新加坡</option>
-                <option>越南</option>
+            <select id="ip-region-filter" class="h-8 px-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);" onchange="filterIPsByRegion(this.value)">
+                <option value="">全部地区</option>
             </select>
-            <select class="h-8 px-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
-                <option>全部来源</option>
-                <option>手动</option>
-                <option>自动扫描</option>
-                <option>批量导入</option>
+            <select id="ip-source-filter" class="h-8 px-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);" onchange="filterIPsBySource(this.value)">
+                <option value="">全部来源</option>
+                <option value="手动">手动</option>
+                <option value="自动扫描">自动扫描</option>
+                <option value="批量导入">批量导入</option>
             </select>
             <div class="flex-1 min-w-[180px] relative">
                 <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style="color: var(--cfnat-muted-foreground);"></i>
-                <input type="text" placeholder="搜索 IP..." class="w-full h-8 pl-8 pr-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                <input id="ip-search-input" type="text" placeholder="搜索 IP..." class="w-full h-8 pl-8 pr-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);" oninput="searchIPs(this.value)">
             </div>
-            <button class="h-8 px-3 text-sm rounded-md border flex items-center gap-1.5" style="border-color: var(--cfnat-border); color: var(--cfnat-foreground); background: var(--cfnat-card);">
+            <button class="h-8 px-3 text-sm rounded-md border flex items-center gap-1.5" style="border-color: var(--cfnat-border); color: var(--cfnat-foreground); background: var(--cfnat-card);" onclick="refreshIPs()">
                 <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
                 <span class="whitespace-nowrap">刷新</span>
             </button>
-            <button class="h-8 px-3 text-sm rounded-md border flex items-center gap-1.5" style="border-color: var(--state-error); color: var(--state-error); background: color-mix(in srgb, var(--state-error) 8%, transparent);">
+            <button class="h-8 px-3 text-sm rounded-md border flex items-center gap-1.5" style="border-color: var(--state-error); color: var(--state-error); background: color-mix(in srgb, var(--state-error) 8%, transparent);" onclick="deleteSelectedIPs()">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span class="whitespace-nowrap">删除选中</span>
             </button>
         </div>
 
         <!-- IP 池统计条 -->
-        <div class="px-6 py-2.5 flex items-center gap-5 flex-wrap text-sm border-b" style="background: var(--cfnat-muted); border-color: var(--cfnat-border);">
-            <span style="color: var(--cfnat-foreground);">总 <strong>156</strong></span>
+        <div id="ip-stats-bar" class="px-6 py-2.5 flex items-center gap-5 flex-wrap text-sm border-b" style="background: var(--cfnat-muted); border-color: var(--cfnat-border);">
+            <span style="color: var(--cfnat-foreground);">总 <strong id="ip-stat-total">0</strong></span>
             <span class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full inline-block" style="background: var(--state-success);"></span>
-                <span style="color: var(--state-success);">正常 128</span>
+                <span style="color: var(--state-success);">正常 <strong id="ip-stat-ok">0</strong></span>
             </span>
             <span class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full inline-block" style="background: var(--state-warning);"></span>
-                <span style="color: var(--state-warning);">隔离 15</span>
+                <span style="color: var(--state-warning);">隔离 <strong id="ip-stat-isolated">0</strong></span>
             </span>
             <span class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full inline-block" style="background: var(--state-info);"></span>
-                <span style="color: var(--state-info);">预热中 8</span>
+                <span style="color: var(--state-info);">预热中 <strong id="ip-stat-warmup">0</strong></span>
             </span>
             <span class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full inline-block" style="background: var(--cfnat-accent);"></span>
-                <span style="color: var(--cfnat-accent);">主池 20</span>
+                <span style="color: var(--cfnat-accent);">主池 <strong id="ip-stat-active">0</strong></span>
             </span>
             <span class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full inline-block" style="background: var(--cfnat-muted-foreground);"></span>
-                <span style="color: var(--cfnat-muted-foreground);">备选池 10</span>
+                <span style="color: var(--cfnat-muted-foreground);">备选池 <strong id="ip-stat-standby">0</strong></span>
             </span>
         </div>
 
@@ -1244,7 +1237,7 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
                 <thead>
                     <tr style="background: var(--cfnat-muted);">
                         <th class="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground); width: 40px;">
-                            <input type="checkbox" class="cfnat-checkbox">
+                            <input type="checkbox" class="cfnat-checkbox" id="ip-select-all" onchange="toggleAllIPs(this.checked)">
                         </th>
                         <th class="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">IP</th>
                         <th class="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground); width: 70px;">Colo</th>
@@ -1257,199 +1250,7 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
                         <th class="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground); width: 80px;">操作</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- 美国分组 -->
-                    <tr>
-                        <td colspan="10" class="px-3 py-2 text-xs font-medium border-b" style="color: var(--cfnat-foreground); background: color-mix(in srgb, var(--cfnat-primary) 6%, var(--cfnat-card)); border-color: var(--cfnat-border);">
-                            <i data-lucide="map-pin" class="w-3 h-3 inline-block mr-1 align-text-bottom" style="color: var(--cfnat-primary);"></i> 美国
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">104.16.132.5</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">LAX</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">美国</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 85%; background: var(--state-success);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-success);">85</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">12.4</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">145</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">手动</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">0</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">172.64.210.18</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">SJC</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">美国</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 72%; background: var(--state-warning);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-warning);">72</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">8.7</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">189</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">自动扫描</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--state-warning);">2</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">162.158.90.33</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">DFW</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">美国</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 91%; background: var(--state-success);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-success);">91</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">15.2</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">98</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">手动</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">0</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">104.17.88.12</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">SEA</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">美国</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 88%; background: var(--state-success);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-success);">88</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">11.9</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">132</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">批量导入</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">1</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <!-- 日本分组 -->
-                    <tr>
-                        <td colspan="10" class="px-3 py-2 text-xs font-medium border-b" style="color: var(--cfnat-foreground); background: color-mix(in srgb, var(--cfnat-primary) 6%, var(--cfnat-card)); border-color: var(--cfnat-border);">
-                            <i data-lucide="map-pin" class="w-3 h-3 inline-block mr-1 align-text-bottom" style="color: var(--cfnat-primary);"></i> 日本
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">198.41.215.67</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">NRT</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">日本</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 68%; background: var(--state-warning);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-warning);">68</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">9.3</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">67</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">自动扫描</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--state-warning);">3</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">141.101.76.44</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">KIX</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">日本</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 55%; background: var(--state-error);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-error);">55</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">5.1</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">112</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">自动扫描</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--state-error);">5</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <!-- 香港分组 -->
-                    <tr>
-                        <td colspan="10" class="px-3 py-2 text-xs font-medium border-b" style="color: var(--cfnat-foreground); background: color-mix(in srgb, var(--cfnat-primary) 6%, var(--cfnat-card)); border-color: var(--cfnat-border);">
-                            <i data-lucide="map-pin" class="w-3 h-3 inline-block mr-1 align-text-bottom" style="color: var(--cfnat-primary);"></i> 香港
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">162.159.128.7</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">HKG</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">香港</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 78%; background: var(--state-warning);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-warning);">78</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">10.8</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">45</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">手动</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">1</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
-                    <!-- 越南分组 -->
-                    <tr>
-                        <td colspan="10" class="px-3 py-2 text-xs font-medium border-b" style="color: var(--cfnat-foreground); background: color-mix(in srgb, var(--cfnat-primary) 6%, var(--cfnat-card)); border-color: var(--cfnat-border);">
-                            <i data-lucide="map-pin" class="w-3 h-3 inline-block mr-1 align-text-bottom" style="color: var(--cfnat-primary);"></i> 越南
-                        </td>
-                    </tr>
-                    <tr class="border-b" style="border-color: var(--cfnat-border);">
-                        <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox"></td>
-                        <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">188.114.98.3</td>
-                        <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">SGN</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">越南</td>
-                        <td class="px-3 py-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-                                    <div class="h-full rounded-full" style="width: 42%; background: var(--state-error);"></div>
-                                </div>
-                                <span class="text-xs whitespace-nowrap" style="color: var(--state-error);">42</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">3.2</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">234</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">批量导入</span></td>
-                        <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--state-error);">8</td>
-                        <td class="px-3 py-2.5">
-                            <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
-                        </td>
-                    </tr>
+                <tbody id="ip-table-body">
                 </tbody>
             </table>
         </div>
@@ -1458,26 +1259,28 @@ body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base
         <div class="px-6 py-4 border-t" style="border-color: var(--cfnat-border);">
             <h3 class="text-sm font-medium mb-3" style="color: var(--cfnat-foreground);">手动添加 IP</h3>
             <div class="flex items-center gap-3 flex-wrap">
-                <input type="text" placeholder="IP 地址" class="h-8 px-3 text-sm rounded-md border outline-none flex-1 min-w-[180px] font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
-                <select class="h-8 px-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
-                    <option>美国</option>
-                    <option>日本</option>
-                    <option>香港</option>
-                    <option>新加坡</option>
-                    <option>越南</option>
+                <input id="add-ip-addr" type="text" placeholder="IP 地址" class="h-8 px-3 text-sm rounded-md border outline-none flex-1 min-w-[180px] font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                <select id="add-ip-region" class="h-8 px-3 text-sm rounded-md border outline-none" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                    <option value="美国">美国</option>
+                    <option value="日本">日本</option>
+                    <option value="香港">香港</option>
+                    <option value="新加坡">新加坡</option>
+                    <option value="越南">越南</option>
                 </select>
-                <input type="text" placeholder="Colo (可选)" class="h-8 px-3 text-sm rounded-md border outline-none w-28 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
-                <button class="h-8 px-4 text-sm rounded-md font-medium whitespace-nowrap" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">添加</button>
+                <input id="add-ip-colo" type="text" placeholder="Colo (可选)" class="h-8 px-3 text-sm rounded-md border outline-none w-28 font-mono" style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground);">
+                <button class="h-8 px-4 text-sm rounded-md font-medium whitespace-nowrap" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);" onclick="addManualIP()">添加</button>
             </div>
         </div>
 
         <!-- 批量导入面板 -->
         <div class="px-6 py-4 border-t" style="border-color: var(--cfnat-border);">
             <h3 class="text-sm font-medium mb-3" style="color: var(--cfnat-foreground);">批量导入</h3>
-            <div class="p-3 rounded-md text-sm" style="background: var(--cfnat-muted); color: var(--cfnat-card-foreground);">
-                <span class="font-medium" style="color: var(--state-success);">导入完成</span>
-                <span style="color: var(--cfnat-muted-foreground);"> — 成功 <strong style="color: var(--cfnat-foreground);">45</strong> / 重复 <strong style="color: var(--state-warning);">3</strong> / 无效 <strong style="color: var(--state-error);">2</strong> / 总计 50 条</span>
+            <textarea id="import-ips-textarea" rows="4" class="w-full px-3 py-2 text-sm rounded-md border outline-none font-mono" placeholder="每行一个 IP 地址..." style="background: var(--cfnat-input); border-color: var(--cfnat-border); color: var(--cfnat-foreground); resize: vertical;"></textarea>
+            <div class="flex items-center gap-3 mt-2">
+                <button class="h-8 px-4 text-sm rounded-md font-medium whitespace-nowrap" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);" onclick="importIPs()">导入</button>
+                <span id="import-ips-loading" class="text-xs" style="color: var(--cfnat-muted-foreground); display: none;">导入中...</span>
             </div>
+            <div id="import-ips-result" class="mt-2" style="display: none;"></div>
         </div>
 </div>
 
@@ -1812,7 +1615,7 @@ async function apiDelete(endpoint) {
 
 async function refreshDashboard() {
   const status = await apiGet('proxy/status');
-  if (status && status.code === 0) {
+  if (status && status.code === 200) {
     State.proxyStatus = status.data;
     State.uptimeStr = formatUptime(status.data.uptime_seconds);
     const el = document.getElementById('dash-uptime');
@@ -1820,7 +1623,7 @@ async function refreshDashboard() {
   }
   
   const ips = await apiGet('ips');
-  if (ips && ips.code === 0) {
+  if (ips && ips.code === 200) {
     State.totalIPs = ips.data.length;
     const el = document.getElementById('dash-total-ips');
     if (el) el.textContent = State.totalIPs;
@@ -1839,7 +1642,7 @@ function formatUptime(seconds) {
 
 async function refreshRegions() {
   const res = await apiGet('regions');
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     State.regions = res.data;
     renderRegions();
   }
@@ -1894,7 +1697,7 @@ async function toggleRegion(name) {
   if (!region) return;
   const updated = { ...region, enabled: !region.enabled };
   const res = await apiPut('regions/' + encodeURIComponent(name), updated);
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     showToast('操作成功');
     refreshRegions();
   } else {
@@ -1905,7 +1708,7 @@ async function toggleRegion(name) {
 async function deleteRegion(name) {
   if (!confirm('确定删除该地区？')) return;
   const res = await apiDelete('regions/' + encodeURIComponent(name));
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     showToast('删除成功');
     refreshRegions();
   } else {
@@ -1921,7 +1724,7 @@ async function loadDatacenters() {
   const res = await apiGet('dc/status');
   const lastSync = document.getElementById('dc-last-sync');
   const dcCount = document.getElementById('dc-count');
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     if (lastSync) lastSync.textContent = res.data?.synced_at || '--';
     if (dcCount) dcCount.textContent = res.data?.total_count || 0;
   }
@@ -1929,7 +1732,7 @@ async function loadDatacenters() {
 
 async function syncDatacenters() {
   const res = await apiPost('dc/sync', {});
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     showToast('同步成功');
     const lastSync = document.getElementById('dc-last-sync');
     const dcCount = document.getElementById('dc-count');
@@ -2091,7 +1894,7 @@ async function confirmAddRegion() {
   const updatedRegions = [...State.regions, newRegion];
   const res = await apiPut('regions', updatedRegions);
   
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     showToast('添加成功');
     refreshRegions();
     selectedCountry = null;
@@ -2110,33 +1913,58 @@ async function confirmAddRegion() {
 
 async function refreshCfdata() {
   const config = await apiGet('scanner');
-  if (config && config.code === 0) {
+  if (config && config.code === 200) {
     State.scannerForm = config.data;
     populateScannerForm();
   }
-  
+
   const history = await apiGet('scanner/history');
-  if (history && history.code === 0) {
+  if (history && history.code === 200) {
     State.scanHistory = history.data;
     renderScanHistory();
   }
-  
+
   const progress = await apiGet('scanner/progress');
-  if (progress && progress.code === 0) {
+  if (progress && progress.code === 200) {
     State.scanProgress = progress.data;
     State.scanRunning = progress.data.running || false;
     State.scannerStatus = progress.data;
+    updateScanProgressUI();
+    updateScannerEngineUI();
   }
 }
 
 function populateScannerForm() {
   const f = State.scannerForm;
+  // 基础输入框
   const els = ['scanner-interval', 'scanner-speed', 'scanner-port', 'scanner-samples', 'scanner-delay', 'scanner-threads'];
   const vals = [f.interval, f.min_speed_mbps, f.port, f.samples_per_24, f.max_delay_ms, f.threads];
   els.forEach((id, i) => {
     const el = document.getElementById(id);
-    if (el) el.setAttribute('value', vals[i]);
+    if (el) el.value = vals[i];
   });
+
+  // IP 类型 select
+  const ipTypeEl = document.getElementById('scanner-ip-type');
+  if (ipTypeEl) ipTypeEl.value = f.ip_type === 6 ? 'IPv6' : 'IPv4';
+
+  // 测速模式 select
+  const speedModeEl = document.getElementById('scanner-speed-mode');
+  if (speedModeEl) speedModeEl.value = f.speed_test_mode || 'both';
+
+  // 测速网址
+  const speedUrlEl = document.getElementById('scanner-speed-url');
+  if (speedUrlEl) speedUrlEl.value = f.speed_test_url || 'auto';
+
+  // Toggle switches
+  const enabledEl = document.getElementById('scanner-enabled');
+  if (enabledEl) enabledEl.checked = f.enabled || false;
+
+  const cmin2El = document.getElementById('scanner-cmin2');
+  if (cmin2El) cmin2El.checked = f.only_cmin2 || false;
+
+  const coloAwareEl = document.getElementById('scanner-colo-aware');
+  if (coloAwareEl) coloAwareEl.checked = f.colo_aware !== false;
 }
 
 function renderScanHistory() {
@@ -2172,7 +2000,7 @@ function startScanProgress() {
   scanProgressTimer = setInterval(async () => {
     if (State.activeTab !== 'cfdata') return;
     const res = await apiGet('scanner/progress');
-    if (res && res.code === 0) {
+    if (res && res.code === 200) {
       State.scanProgress = res.data;
       updateScanProgressUI();
     }
@@ -2180,58 +2008,337 @@ function startScanProgress() {
 }
 
 function updateScanProgressUI() {
-  const p = State.scanProgress;
-  const bar = document.querySelector('#page-cfdata .progress-bar-fill-v3');
-  if (bar) bar.style.width = p.percent + '%';
+  const p = State.scanProgress || {};
+
+  // 进度条
+  const bar = document.getElementById('scan-progress-bar');
+  if (bar) bar.style.width = (p.percent || 0) + '%';
+
+  // 状态标签
+  const badge = document.getElementById('scan-status-badge');
+  if (badge) {
+    const running = p.running || false;
+    badge.textContent = running ? '运行中' : '空闲';
+    badge.style.background = running ? 'rgba(88,166,255,0.15)' : 'rgba(63,185,80,0.15)';
+    badge.style.color = running ? 'var(--cfnat-primary)' : '#3fb950';
+    badge.style.borderColor = running ? 'rgba(88,166,255,0.25)' : 'rgba(63,185,80,0.25)';
+  }
+
+  // 阶段百分比
+  const phasePercent = document.getElementById('scan-phase-percent');
+  if (phasePercent) phasePercent.textContent = '阶段 ' + (p.percent || 0) + '%';
+
+  // 已测数量
+  const testedCount = document.getElementById('scan-tested-count');
+  if (testedCount) testedCount.textContent = (p.tested_count || 0).toLocaleString();
+
+  // 当前阶段
+  const currentPhase = document.getElementById('scan-current-phase');
+  if (currentPhase) currentPhase.textContent = p.current_phase || '-';
+
+  // 当前 IP
+  const currentIP = document.getElementById('scan-current-ip');
+  if (currentIP) currentIP.textContent = p.current_ip || '-';
+}
+
+function updateScannerEngineUI() {
+  const s = State.scannerStatus || {};
+
+  // CIDR 来源
+  const cidrSource = document.getElementById('scan-cidr-source');
+  if (cidrSource) {
+    const hasLocal = s.cidr_local_count > 0;
+    cidrSource.textContent = hasLocal ? '本地 ip.txt (' + s.cidr_local_count + ' 段)' : '远程 URL';
+    cidrSource.className = 'badge badge-' + (hasLocal ? 'success' : 'warning');
+  }
+
+  // /24 拆分统计
+  const cidrCount = document.getElementById('scan-cidr-count');
+  if (cidrCount) cidrCount.textContent = (s.cidr_count || 0).toLocaleString() + ' 个 /24 段';
+
+  // 429 速率限制器
+  const rateLimitStatus = document.getElementById('scan-rate-limit-status');
+  if (rateLimitStatus) {
+    const limited = (s.rate_limit_count || 0) > 0;
+    rateLimitStatus.textContent = limited ? '受限' : '正常';
+    rateLimitStatus.className = 'badge badge-' + (limited ? 'warning' : 'success');
+  }
+
+  // Colo 映射表数量
+  const coloMapCount = document.getElementById('scan-colo-map-count');
+  if (coloMapCount) coloMapCount.textContent = '映射表 ' + (s.colo_map_count || 0).toLocaleString() + ' 条';
+}
+
+async function saveScannerConfig() {
+  const form = {
+    enabled: document.getElementById('scanner-enabled')?.checked || false,
+    interval: parseInt(document.getElementById('scanner-interval')?.value) || 60,
+    min_speed_mbps: parseFloat(document.getElementById('scanner-speed')?.value) || 0.5,
+    ip_type: document.getElementById('scanner-ip-type')?.value === 'IPv6' ? 6 : 4,
+    port: parseInt(document.getElementById('scanner-port')?.value) || 443,
+    samples_per_24: parseInt(document.getElementById('scanner-samples')?.value) || 100,
+    max_delay_ms: parseInt(document.getElementById('scanner-delay')?.value) || 500,
+    threads: parseInt(document.getElementById('scanner-threads')?.value) || 100,
+    speed_test_mode: document.getElementById('scanner-speed-mode')?.value || 'both',
+    speed_test_url: document.getElementById('scanner-speed-url')?.value || 'auto',
+    only_cmin2: document.getElementById('scanner-cmin2')?.checked || false,
+    colo_aware: document.getElementById('scanner-colo-aware')?.checked !== false,
+  };
+
+  const res = await apiPut('scanner', form);
+  if (res && res.code === 200) {
+    showToast('配置已保存');
+    State.scannerForm = form;
+  } else {
+    showToast(res?.message || '保存失败', 'error');
+  }
+}
+
+async function startScan() {
+  const res = await apiPost('scanner/run', {});
+  if (res && res.code === 200) {
+    showToast('扫描已启动');
+    State.scanRunning = true;
+    startScanProgress();
+  } else {
+    showToast(res?.message || '启动失败', 'error');
+  }
+}
+
+async function stopScan() {
+  const res = await apiPost('scanner/stop', {});
+  if (res && res.code === 200) {
+    showToast('扫描已停止');
+    State.scanRunning = false;
+    if (scanProgressTimer) clearInterval(scanProgressTimer);
+  } else {
+    showToast(res?.message || '停止失败', 'error');
+  }
 }
 
 async function refreshIPs() {
   const res = await apiGet('ips');
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     State.allIPs = res.data;
     renderIPs();
   }
 }
 
 function renderIPs() {
-  const tbody = document.querySelector('#page-ips table tbody');
+  const tbody = document.getElementById('ip-table-body');
   if (!tbody) return;
-  
+
+  /* 筛选 */
   const filtered = State.allIPs.filter(ip => {
     if (State.ipFilter.region && ip.region !== State.ipFilter.region) return false;
+    if (State.ipFilter.source && ip.source !== State.ipFilter.source) return false;
     if (State.ipFilter.search && !ip.ip.includes(State.ipFilter.search)) return false;
     return true;
   });
-  
-  tbody.innerHTML = filtered.map(ip => `
+
+  /* 更新统计条（基于全量数据） */
+  const all = State.allIPs;
+  const total = all.length;
+  const ok = all.filter(ip => !ip.is_isolated).length;
+  const isolated = all.filter(ip => ip.is_isolated).length;
+  const warmup = all.filter(ip => ip.pool === 'warmup').length;
+  const active = all.filter(ip => ip.pool === 'active').length;
+  const standby = all.filter(ip => ip.pool === 'standby').length;
+  const setStat = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setStat('ip-stat-total', total);
+  setStat('ip-stat-ok', ok);
+  setStat('ip-stat-isolated', isolated);
+  setStat('ip-stat-warmup', warmup);
+  setStat('ip-stat-active', active);
+  setStat('ip-stat-standby', standby);
+
+  /* 更新地区筛选下拉选项 */
+  updateRegionFilterOptions();
+
+  /* 按地区分组 */
+  const regionOrder = [];
+  const groups = {};
+  filtered.forEach(ip => {
+    const r = ip.region || '未知';
+    if (!groups[r]) { groups[r] = []; regionOrder.push(r); }
+    groups[r].push(ip);
+  });
+
+  /* 渲染：地区分组头 + IP 行 */
+  let html = '';
+  regionOrder.forEach(region => {
+    /* 地区分组头 */
+    html += `
+      <tr>
+        <td colspan="10" class="px-3 py-2 text-xs font-medium border-b" style="color: var(--cfnat-foreground); background: color-mix(in srgb, var(--cfnat-primary) 6%, var(--cfnat-card)); border-color: var(--cfnat-border);">
+          <i data-lucide="map-pin" class="w-3 h-3 inline-block mr-1 align-text-bottom" style="color: var(--cfnat-primary);"></i> ${region}
+        </td>
+      </tr>`;
+    /* 该地区下的 IP 行 */
+    groups[region].forEach(ip => {
+      const qColor = ip.quality_score >= 70 ? 'var(--state-success)' : ip.quality_score >= 50 ? 'var(--state-warning)' : 'var(--state-error)';
+      const failColor = ip.fail_count > 3 ? 'var(--state-error)' : ip.fail_count > 0 ? 'var(--state-warning)' : 'var(--cfnat-foreground)';
+      const checked = State.checkedIPKeys.includes(ip.ip) ? 'checked' : '';
+      html += `
     <tr class="border-b" style="border-color: var(--cfnat-border);">
-      <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox" onchange="toggleIPSelect('${ip.ip}')"></td>
+      <td class="px-3 py-2.5"><input type="checkbox" class="cfnat-checkbox" ${checked} onchange="toggleIPSelect('${ip.ip}')"></td>
       <td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap" style="color: var(--cfnat-primary);">${ip.ip}</td>
       <td class="px-3 py-2.5"><span class="text-xs px-1.5 py-0.5 rounded" style="background: color-mix(in srgb, var(--cfnat-primary) 15%, transparent); color: var(--cfnat-primary);">${ip.colo || '-'}</span></td>
       <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">${ip.region}</td>
       <td class="px-3 py-2.5">
         <div class="flex items-center gap-2">
           <div class="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style="background: var(--cfnat-muted);">
-            <div class="h-full rounded-full" style="width: ${ip.quality_score || 0}%; background: ${ip.quality_score >= 70 ? 'var(--state-success)' : ip.quality_score >= 50 ? 'var(--state-warning)' : 'var(--state-error)'};"></div>
+            <div class="h-full rounded-full" style="width: ${ip.quality_score || 0}%; background: ${qColor};"></div>
           </div>
-          <span class="text-xs whitespace-nowrap" style="color: ${ip.quality_score >= 70 ? 'var(--state-success)' : ip.quality_score >= 50 ? 'var(--state-warning)' : 'var(--state-error)'};">${ip.quality_score || '-'}</span>
+          <span class="text-xs whitespace-nowrap" style="color: ${qColor};">${ip.quality_score != null ? ip.quality_score : '-'}</span>
         </div>
       </td>
       <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">${ip.speed_mbps ? ip.speed_mbps.toFixed(1) : '-'}</td>
-      <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">${ip.ewma_delay_ms ? ip.ewma_delay_ms.toFixed(0) + 'ms' : (ip.latency_ms ? ip.latency_ms.toFixed(0) + 'ms' : '-')}</td>
+      <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">${ip.ewma_delay_ms ? ip.ewma_delay_ms.toFixed(0) : (ip.latency_ms ? ip.latency_ms.toFixed(0) : '-')}</td>
       <td class="px-3 py-2.5 whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">${ip.source || '-'}</span></td>
-      <td class="px-3 py-2.5 whitespace-nowrap" style="color: ${ip.fail_count > 0 ? 'var(--state-warning)' : 'var(--cfnat-foreground)'};">${ip.fail_count || 0}</td>
+      <td class="px-3 py-2.5 whitespace-nowrap" style="color: ${failColor};">${ip.fail_count || 0}</td>
       <td class="px-3 py-2.5">
-        <button class="text-xs px-2 py-1 rounded" style="color: var(--cfnat-muted-foreground);">详情</button>
+        <button class="text-xs px-2 py-1 rounded" style="color: var(--state-error);" onclick="deleteSingleIP('${ip.ip}')">删除</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+    });
+  });
+
+  if (filtered.length === 0) {
+    html = `<tr><td colspan="10" class="px-3 py-8 text-center text-sm" style="color: var(--cfnat-muted-foreground);">暂无 IP 数据</td></tr>`;
+  }
+
+  tbody.innerHTML = html;
+  lucide.createIcons();
+}
+
+/* 更新地区筛选下拉选项（基于当前 IP 数据动态生成） */
+function updateRegionFilterOptions() {
+  const select = document.getElementById('ip-region-filter');
+  if (!select) return;
+  const currentVal = select.value;
+  const regions = [...new Set(State.allIPs.map(ip => ip.region).filter(Boolean))].sort();
+  let opts = '<option value="">全部地区</option>';
+  regions.forEach(r => { opts += `<option value="${r}"${r === currentVal ? ' selected' : ''}>${r}</option>`; });
+  select.innerHTML = opts;
 }
 
 function toggleIPSelect(ip) {
   const idx = State.checkedIPKeys.indexOf(ip);
   if (idx >= 0) State.checkedIPKeys.splice(idx, 1);
   else State.checkedIPKeys.push(ip);
+}
+
+/* 全选/取消全选 IP */
+function toggleAllIPs(checked) {
+  if (checked) {
+    const visible = State.allIPs.filter(ip => {
+      if (State.ipFilter.region && ip.region !== State.ipFilter.region) return false;
+      if (State.ipFilter.source && ip.source !== State.ipFilter.source) return false;
+      if (State.ipFilter.search && !ip.ip.includes(State.ipFilter.search)) return false;
+      return true;
+    });
+    State.checkedIPKeys = visible.map(ip => ip.ip);
+  } else {
+    State.checkedIPKeys = [];
+  }
+  renderIPs();
+}
+
+/* 地区筛选 */
+function filterIPsByRegion(region) {
+  State.ipFilter.region = region;
+  renderIPs();
+}
+
+/* 来源筛选 */
+function filterIPsBySource(source) {
+  State.ipFilter.source = source;
+  renderIPs();
+}
+
+/* 搜索 IP */
+function searchIPs(query) {
+  State.ipFilter.search = query.trim();
+  renderIPs();
+}
+
+/* 删除单个 IP */
+async function deleteSingleIP(ip) {
+  if (!confirm('确认删除 IP: ' + ip + '？')) return;
+  const res = await apiDelete('ips/' + encodeURIComponent(ip));
+  if (res && res.code === 200) {
+    showToast('已删除 ' + ip);
+    await refreshIPs();
+  } else {
+    showToast('删除失败: ' + (res?.message || '未知错误'), 'error');
+  }
+}
+
+/* 删除选中 IP */
+async function deleteSelectedIPs() {
+  if (State.checkedIPKeys.length === 0) {
+    showToast('未选中任何 IP', 'error');
+    return;
+  }
+  if (!confirm('确认删除选中的 ' + State.checkedIPKeys.length + ' 个 IP？')) return;
+  const res = await apiPost('ips/delete-batch', { ips: State.checkedIPKeys });
+  if (res && res.code === 200) {
+    showToast('已删除 ' + State.checkedIPKeys.length + ' 个 IP');
+    State.checkedIPKeys = [];
+    await refreshIPs();
+  } else {
+    showToast('批量删除失败: ' + (res?.message || '未知错误'), 'error');
+  }
+}
+
+/* 手动添加 IP */
+async function addManualIP() {
+  const ip = document.getElementById('add-ip-addr').value.trim();
+  const region = document.getElementById('add-ip-region').value;
+  const colo = document.getElementById('add-ip-colo').value.trim();
+  if (!ip) { showToast('请输入 IP 地址', 'error'); return; }
+  const res = await apiPost('ips/add', { ip, region, colo });
+  if (res && res.code === 200) {
+    showToast('已添加 ' + ip);
+    document.getElementById('add-ip-addr').value = '';
+    document.getElementById('add-ip-colo').value = '';
+    await refreshIPs();
+  } else {
+    showToast('添加失败: ' + (res?.message || '未知错误'), 'error');
+  }
+}
+
+/* 批量导入 IP */
+async function importIPs() {
+  const textarea = document.getElementById('import-ips-textarea');
+  const loadingEl = document.getElementById('import-ips-loading');
+  const resultEl = document.getElementById('import-ips-result');
+  const text = textarea.value.trim();
+  if (!text) { showToast('请输入 IP 列表', 'error'); return; }
+
+  loadingEl.style.display = 'inline';
+  resultEl.style.display = 'none';
+  const res = await apiPost('ips/import', { ips: text });
+  loadingEl.style.display = 'none';
+
+  if (res && res.code === 200) {
+    const d = res.data || {};
+    resultEl.innerHTML = `
+      <div class="p-3 rounded-md text-sm" style="background: var(--cfnat-muted); color: var(--cfnat-card-foreground);">
+        <span class="font-medium" style="color: var(--state-success);">导入完成</span>
+        <span style="color: var(--cfnat-muted-foreground);"> — 成功 <strong style="color: var(--cfnat-foreground);">${d.success || 0}</strong> / 重复 <strong style="color: var(--state-warning);">${d.duplicate || 0}</strong> / 无效 <strong style="color: var(--state-error);">${d.invalid || 0}</strong> / 总计 ${d.total || 0} 条</span>
+      </div>`;
+    resultEl.style.display = 'block';
+    textarea.value = '';
+    await refreshIPs();
+  } else {
+    resultEl.innerHTML = `
+      <div class="p-3 rounded-md text-sm" style="background: var(--cfnat-muted); color: var(--state-error);">
+        导入失败: ${res?.message || '未知错误'}
+      </div>`;
+    resultEl.style.display = 'block';
+  }
 }
 
 let logEventSource = null;
@@ -2288,7 +2395,7 @@ async function saveCfnatConfig() {
   }
   config.tls_mode = tlsMode;
   const res = await apiPut('cfnat', config);
-  if (res && res.code === 0) {
+  if (res && res.code === 200) {
     showToast('保存成功');
   } else {
     showToast(res?.message || '保存失败', 'error');

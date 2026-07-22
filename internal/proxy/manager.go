@@ -12,6 +12,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -41,6 +43,14 @@ func parseCodes(code string) []string {
 		}
 	}
 	return out
+}
+
+// computeWebSocketAccept 计算 WebSocket Accept 响应值（RFC 6455）
+func computeWebSocketAccept(key string) string {
+	const magicGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+	h := sha1.New()
+	h.Write([]byte(key + magicGUID))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
 // 全量 CF IP 兜底池（每 /24 抽 1 个，懒加载）
@@ -183,7 +193,7 @@ func (m *Manager) startRegion(r config.ProxyRegion) *regionListener {
 		return nil
 	}
 	logging.InfoTo("proxy", "▶ 启动代理 %s → :%d (colo=%s, 当前可用 IP=%d)",
-		r.Name, r.Port, r.Code, m.lib.CountIPsByCodes(parseCodes(r.Code)))
+		r.Name, r.Port, r.Code, len(m.lib.ListIPs(r.Name)))
 	ctx, cancel := context.WithCancel(context.Background())
 	rl := &regionListener{
 		region: r,
@@ -349,7 +359,6 @@ func (m *Manager) handleProtocol(ctx context.Context, client, upstream net.Conn,
 
 // pickTarget 选取转发目标
 func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (string, bool, error) {
-	codes := parseCodes(r.Code)
 	var ip string
 	var err error
 
@@ -358,12 +367,10 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 	// 新IP优先调度：预热期内的新IP获得30%概率被优先选中
 	if cfg.NewIPPriority {
 		var newIPs []string
-		for _, code := range codes {
-			for _, entry := range m.lib.ListIPs(code) {
-				if m.isInWarmup(entry) && !m.isIsolated(entry.IP) {
-					if exclude == nil || !exclude[entry.IP] {
-						newIPs = append(newIPs, entry.IP)
-					}
+		for _, entry := range m.lib.ListIPs(r.Name) {
+			if m.isInWarmup(entry) && !m.isIsolated(entry.IP) {
+				if exclude == nil || !exclude[entry.IP] {
+					newIPs = append(newIPs, entry.IP)
 				}
 			}
 		}
@@ -377,28 +384,24 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 		switch cfg.LoadBalanceMode {
 		case "least-conn":
 			if exclude != nil && len(exclude) > 0 {
-				ip, err = m.pickLeastConn(codes, exclude)
+				ip, err = m.pickLeastConn(r.Name, exclude)
 			} else {
-				ip, err = m.pickLeastConn(codes, nil)
+				ip, err = m.pickLeastConn(r.Name, nil)
 			}
 		case "weighted-random":
 			if exclude != nil && len(exclude) > 0 {
-				ip, err = m.pickWeightedRandom(codes, exclude)
+				ip, err = m.pickWeightedRandom(r.Name, exclude)
 			} else {
-				ip, err = m.pickWeightedRandom(codes, nil)
+				ip, err = m.pickWeightedRandom(r.Name, nil)
 			}
 		case "quality-score":
 			if exclude != nil && len(exclude) > 0 {
-				ip, err = m.pickByQualityScore(codes, exclude)
+				ip, err = m.pickByQualityScore(r.Name, exclude)
 			} else {
-				ip, err = m.pickByQualityScore(codes, nil)
+				ip, err = m.pickByQualityScore(r.Name, nil)
 			}
 		default:
-			if exclude != nil && len(exclude) > 0 {
-				ip, err = m.lib.PickRandomByCodesWithExclude(codes, exclude)
-			} else {
-				ip, err = m.lib.PickRandomByCodes(codes)
-			}
+			ip, err = m.lib.PickRandomByRegionWithExclude(r.Name, exclude)
 		}
 
 		if err != nil {
@@ -443,32 +446,29 @@ func (m *Manager) pickTarget(r config.ProxyRegion, exclude map[string]bool) (str
 }
 
 // pickByQualityScore 基于综合质量分数的加权随机调度（V2.2）
-func (m *Manager) pickByQualityScore(codes []string, exclude map[string]bool) (string, error) {
+func (m *Manager) pickByQualityScore(region string, exclude map[string]bool) (string, error) {
 	type candidate struct {
 		IP    string
 		Score float64
 	}
 	var candidates []candidate
 
-	for _, code := range codes {
-		ips := m.lib.ListIPs(code)
-		for _, entry := range ips {
-			if exclude != nil && exclude[entry.IP] {
-				continue
-			}
-			if m.isIsolated(entry.IP) {
-				continue
-			}
-
-			metrics := m.metricsMgr.Get(entry.IP)
-			score := metrics.QualityScore()
-
-			if metrics.GetSampleCount() == 0 {
-				score = m.calculateInitialScore(entry)
-			}
-
-			candidates = append(candidates, candidate{IP: entry.IP, Score: score})
+	for _, entry := range m.lib.ListIPs(region) {
+		if exclude != nil && exclude[entry.IP] {
+			continue
 		}
+		if m.isIsolated(entry.IP) {
+			continue
+		}
+
+		metrics := m.metricsMgr.Get(entry.IP)
+		score := metrics.QualityScore()
+
+		if metrics.GetSampleCount() == 0 {
+			score = m.calculateInitialScore(entry)
+		}
+
+		candidates = append(candidates, candidate{IP: entry.IP, Score: score})
 	}
 
 	if len(candidates) == 0 {
@@ -544,12 +544,8 @@ func (m *Manager) GetAdaptiveThresholds(codes []string) (p50, p90, adaptiveDelay
 }
 
 // pickLeastConn 选取连接数最少的 IP（V1.2）
-func (m *Manager) pickLeastConn(codes []string, exclude map[string]bool) (string, error) {
-	ips, err := m.lib.ListIPsByCodes(codes)
-	if err != nil {
-		return "", err
-	}
-
+func (m *Manager) pickLeastConn(region string, exclude map[string]bool) (string, error) {
+	ips := m.lib.ListIPs(region)
 	if len(ips) == 0 {
 		return "", errors.New("no available IPs")
 	}
@@ -557,6 +553,9 @@ func (m *Manager) pickLeastConn(codes []string, exclude map[string]bool) (string
 	var available []config.IPEntry
 	for _, ip := range ips {
 		if exclude != nil && exclude[ip.IP] {
+			continue
+		}
+		if m.isIsolated(ip.IP) {
 			continue
 		}
 		available = append(available, ip)
@@ -589,45 +588,42 @@ func (m *Manager) pickLeastConn(codes []string, exclude map[string]bool) (string
 
 // pickWeightedRandom 加权随机选取（V1.5）
 // 基于 IP 速度（SpeedMbps）加权，速度越快的 IP 被选中概率越高
-func (m *Manager) pickWeightedRandom(codes []string, exclude map[string]bool) (string, error) {
+func (m *Manager) pickWeightedRandom(region string, exclude map[string]bool) (string, error) {
 	var candidates []struct {
 		IP    string
 		Score float64
 	}
 
-	for _, code := range codes {
-		ips := m.lib.ListIPs(code)
-		for _, entry := range ips {
-			if exclude != nil && exclude[entry.IP] {
-				continue
-			}
-			if m.isIsolated(entry.IP) {
-				continue
-			}
-
-			score := entry.SpeedMbps
-			if score <= 0 {
-				score = 1.0
-			}
-
-			metrics := m.metricsMgr.Get(entry.IP)
-			if metrics.GetSampleCount() > 0 {
-				delay := metrics.GetDelay()
-				lossRate := metrics.GetLossRate()
-
-				if delay > 0 {
-					score *= 100.0 / (delay + 100.0)
-				}
-				if lossRate > 0 {
-					score *= (100.0 - lossRate) / 100.0
-				}
-			}
-
-			candidates = append(candidates, struct {
-				IP    string
-				Score float64
-			}{entry.IP, score})
+	for _, entry := range m.lib.ListIPs(region) {
+		if exclude != nil && exclude[entry.IP] {
+			continue
 		}
+		if m.isIsolated(entry.IP) {
+			continue
+		}
+
+		score := entry.SpeedMbps
+		if score <= 0 {
+			score = 1.0
+		}
+
+		metrics := m.metricsMgr.Get(entry.IP)
+		if metrics.GetSampleCount() > 0 {
+			delay := metrics.GetDelay()
+			lossRate := metrics.GetLossRate()
+
+			if delay > 0 {
+				score *= 100.0 / (delay + 100.0)
+			}
+			if lossRate > 0 {
+				score *= (100.0 - lossRate) / 100.0
+			}
+		}
+
+		candidates = append(candidates, struct {
+			IP    string
+			Score float64
+		}{entry.IP, score})
 	}
 
 	if len(candidates) == 0 {
@@ -762,6 +758,33 @@ func (m *Manager) proxyHTTPConnect(client, upstream net.Conn, firstByte []byte) 
 	req, err := http.ReadRequest(br)
 	if err != nil {
 		return fmt.Errorf("HTTP parse: %w", err)
+	}
+
+	// WebSocket 握手处理
+	if req.Header.Get("Upgrade") == "websocket" {
+		logging.DebugTo("proxy", "WebSocket handshake: %s", req.Host)
+		
+		// 构建 WebSocket 升级响应
+		resp := &http.Response{
+			StatusCode: 101,
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Header: make(http.Header),
+			Body:   io.NopCloser(bytes.NewReader([]byte{})),
+		}
+		resp.Header.Set("Upgrade", "websocket")
+		resp.Header.Set("Connection", "Upgrade")
+		resp.Header.Set("Sec-WebSocket-Accept", computeWebSocketAccept(req.Header.Get("Sec-WebSocket-Key")))
+		
+		if err := resp.Write(client); err != nil {
+			return err
+		}
+		
+		client.SetReadDeadline(time.Time{})
+		go io.Copy(upstream, client)
+		io.Copy(client, upstream)
+		return nil
 	}
 
 	if req.Method != "CONNECT" {
@@ -983,7 +1006,7 @@ func (m *Manager) Status() Status {
 		m.stickyMgr.mu.Unlock()
 		
 		healthStatus := "healthy"
-		totalIPs := m.lib.CountIPsByCodes(codes)
+		totalIPs := len(m.lib.ListIPs(r.Name))
 		if totalIPs == 0 {
 			healthStatus = "down"
 		} else if isolatedCount >= totalIPs/2 || lossRate > 20 {

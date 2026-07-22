@@ -261,6 +261,25 @@ func (l *Library) PickRandom(region string) (string, error) {
 	return ips[idx], nil
 }
 
+// PickRandomByRegionWithExclude 从某地区随机挑选一个 IP，排除指定 IP
+func (l *Library) PickRandomByRegionWithExclude(region string, exclude map[string]bool) (string, error) {
+	l.mu.RLock()
+	var allIPs []string
+	for _, ip := range l.cache[region] {
+		if exclude == nil || !exclude[ip] {
+			allIPs = append(allIPs, ip)
+		}
+	}
+	l.mu.RUnlock()
+
+	if len(allIPs) == 0 {
+		return "", fmt.Errorf("region %q has no IPs after exclusion", region)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	return allIPs[rand.Intn(len(allIPs))], nil
+}
+
 // PickFallback 库为空时，从全量 CF IP 中随机选（兜底）
 // 这部分由调用方传入候选列表
 func (l *Library) PickFallback(candidates []string) (string, error) {

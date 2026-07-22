@@ -836,19 +836,56 @@ func (h *Handlers) HandleAPIDCList(w http.ResponseWriter, r *http.Request) {
 	writeAPIResponse(w, 200, dcs)
 }
 
-// HandleAPIDCCountries 返回所有国家列表
+// HandleAPIDCCountries 返回所有国家列表（带统计）
 // GET /api/dc/countries
 func (h *Handlers) HandleAPIDCCountries(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, 405, "method not allowed")
 		return
 	}
-	countries, err := h.CfgMgr.ListCountries()
+	dcs, err := h.CfgMgr.ListDatacenters()
 	if err != nil {
 		writeError(w, 500, err.Error())
 		return
 	}
-	writeAPIResponse(w, 200, countries)
+
+	type countryStat struct {
+		CCA2      string   `json:"cca2"`
+		CountryZh string   `json:"country_zh"`
+		Count     int      `json:"count"`
+		IATAs     []string `json:"iatas"`
+	}
+
+	countryMap := make(map[string]*countryStat)
+
+	for _, dc := range dcs {
+		if dc.Country == "" {
+			continue
+		}
+		if _, ok := countryMap[dc.Country]; !ok {
+			// 优先使用数据库中的 region_name（中文名），其次用 CCA2 代码
+			zhName := dc.RegionName
+			if zhName == "" {
+				zhName = dc.Country
+			}
+			countryMap[dc.Country] = &countryStat{
+				CCA2:      dc.Country,
+				CountryZh: zhName,
+				Count:     0,
+				IATAs:     []string{},
+			}
+		}
+		countryMap[dc.Country].Count++
+		if dc.Colo != "" {
+			countryMap[dc.Country].IATAs = append(countryMap[dc.Country].IATAs, dc.Colo)
+		}
+	}
+
+	result := make([]countryStat, 0, len(countryMap))
+	for _, v := range countryMap {
+		result = append(result, *v)
+	}
+	writeAPIResponse(w, 200, result)
 }
 
 // HandleAPIDCByCountry 返回指定国家的数据中心
@@ -883,7 +920,33 @@ func (h *Handlers) HandleAPIDCSync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, err.Error())
 		return
 	}
-	writeAPIResponse(w, 200, map[string]string{"status": "syncing"})
+
+	dcs, _ := h.CfgMgr.ListDatacenters()
+	lastSync, _ := h.CfgMgr.GetDatacenterMeta("last_sync")
+	writeAPIResponse(w, 200, map[string]interface{}{
+		"status":      "syncing",
+		"total_count": len(dcs),
+		"synced_at":   lastSync,
+	})
+}
+
+// HandleAPIDCStatus 返回数据中心字典状态
+// GET /api/dc/status
+func (h *Handlers) HandleAPIDCStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, 405, "method not allowed")
+		return
+	}
+	dcs, err := h.CfgMgr.ListDatacenters()
+	if err != nil {
+		writeError(w, 500, err.Error())
+		return
+	}
+	lastSync, _ := h.CfgMgr.GetDatacenterMeta("last_sync")
+	writeAPIResponse(w, 200, map[string]interface{}{
+		"total_count": len(dcs),
+		"synced_at":   lastSync,
+	})
 }
 
 // === IP 历史记录 API（V2.3）===

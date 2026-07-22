@@ -481,7 +481,7 @@ func (s *SQLiteStore) ListDatacentersByCountry(country string) ([]DatacenterEntr
 	rows, err := s.db.Query(`SELECT colo,COALESCE(name,''),COALESCE(country,''),COALESCE(city,''),
 		COALESCE(continent,''),COALESCE(latitude,0),COALESCE(longitude,0),
 		COALESCE(region_name,''),COALESCE(zone,''),COALESCE(updated_at,'')
-		FROM cf_datacenter WHERE country=? ORDER BY city`, country)
+		FROM cf_datacenter WHERE country=? OR region_name=? ORDER BY city`, country, country)
 	if err != nil {
 		return nil, err
 	}

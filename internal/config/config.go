@@ -9,6 +9,7 @@ package config
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,6 +26,7 @@ import (
 // ProxyRegion 描述一个代理地区（监听端口 + CMIN2 IP 库）
 type ProxyRegion struct {
 	Name      string `json:"name"`       // HKG / LAX / JP
+	Country   string `json:"country"`    // 国家/地区名称
 	Code      string `json:"code"`       // 数据中心代码（用于从扫描结果匹配）
 	Port      int    `json:"port"`       // 监听端口
 	Enabled   bool   `json:"enabled"`    // 是否启用
@@ -230,14 +232,20 @@ func (m *Manager) loadAll() error {
 
 	if rs, err := m.db.LoadRegions(); err == nil && len(rs) > 0 {
 		m.regions = rs
-	} else {
-		m.regions = []ProxyRegion{
-			{Name: "香港", Code: "HKG", Port: 1001, Enabled: true, Fallback: true},
-			{Name: "美国", Code: "DEN,DFW,DTW,EWR,FSD,HNL,IAD,IAH,IND,JAX,LAS,LAX,MCI,MEM,MFE,MIA,MSP,OKC,OMA,ORD,ORF,PDX,PHL,PHX,PIT,RDU,RIC,SAN,SAT,SEA,SFO,SJC,SLC,SMF,STL,TLH,TPA", Port: 1002, Enabled: true, Fallback: true},
-			{Name: "日本", Code: "KIX,NRT,OKA,FUK", Port: 1003, Enabled: true, Fallback: true},
-			{Name: "新加坡", Code: "SIN", Port: 1004, Enabled: true, Fallback: true},
-			{Name: "越南", Code: "DAD,HAN,SGN", Port: 1005, Enabled: true, Fallback: true},
+		// V2.2.1 数据迁移：补充 country 字段（旧数据无此字段）
+		needMigrate := false
+		for i := range m.regions {
+			if m.regions[i].Country == "" {
+				m.regions[i].Country = inferCountryFromRegion(m.regions[i])
+				needMigrate = true
+			}
 		}
+		if needMigrate {
+			_ = m.db.SaveRegions(m.regions)
+			logging.InfoTo("config", "✅ 地区 country 字段迁移完成")
+		}
+	} else {
+		m.regions = defaultRegions()
 		_ = m.db.SaveRegions(m.regions)
 	}
 
@@ -255,6 +263,40 @@ func (m *Manager) loadAll() error {
 		_ = m.db.SaveProxyForward(m.proxyForward)
 	}
 	return nil
+}
+
+// defaultRegions 默认 5 地区列表（V2.2.1）
+func defaultRegions() []ProxyRegion {
+	return []ProxyRegion{
+		{Name: "香港", Country: "香港", Code: "HKG", Port: 1001, Enabled: true, Fallback: true},
+		{Name: "美国", Country: "美国", Code: "DEN,DFW,DTW,EWR,FSD,HNL,IAD,IAH,IND,JAX,LAS,LAX,MCI,MEM,MFE,MIA,MSP,OKC,OMA,ORD,ORF,PDX,PHL,PHX,PIT,RDU,RIC,SAN,SAT,SEA,SFO,SJC,SLC,SMF,STL,TLH,TPA", Port: 1002, Enabled: true, Fallback: true},
+		{Name: "日本", Country: "日本", Code: "KIX,NRT,OKA,FUK", Port: 1003, Enabled: true, Fallback: true},
+		{Name: "新加坡", Country: "新加坡", Code: "SIN", Port: 1004, Enabled: true, Fallback: true},
+		{Name: "越南", Country: "越南", Code: "DAD,HAN,SGN", Port: 1005, Enabled: true, Fallback: true},
+	}
+}
+
+// inferCountryFromRegion 通过地区名或 colo 反查国家名（V2.2.1 迁移）
+func inferCountryFromRegion(r ProxyRegion) string {
+	if r.Name != "" {
+		// 已知地区名直接映射
+		switch r.Name {
+		case "香港", "美国", "日本", "新加坡", "越南", "韩国", "台湾", "印度", "英国", "德国", "法国",
+			"荷兰", "瑞典", "瑞士", "西班牙", "意大利", "俄罗斯", "巴西", "加拿大", "澳大利亚":
+			return r.Name
+		}
+	}
+	// 通过 colo 反查内置字典
+	if r.Code != "" {
+		for _, dc := range builtinDatacenters {
+			for _, colo := range strings.Split(r.Code, ",") {
+				if strings.TrimSpace(colo) == dc.Colo && dc.RegionName != "" {
+					return dc.RegionName
+				}
+			}
+		}
+	}
+	return r.Name
 }
 
 func defaultScannerConfig() ScannerConfig {
@@ -453,6 +495,44 @@ func hasIPv6Connectivity() bool {
 
 // === 数据中心字典同步（V2.2.1）===
 
+//go:embed cf-iata.json
+var cfIATAJSON []byte
+
+// cca2ToZhCountry CCA2 国家代码到中文名称映射
+var cca2ToZhCountry = map[string]string{
+	"US": "美国", "JP": "日本", "HK": "中国香港", "SG": "新加坡", "VN": "越南",
+	"KR": "韩国", "GB": "英国", "DE": "德国", "FR": "法国", "NL": "荷兰",
+	"AU": "澳大利亚", "CA": "加拿大", "BR": "巴西", "IN": "印度", "TW": "台湾",
+	"TH": "泰国", "PH": "菲律宾", "ID": "印度尼西亚", "MY": "马来西亚",
+	"MO": "澳门", "AE": "阿联酋", "SA": "沙特阿拉伯", "NZ": "新西兰",
+	"CL": "智利", "MX": "墨西哥", "AR": "阿根廷", "CO": "哥伦比亚", "PE": "秘鲁",
+	"ZA": "南非", "EG": "埃及", "NG": "尼日利亚", "KE": "肯尼亚", "MA": "摩洛哥",
+	"SE": "瑞典", "NO": "挪威", "FI": "芬兰", "DK": "丹麦", "PL": "波兰",
+	"IT": "意大利", "ES": "西班牙", "PT": "葡萄牙", "CH": "瑞士", "AT": "奥地利",
+	"BE": "比利时", "IE": "爱尔兰", "RU": "俄罗斯", "UA": "乌克兰", "TR": "土耳其",
+	"IL": "以色列", "JO": "约旦", "LB": "黎巴嫩", "IQ": "伊拉克", "IR": "伊朗",
+	"KZ": "哈萨克斯坦", "UZ": "乌兹别克斯坦", "PK": "巴基斯坦", "BD": "孟加拉国",
+	"LK": "斯里兰卡", "NP": "尼泊尔", "MM": "缅甸", "KH": "柬埔寨", "LA": "老挝",
+	"BN": "文莱", "FJ": "斐济", "PG": "巴布亚新几内亚", "CK": "库克群岛",
+	"EC": "厄瓜多尔", "VE": "委内瑞拉", "BO": "玻利维亚", "PY": "巴拉圭",
+	"UY": "乌拉圭", "CR": "哥斯达黎加", "PA": "巴拿马", "GT": "危地马拉",
+	"DO": "多米尼加", "JM": "牙买加", "BS": "巴哈马", "TT": "特立尼达和多巴哥",
+	"CW": "库拉索", "AW": "阿鲁巴", "BM": "百慕大", "KY": "开曼群岛",
+	"DZ": "阿尔及利亚", "TN": "突尼斯", "LY": "利比亚", "SD": "苏丹",
+	"ET": "埃塞俄比亚", "TZ": "坦桑尼亚", "UG": "乌干达", "CD": "刚果民主共和国",
+	"CM": "喀麦隆", "CI": "科特迪瓦", "GH": "加纳", "SN": "塞内加尔",
+	"AO": "安哥拉", "MZ": "莫桑比克", "ZW": "津巴布韦", "BW": "博茨瓦纳",
+	"NA": "纳米比亚", "BG": "保加利亚", "RO": "罗马尼亚", "HU": "匈牙利",
+	"CZ": "捷克", "SK": "斯洛伐克", "HR": "克罗地亚", "RS": "塞尔维亚",
+	"SI": "斯洛文尼亚", "EE": "爱沙尼亚", "LV": "拉脱维亚", "LT": "立陶宛",
+	"IS": "冰岛", "GR": "希腊", "CY": "塞浦路斯", "MT": "马耳他", "LU": "卢森堡",
+	"MC": "摩纳哥", "AD": "安道尔", "LI": "列支敦士登", "SM": "圣马力诺",
+	"VA": "梵蒂冈", "BY": "白俄罗斯", "MD": "摩尔多瓦", "GE": "格鲁吉亚",
+	"AM": "亚美尼亚", "AZ": "阿塞拜疆", "BH": "巴林", "QA": "卡塔尔",
+	"KW": "科威特", "OM": "阿曼", "YE": "也门", "AF": "阿富汗",
+	"MN": "蒙古",
+}
+
 var builtinDatacenters = []DatacenterEntry{
 	{Colo: "HKG", Name: "Hong Kong", Country: "HK", City: "Hong Kong", Continent: "AS", RegionName: "香港"},
 	{Colo: "SIN", Name: "Singapore", Country: "SG", City: "Singapore", Continent: "AS", RegionName: "新加坡"},
@@ -477,6 +557,26 @@ var builtinDatacenters = []DatacenterEntry{
 	{Colo: "MEM", Name: "Memphis", Country: "US", City: "Memphis", Continent: "NA", RegionName: "美国"},
 	{Colo: "IND", Name: "Indianapolis", Country: "US", City: "Indianapolis", Continent: "NA", RegionName: "美国"},
 	{Colo: "JAX", Name: "Jacksonville", Country: "US", City: "Jacksonville", Continent: "NA", RegionName: "美国"},
+	{Colo: "DTW", Name: "Detroit", Country: "US", City: "Detroit", Continent: "NA", RegionName: "美国"},
+	{Colo: "FSD", Name: "Sioux Falls", Country: "US", City: "Sioux Falls", Continent: "NA", RegionName: "美国"},
+	{Colo: "HNL", Name: "Honolulu", Country: "US", City: "Honolulu", Continent: "NA", RegionName: "美国"},
+	{Colo: "IAH", Name: "Houston", Country: "US", City: "Houston", Continent: "NA", RegionName: "美国"},
+	{Colo: "MCI", Name: "Kansas City", Country: "US", City: "Kansas City", Continent: "NA", RegionName: "美国"},
+	{Colo: "MFE", Name: "McAllen", Country: "US", City: "McAllen", Continent: "NA", RegionName: "美国"},
+	{Colo: "MSP", Name: "Minneapolis", Country: "US", City: "Minneapolis", Continent: "NA", RegionName: "美国"},
+	{Colo: "OKC", Name: "Oklahoma City", Country: "US", City: "Oklahoma City", Continent: "NA", RegionName: "美国"},
+	{Colo: "OMA", Name: "Omaha", Country: "US", City: "Omaha", Continent: "NA", RegionName: "美国"},
+	{Colo: "ORF", Name: "Norfolk", Country: "US", City: "Norfolk", Continent: "NA", RegionName: "美国"},
+	{Colo: "PIT", Name: "Pittsburgh", Country: "US", City: "Pittsburgh", Continent: "NA", RegionName: "美国"},
+	{Colo: "RDU", Name: "Raleigh", Country: "US", City: "Raleigh", Continent: "NA", RegionName: "美国"},
+	{Colo: "RIC", Name: "Richmond", Country: "US", City: "Richmond", Continent: "NA", RegionName: "美国"},
+	{Colo: "SAN", Name: "San Diego", Country: "US", City: "San Diego", Continent: "NA", RegionName: "美国"},
+	{Colo: "SAT", Name: "San Antonio", Country: "US", City: "San Antonio", Continent: "NA", RegionName: "美国"},
+	{Colo: "SLC", Name: "Salt Lake City", Country: "US", City: "Salt Lake City", Continent: "NA", RegionName: "美国"},
+	{Colo: "SMF", Name: "Sacramento", Country: "US", City: "Sacramento", Continent: "NA", RegionName: "美国"},
+	{Colo: "STL", Name: "St. Louis", Country: "US", City: "St. Louis", Continent: "NA", RegionName: "美国"},
+	{Colo: "TLH", Name: "Tallahassee", Country: "US", City: "Tallahassee", Continent: "NA", RegionName: "美国"},
+	{Colo: "TPA", Name: "Tampa", Country: "US", City: "Tampa", Continent: "NA", RegionName: "美国"},
 	{Colo: "DAD", Name: "Da Nang", Country: "VN", City: "Da Nang", Continent: "AS", RegionName: "越南"},
 	{Colo: "HAN", Name: "Hanoi", Country: "VN", City: "Hanoi", Continent: "AS", RegionName: "越南"},
 	{Colo: "SGN", Name: "Ho Chi Minh", Country: "VN", City: "Ho Chi Minh", Continent: "AS", RegionName: "越南"},
@@ -507,76 +607,117 @@ func (m *Manager) InitDatacenters() {
 			rows.Close()
 		}
 
+		// 始终 upsert 内置字典，确保新增条目被写入（已有条目保持不变）
 		if count == 0 {
 			logging.InfoTo("config", "📦 初始化内置数据中心字典")
-			for i := range builtinDatacenters {
-				builtinDatacenters[i].UpdatedAt = NowISO()
-			}
-			if err := sqliteStore.UpsertDatacentersBatch(builtinDatacenters); err != nil {
-				logging.ErrorTo("config", "数据中心字典初始化失败: %v", err)
-			}
+		} else {
+			logging.InfoTo("config", "📦 同步内置数据中心字典（当前 %d 条）", count)
+		}
+		for i := range builtinDatacenters {
+			builtinDatacenters[i].UpdatedAt = NowISO()
+		}
+		if err := sqliteStore.UpsertDatacentersBatch(builtinDatacenters); err != nil {
+			logging.ErrorTo("config", "数据中心字典初始化失败: %v", err)
 		}
 	}
 }
 
 func (m *Manager) SyncDatacenters() error {
 	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		// 优先尝试远程拉取，失败则使用内置 cf-iata.json
+		var body []byte
+		remoteOK := false
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		req, err := http.NewRequestWithContext(ctx, "GET", "https://raw.githubusercontent.com/cloudflare/cf-speedtest/master/servers.json", nil)
-		if err != nil {
-			logging.WarnTo("config", "数据中心同步请求创建失败: %v", err)
-			return err
+		if err == nil {
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					body, err = io.ReadAll(resp.Body)
+					if err == nil {
+						remoteOK = true
+						logging.InfoTo("config", "数据中心字典远程拉取成功")
+					}
+				}
+			}
 		}
 
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			logging.WarnTo("config", "数据中心同步请求失败: %v", err)
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			logging.WarnTo("config", "数据中心同步返回异常: %d", resp.StatusCode)
-			return fmt.Errorf("unexpected status: %d", resp.StatusCode)
+		if !remoteOK {
+			logging.WarnTo("config", "远程数据中心字典拉取失败，使用内置 cf-iata.json")
+			body = cfIATAJSON
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			logging.WarnTo("config", "数据中心同步读取失败: %v", err)
-			return err
-		}
-
-		type remoteDC struct {
-			Code     string  `json:"code"`
-			City     string  `json:"city"`
-			Country  string  `json:"country"`
+		// cf-iata.json 格式：{ "IATA": { "place":"...", "place_zh":"...", "lat":.., "lng":.., "cca2":"..", "region":".." } }
+		var rawMap map[string]struct {
+			Place    string  `json:"place"`
+			PlaceZh  string  `json:"place_zh"`
+			Lat      float64 `json:"lat"`
+			Lng      float64 `json:"lng"`
+			CCA2     string  `json:"cca2"`
 			Region   string  `json:"region"`
-			Latitude float64 `json:"lat"`
-			Longitude float64 `json:"lon"`
+		}
+		if err := json.Unmarshal(body, &rawMap); err != nil {
+			// 可能是旧格式（数组），尝试旧解析
+			type remoteDC struct {
+				Code      string  `json:"code"`
+				City      string  `json:"city"`
+				Country   string  `json:"country"`
+				Region    string  `json:"region"`
+				Latitude  float64 `json:"lat"`
+				Longitude float64 `json:"lon"`
+			}
+			var remoteDCs []remoteDC
+			if err2 := json.Unmarshal(body, &remoteDCs); err2 != nil {
+				logging.WarnTo("config", "数据中心同步解析失败: %v / %v", err, err2)
+				return err
+			}
+			// 旧格式处理
+			now := NowISO()
+			var entries []DatacenterEntry
+			for _, dc := range remoteDCs {
+				entries = append(entries, DatacenterEntry{
+					Colo:       dc.Code,
+					Name:       dc.City,
+					Country:    dc.Country,
+					City:       dc.City,
+					Latitude:   dc.Latitude,
+					Longitude:  dc.Longitude,
+					RegionName: cca2ToZhCountry[dc.Country],
+					UpdatedAt:  now,
+				})
+			}
+			if len(entries) > 0 {
+				if err := sqliteStore.UpsertDatacentersBatch(entries); err != nil {
+					return err
+				}
+				_ = sqliteStore.SetDatacenterMeta("last_sync", now)
+				logging.InfoTo("config", "✅ 数据中心字典同步完成: %d 个数据中心", len(entries))
+			}
+			return nil
 		}
 
-		var remoteDCs []remoteDC
-		if err := json.Unmarshal(body, &remoteDCs); err != nil {
-			logging.WarnTo("config", "数据中心同步解析失败: %v", err)
-			return err
-		}
-
-		var entries []DatacenterEntry
+		// cf-iata.json 格式处理
 		now := NowISO()
-		for _, dc := range remoteDCs {
+		var entries []DatacenterEntry
+		for colo, dc := range rawMap {
+			regionName := cca2ToZhCountry[dc.CCA2]
+			if regionName == "" {
+				regionName = dc.Region
+			}
 			entries = append(entries, DatacenterEntry{
-				Colo:       dc.Code,
-				Name:       dc.City,
-				Country:    dc.Country,
-				City:       dc.City,
-				Continent:  "",
-				Latitude:   dc.Latitude,
-				Longitude:  dc.Longitude,
-				RegionName: dc.Region,
-				Zone:       "",
+				Colo:       colo,
+				Name:       dc.Place,
+				Country:    dc.CCA2,
+				City:       dc.Place,
+				Continent:  dc.Region,
+				Latitude:   dc.Lat,
+				Longitude:  dc.Lng,
+				RegionName: regionName,
 				UpdatedAt:  now,
 			})
 		}
@@ -612,4 +753,11 @@ func (m *Manager) ListCountries() ([]string, error) {
 		return sqliteStore.ListCountries()
 	}
 	return nil, fmt.Errorf("not supported")
+}
+
+func (m *Manager) GetDatacenterMeta(key string) (string, error) {
+	if sqliteStore, ok := m.db.(*SQLiteStore); ok {
+		return sqliteStore.GetDatacenterMeta(key)
+	}
+	return "", fmt.Errorf("not supported")
 }

@@ -216,6 +216,7 @@ func registerRoutes(mux *http.ServeMux, h *webui.Handlers) {
 
 	// 数据中心字典（V2.2.1）
 	mux.HandleFunc("/api/dc/list", h.HandleAPIDCList)
+	mux.HandleFunc("/api/dc/status", h.HandleAPIDCStatus)
 	mux.HandleFunc("/api/dc/countries", h.HandleAPIDCCountries)
 	mux.HandleFunc("/api/dc/country/", h.HandleAPIDCByCountry)
 	mux.HandleFunc("/api/dc/sync", h.HandleAPIDCSync)

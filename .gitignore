@@ -12,3 +12,24 @@ cmd/probe-test/
 产品版本迭代方案v2.md
 测试用例.md
 测试用例v2.md
+
+# 临时验证脚本
+app.js
+build_index.py
+check_all_pages.py
+check_html.py
+check_js.py
+check_js_detail.py
+check_page_divs.py
+check_settings.py
+debug_html.py
+find_escape_issues.py
+temp_check.js
+temp_js.js
+temp_js_for_check.js
+temp_verify.js
+verify_js.py
+verify_pages.py
+
+# 根目录 index.html（构建产物）
+/index.html

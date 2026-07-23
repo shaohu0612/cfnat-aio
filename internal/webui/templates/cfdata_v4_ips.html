@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFNAT-AIO V4 - IP 库</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+  <style>
+
+:root {
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+  --v4-teal: #22d3ee;
+  --v4-emerald: #34d399;
+  --v4-amber: #fbbf24;
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+}
+
+body { margin: 0; font-family: var(--font-body); font-size: var(--font-size-base); background: var(--cfnat-background); color: var(--cfnat-foreground); }
+
+/* === 通用组件 === */
+.toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: var(--cfnat-muted); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-full); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+.toggle-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--cfnat-muted-foreground); border-radius: var(--cfnat-radius-full); transition: transform 0.2s, background 0.2s; }
+.toggle-switch input:checked + .toggle-track { background: var(--cfnat-primary); border-color: var(--cfnat-primary); }
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(20px); background: #fff; }
+.toggle-accent input:checked + .toggle-track { background: var(--cfnat-accent); border-color: var(--cfnat-accent); }
+
+.num-input { width: 80px; padding: 6px 10px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-family: var(--font-display); font-size: var(--font-size-sm); text-align: center; outline: none; transition: border-color 0.15s; }
+.num-input:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88,166,255,0.15); }
+
+.text-input { width: 120px; padding: 6px 10px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-family: var(--font-display); font-size: var(--font-size-sm); outline: none; transition: border-color 0.15s; }
+.text-input:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88,166,255,0.15); }
+
+.custom-select { padding: 7px 32px 7px 12px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-size: var(--font-size-sm); outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e7681' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+.custom-select:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88,166,255,0.15); }
+
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--cfnat-radius-full); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); white-space: nowrap; }
+.badge-success { background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid rgba(63,185,80,0.25); }
+.badge-error { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.25); }
+.badge-warning { background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.25); }
+.badge-info { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.25); }
+.badge-accent { background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
+.badge-v4 { display: inline-flex; align-items: center; justify-content: center; font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); color: var(--v4-teal); background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.3); border-radius: var(--cfnat-radius-sm); padding: 1px 6px; letter-spacing: 0.5px; white-space: nowrap; }
+.badge-engine-v4 { display: inline-flex; align-items: center; justify-content: center; font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); color: var(--v4-emerald); background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); border-radius: var(--cfnat-radius-sm); padding: 2px 8px; letter-spacing: 0.5px; white-space: nowrap; }
+
+.cfnat-checkbox { appearance: none; width: 14px; height: 14px; border: 1px solid var(--cfnat-border); border-radius: 3px; background: var(--cfnat-input); cursor: pointer; position: relative; }
+.cfnat-checkbox:checked { background: var(--cfnat-primary); border-color: var(--cfnat-primary); }
+.cfnat-checkbox:checked::after { content: ''; position: absolute; left: 3px; top: 0px; width: 5px; height: 9px; border: solid var(--cfnat-primary-foreground); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+.toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: var(--cfnat-radius-md); color: white; font-size: var(--font-size-sm); z-index: 1000; animation: slideIn 0.3s ease; }
+.toast-success { background: var(--state-success); }
+.toast-error { background: var(--state-error); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === IP 表格 === */
+.ip-table-v4 { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ip-table-v4 thead th { padding: 10px 16px; text-align: left; font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--cfnat-muted-foreground); background: var(--cfnat-muted); border-bottom: 1px solid var(--cfnat-border); white-space: nowrap; cursor: pointer; user-select: none; transition: color 0.15s; }
+.ip-table-v4 thead th:hover { color: var(--cfnat-card-foreground); }
+.ip-table-v4 thead th .sort-arrow { margin-left: 4px; font-size: 10px; opacity: 0.4; }
+.ip-table-v4 thead th.sorted .sort-arrow { opacity: 1; color: var(--v4-teal); }
+.ip-table-v4 tbody td { padding: 10px 16px; font-size: var(--font-size-sm); color: var(--cfnat-card-foreground); border-bottom: 1px solid var(--cfnat-border); white-space: nowrap; }
+.ip-table-v4 tbody tr:hover { background: rgba(88,166,255,0.03); }
+.ip-table-v4 tbody tr:last-child td { border-bottom: none; }
+.ip-table-v4 tbody tr.row-isolated { opacity: 0.5; }
+.ip-table-v4 tbody tr.row-warming { background: rgba(88,166,255,0.04); }
+
+/* === 质量分条 === */
+.quality-bar-track { width: 120px; height: 6px; background: var(--cfnat-muted); border-radius: var(--cfnat-radius-full); overflow: hidden; }
+.quality-bar-fill { height: 100%; border-radius: var(--cfnat-radius-full); transition: width 0.4s ease, background 0.4s ease; }
+
+/* === 状态指示灯 === */
+.status-dot { width: 8px; height: 8px; border-radius: var(--cfnat-radius-full); display: inline-block; flex-shrink: 0; }
+.status-dot-normal { background: var(--state-success); box-shadow: 0 0 6px rgba(63,185,80,0.4); }
+.status-dot-isolated { background: var(--state-error); box-shadow: 0 0 6px rgba(248,81,73,0.4); }
+.status-dot-warming { background: var(--state-info); box-shadow: 0 0 6px rgba(88,166,255,0.4); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%, 100% { box-shadow: 0 0 6px rgba(88,166,255,0.2); } 50% { box-shadow: 0 0 12px rgba(88,166,255,0.5); } }
+
+/* === 统计卡片网格 === */
+.stat-card { background: var(--cfnat-card); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-lg); padding: 16px 20px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s; }
+.stat-card:hover { border-color: rgba(88,166,255,0.2); }
+.stat-icon { width: 40px; height: 40px; border-radius: var(--cfnat-radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-value { font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--cfnat-foreground); line-height: 1; }
+.stat-label { font-size: var(--font-size-xs); color: var(--cfnat-muted-foreground); margin-top: 4px; }
+
+/* === 搜索框 === */
+.search-box { position: relative; flex: 1; min-width: 200px; }
+.search-box input { width: 100%; padding: 7px 12px 7px 34px; background: var(--cfnat-input); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-md); color: var(--cfnat-foreground); font-size: var(--font-size-sm); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.search-box input:focus { border-color: var(--cfnat-primary); box-shadow: 0 0 0 2px rgba(88,166,255,0.15); }
+.search-box input::placeholder { color: var(--cfnat-muted-foreground); }
+.search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+
+/* === 操作按钮 === */
+.btn { padding: 7px 16px; border-radius: var(--cfnat-radius-md); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); cursor: pointer; transition: background 0.15s, border-color 0.15s; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-primary { background: var(--cfnat-primary); color: var(--cfnat-primary-foreground); border-color: var(--cfnat-primary); }
+.btn-primary:hover { background: var(--cfnat-primary-hover); }
+.btn-teal { background: var(--v4-teal); color: #0a0e14; border-color: var(--v4-teal); font-weight: var(--font-weight-bold); }
+.btn-teal:hover { background: #06b6d4; }
+.btn-danger-outline { background: rgba(248,81,73,0.08); color: var(--state-error); border-color: rgba(248,81,73,0.3); }
+.btn-danger-outline:hover { background: rgba(248,81,73,0.15); }
+.btn-ghost { background: transparent; color: var(--cfnat-card-foreground); border-color: var(--cfnat-border); }
+.btn-ghost:hover { background: rgba(88,166,255,0.06); border-color: rgba(88,166,255,0.3); }
+.btn-sm { padding: 4px 10px; font-size: var(--font-size-xs); }
+
+/* === 模态框 === */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 900; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+.modal-content { background: var(--cfnat-card); border: 1px solid var(--cfnat-border); border-radius: var(--cfnat-radius-lg); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+.modal-header { padding: 16px 24px; border-bottom: 1px solid var(--cfnat-border); display: flex; align-items: center; justify-content: space-between; }
+.modal-body { padding: 20px 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--cfnat-border); display: flex; justify-content: flex-end; gap: 12px; }
+
+/* === 空状态 === */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--cfnat-muted-foreground); }
+.empty-state svg { margin: 0 auto 16px; opacity: 0.3; }
+.empty-state p { font-size: var(--font-size-sm); }
+  </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+<!-- 顶部导航栏 -->
+<nav style="background:var(--cfnat-card);border-bottom:1px solid var(--cfnat-border);">
+  <div style="max-width:1400px;margin:0 auto;padding:0 24px;display:flex;align-items:center;height:56px;gap:4px;">
+    <div style="font-family:var(--font-display);font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--cfnat-primary);margin-right:8px;white-space:nowrap;letter-spacing:1px;">CFNAT-AIO</div>
+    <span class="badge-v4" style="margin-right:16px;">V4</span>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);color:var(--cfnat-muted-foreground);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">仪表盘</a>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);color:var(--cfnat-muted-foreground);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">地区管理</a>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);color:var(--cfnat-muted-foreground);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">cfnat 配置</a>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);color:var(--cfnat-muted-foreground);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">cfdata 扫描</a>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);background:rgba(34,211,238,0.1);color:var(--v4-teal);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">IP 库</a>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);color:var(--cfnat-muted-foreground);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">日志</a>
+    <a href="#" style="padding:8px 16px;border-radius:var(--cfnat-radius-md);color:var(--cfnat-muted-foreground);text-decoration:none;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);transition:color 0.15s,background 0.15s;white-space:nowrap;">通用设置</a>
+  </div>
+</nav>
+
+<!-- 主内容区 -->
+<div style="max-width:1400px;margin:0 auto;padding:24px;">
+
+  <!-- 页面标题 -->
+  <div style="margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+    <div>
+      <h1 style="font-size:var(--font-size-xl);font-weight:var(--font-weight-bold);color:var(--cfnat-foreground);margin:0 0 4px 0;">IP 库</h1>
+      <p style="font-size:var(--font-size-sm);color:var(--cfnat-muted-foreground);margin:0;">Cloudflare 优选 IP 管理、质量监控与池调度</p>
+    </div>
+    <span class="badge-engine-v4">Engine V4.0</span>
+  </div>
+
+  <!-- ===== IP 池统计卡片 ===== -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px;">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(88,166,255,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cfnat-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-total">156</div>
+        <div class="stat-label">总 IP 数</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(63,185,80,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--state-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-normal" style="color:var(--state-success);">142</div>
+        <div class="stat-label">正常</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(210,153,34,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--state-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-isolated" style="color:var(--state-warning);">8</div>
+        <div class="stat-label">隔离中</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(88,166,255,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--state-info)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-warming" style="color:var(--state-info);">6</div>
+        <div class="stat-label">预热中</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(167,139,250,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cfnat-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="var(--cfnat-accent)" opacity="0.3"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-active" style="color:var(--cfnat-accent);">98</div>
+        <div class="stat-label">主池</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(34,211,238,0.12);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--v4-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-standby" style="color:var(--v4-teal);">58</div>
+        <div class="stat-label">备选池</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 工具栏 ===== -->
+  <div style="background:var(--cfnat-card);border:1px solid var(--cfnat-border);border-radius:var(--cfnat-radius-lg) var(--cfnat-radius-lg) 0 0;border-bottom:none;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <select id="ip-region-filter" class="custom-select" onchange="filterIPs()">
+      <option value="">全部地区</option>
+      <option value="香港">香港</option>
+      <option value="美国">美国</option>
+      <option value="日本">日本</option>
+      <option value="新加坡">新加坡</option>
+      <option value="越南">越南</option>
+    </select>
+    <select id="ip-pool-filter" class="custom-select" onchange="filterIPs()">
+      <option value="">全部池</option>
+      <option value="active">主池</option>
+      <option value="standby">备选池</option>
+    </select>
+    <select id="ip-status-filter" class="custom-select" onchange="filterIPs()">
+      <option value="">全部状态</option>
+      <option value="normal">正常</option>
+      <option value="isolated">隔离中</option>
+      <option value="warming">预热中</option>
+    </select>
+    <select id="ip-source-filter" class="custom-select" onchange="filterIPs()">
+      <option value="">全部来源</option>
+      <option value="scan">自动扫描</option>
+      <option value="import">批量导入</option>
+      <option value="manual">手动添加</option>
+    </select>
+    <div class="search-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cfnat-muted-foreground)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="ip-search-input" type="text" placeholder="搜索 IP / Colo..." oninput="filterIPs()">
+    </div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ghost" onclick="refreshIPs()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      刷新
+    </button>
+    <button class="btn btn-teal" onclick="openAddIPModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      添加 IP
+    </button>
+    <button class="btn" style="background:rgba(167,139,250,0.12);color:var(--cfnat-accent);border:1px solid rgba(167,139,250,0.3);" onclick="openImportModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      批量导入
+    </button>
+    <button class="btn btn-danger-outline" onclick="deleteSelectedIPs()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      删除选中
+    </button>
+  </div>
+
+  <!-- ===== IP 表格 ===== -->
+  <div style="background:var(--cfnat-card);border:1px solid var(--cfnat-border);border-radius:0 0 var(--cfnat-radius-lg) var(--cfnat-radius-lg);overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table class="ip-table-v4">
+        <thead>
+          <tr>
+            <th style="width:40px;">
+              <input type="checkbox" class="cfnat-checkbox" id="ip-select-all" onchange="toggleAllIPs(this.checked)">
+            </th>
+            <th style="width:36px;"></th>
+            <th onclick="sortIPs('ip')" data-key="ip">IP <span class="sort-arrow">&#9650;</span></th>
+            <th onclick="sortIPs('colo')" data-key="colo">Colo <span class="sort-arrow">&#9650;</span></th>
+            <th onclick="sortIPs('region')" data-key="region">地区 <span class="sort-arrow">&#9650;</span></th>
+            <th onclick="sortIPs('quality')" data-key="quality">质量分 <span class="sort-arrow">&#9650;</span></th>
+            <th onclick="sortIPs('speed')" data-key="speed">速度 MB/s <span class="sort-arrow">&#9650;</span></th>
+            <th onclick="sortIPs('delay')" data-key="delay">EWMA 延迟 <span class="sort-arrow">&#9650;</span></th>
+            <th onclick="sortIPs('loss')" data-key="loss">EWMA 丢包率 <span class="sort-arrow">&#9650;</span></th>
+            <th>来源</th>
+            <th>池</th>
+            <th>连接数</th>
+            <th>失败</th>
+            <th style="width:60px;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="ip-table-body">
+          <!-- 示例数据行 -->
+          <tr>
+            <td><input type="checkbox" class="cfnat-checkbox ip-row-check" data-ip="104.16.132.5" data-region="香港"></td>
+            <td><span class="status-dot status-dot-normal"></span></td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);font-weight:var(--font-weight-medium);">104.16.132.5</td>
+            <td style="font-family:var(--font-display);color:var(--v4-teal);font-weight:var(--font-weight-bold);">HKG</td>
+            <td style="color:var(--cfnat-card-foreground);">香港</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="quality-bar-track"><div class="quality-bar-fill" style="width:92%;background:var(--state-success);"></div></div>
+                <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--state-success);font-weight:var(--font-weight-bold);">92</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);">8.5</td>
+            <td style="font-family:var(--font-display);color:var(--state-success);">42ms</td>
+            <td style="font-family:var(--font-display);color:var(--state-success);">0.1%</td>
+            <td><span class="badge badge-info">scan</span></td>
+            <td><span class="badge badge-accent">主池</span></td>
+            <td style="font-family:var(--font-display);">128</td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-muted-foreground);">0</td>
+            <td>
+              <button class="btn btn-sm btn-danger-outline" onclick="removeSingleIP('104.16.132.5','香港')" title="删除">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="cfnat-checkbox ip-row-check" data-ip="162.159.200.1" data-region="香港"></td>
+            <td><span class="status-dot status-dot-normal"></span></td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);font-weight:var(--font-weight-medium);">162.159.200.1</td>
+            <td style="font-family:var(--font-display);color:var(--v4-teal);font-weight:var(--font-weight-bold);">HKG</td>
+            <td style="color:var(--cfnat-card-foreground);">香港</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="quality-bar-track"><div class="quality-bar-fill" style="width:88%;background:var(--state-success);"></div></div>
+                <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--state-success);font-weight:var(--font-weight-bold);">88</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);">7.2</td>
+            <td style="font-family:var(--font-display);color:var(--state-success);">38ms</td>
+            <td style="font-family:var(--font-display);color:var(--state-success);">0.0%</td>
+            <td><span class="badge badge-info">scan</span></td>
+            <td><span class="badge badge-accent">主池</span></td>
+            <td style="font-family:var(--font-display);">96</td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-muted-foreground);">1</td>
+            <td>
+              <button class="btn btn-sm btn-danger-outline" onclick="removeSingleIP('162.159.200.1','香港')" title="删除">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr class="row-isolated">
+            <td><input type="checkbox" class="cfnat-checkbox ip-row-check" data-ip="104.17.88.12" data-region="美国"></td>
+            <td><span class="status-dot status-dot-isolated"></span></td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);font-weight:var(--font-weight-medium);">104.17.88.12</td>
+            <td style="font-family:var(--font-display);color:var(--v4-amber);font-weight:var(--font-weight-bold);">LAX</td>
+            <td style="color:var(--cfnat-card-foreground);">美国</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="quality-bar-track"><div class="quality-bar-fill" style="width:22%;background:var(--state-error);"></div></div>
+                <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--state-error);font-weight:var(--font-weight-bold);">22</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-muted-foreground);">2.1</td>
+            <td style="font-family:var(--font-display);color:var(--state-error);">580ms</td>
+            <td style="font-family:var(--font-display);color:var(--state-error);">15.2%</td>
+            <td><span class="badge badge-info">scan</span></td>
+            <td><span class="badge badge-success">备选池</span></td>
+            <td style="font-family:var(--font-display);">0</td>
+            <td style="font-family:var(--font-display);color:var(--state-error);">12</td>
+            <td>
+              <button class="btn btn-sm btn-danger-outline" onclick="removeSingleIP('104.17.88.12','美国')" title="删除">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr class="row-warming">
+            <td><input type="checkbox" class="cfnat-checkbox ip-row-check" data-ip="172.64.210.18" data-region="日本"></td>
+            <td><span class="status-dot status-dot-warming"></span></td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);font-weight:var(--font-weight-medium);">172.64.210.18</td>
+            <td style="font-family:var(--font-display);color:var(--v4-teal);font-weight:var(--font-weight-bold);">NRT</td>
+            <td style="color:var(--cfnat-card-foreground);">日本</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="quality-bar-track"><div class="quality-bar-fill" style="width:65%;background:var(--state-info);"></div></div>
+                <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--state-info);font-weight:var(--font-weight-bold);">65</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);">5.3</td>
+            <td style="font-family:var(--font-display);color:var(--state-info);">--</td>
+            <td style="font-family:var(--font-display);color:var(--state-info);">--</td>
+            <td><span class="badge badge-success">import</span></td>
+            <td><span class="badge badge-accent">主池</span></td>
+            <td style="font-family:var(--font-display);">0</td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-muted-foreground);">0</td>
+            <td>
+              <button class="btn btn-sm btn-danger-outline" onclick="removeSingleIP('172.64.210.18','日本')" title="删除">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="cfnat-checkbox ip-row-check" data-ip="188.114.98.3" data-region="新加坡"></td>
+            <td><span class="status-dot status-dot-normal"></span></td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);font-weight:var(--font-weight-medium);">188.114.98.3</td>
+            <td style="font-family:var(--font-display);color:var(--v4-teal);font-weight:var(--font-weight-bold);">SIN</td>
+            <td style="color:var(--cfnat-card-foreground);">新加坡</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="quality-bar-track"><div class="quality-bar-fill" style="width:85%;background:var(--state-success);"></div></div>
+                <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--state-success);font-weight:var(--font-weight-bold);">85</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-foreground);">6.8</td>
+            <td style="font-family:var(--font-display);color:var(--state-success);">52ms</td>
+            <td style="font-family:var(--font-display);color:var(--state-success);">0.3%</td>
+            <td><span class="badge badge-warning">manual</span></td>
+            <td><span class="badge badge-accent">主池</span></td>
+            <td style="font-family:var(--font-display);">64</td>
+            <td style="font-family:var(--font-display);color:var(--cfnat-muted-foreground);">0</td>
+            <td>
+              <button class="btn btn-sm btn-danger-outline" onclick="removeSingleIP('188.114.98.3','新加坡')" title="删除">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== IP 池操作栏 ===== -->
+  <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <button class="btn btn-teal" onclick="rebuildPools()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      重建 IP 池
+    </button>
+    <button class="btn btn-ghost" onclick="cleanLowQuality()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+      清理低质量 IP
+    </button>
+    <div style="flex:1;"></div>
+    <span style="font-family:var(--font-display);font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);" id="ip-table-info">共 156 条记录</span>
+  </div>
+
+</div>
+
+<!-- Toast 容器 -->
+<div id="toast-container"></div>
+
+<!-- 添加 IP 模态框 -->
+<div id="add-ip-modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeModal('add-ip-modal', event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span style="font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--cfnat-foreground);">手动添加 IP</span>
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('add-ip-modal').style.display='none'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="grid-column:span 2;">
+            <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);display:block;margin-bottom:6px;">IP 地址</label>
+            <input id="add-ip-addr" type="text" placeholder="1.2.3.4" class="text-input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);display:block;margin-bottom:6px;">地区</label>
+            <select id="add-ip-region" class="custom-select" style="width:100%;">
+              <option value="香港">香港</option>
+              <option value="美国">美国</option>
+              <option value="日本">日本</option>
+              <option value="新加坡">新加坡</option>
+              <option value="越南">越南</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);display:block;margin-bottom:6px;">Colo (可选)</label>
+            <input id="add-ip-colo" type="text" placeholder="HKG" class="text-input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);display:block;margin-bottom:6px;">速度 MB/s (可选)</label>
+            <input id="add-ip-speed" type="number" placeholder="0" step="0.1" class="num-input" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);display:block;margin-bottom:6px;">延迟 ms (可选)</label>
+            <input id="add-ip-latency" type="number" placeholder="0" class="num-input" style="width:100%;">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('add-ip-modal').style.display='none'">取消</button>
+        <button class="btn btn-primary" onclick="addManualIP()">添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导入模态框 -->
+<div id="import-modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeModal('import-modal', event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span style="font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--cfnat-foreground);">批量导入 IP</span>
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('import-modal').style.display='none'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);display:block;margin-bottom:6px;">IP 列表</label>
+          <textarea id="import-ips-textarea" rows="8" style="width:100%;padding:10px 12px;background:var(--cfnat-input);border:1px solid var(--cfnat-border);border-radius:var(--cfnat-radius-md);color:var(--cfnat-foreground);font-family:var(--font-display);font-size:var(--font-size-sm);outline:none;resize:vertical;" placeholder="每行一个 IP 地址，支持格式：&#10;1.2.3.4&#10;1.2.3.5:443&#10;1.2.3.6#注释"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <label class="toggle-switch">
+            <input id="import-auto-add" type="checkbox" checked>
+            <span class="toggle-track"></span>
+          </label>
+          <span style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">CMIN2 节点测速达标后自动入库</span>
+        </div>
+      </div>
+      <div id="import-result" style="display:none;padding:0 24px 16px;"></div>
+      <div class="modal-footer">
+        <span id="import-loading" style="font-size:var(--font-size-xs);color:var(--cfnat-muted-foreground);display:none;margin-right:auto;">导入中，请稍候...</span>
+        <button class="btn btn-ghost" onclick="document.getElementById('import-modal').style.display='none'">取消</button>
+        <button class="btn btn-teal" onclick="importIPs()" id="import-submit-btn">开始导入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Toast 通知 ===
+function showToast(msg, type) {
+  type = type || 'success';
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 3000);
+}
+
+// === 模态框 ===
+function openAddIPModal() {
+  document.getElementById('add-ip-modal').style.display = 'block';
+  document.getElementById('add-ip-addr').focus();
+}
+
+function openImportModal() {
+  document.getElementById('import-modal').style.display = 'block';
+  document.getElementById('import-ips-textarea').value = '';
+  document.getElementById('import-result').style.display = 'none';
+  document.getElementById('import-loading').style.display = 'none';
+  document.getElementById('import-submit-btn').disabled = false;
+}
+
+function closeModal(id, event) {
+  if (event.target.classList.contains('modal-overlay')) {
+    document.getElementById(id).style.display = 'none';
+  }
+}
+
+// === API 辅助 ===
+async function apiGet(endpoint) {
+  try {
+    const res = await fetch('/api/' + endpoint);
+    return await res.json();
+  } catch (e) {
+    console.error('API error:', e);
+    return null;
+  }
+}
+
+async function apiPost(endpoint, data) {
+  try {
+    const res = await fetch('/api/' + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return await res.json();
+  } catch (e) {
+    console.error('API error:', e);
+    return null;
+  }
+}
+
+// === IP 刷新与渲染 ===
+async function refreshIPs() {
+  showToast('IP 库已刷新');
+}
+
+function filterIPs() {
+  // 占位：筛选逻辑由后端 API 支持
+}
+
+// === 全选/取消 ===
+function toggleAllIPs(checked) {
+  document.querySelectorAll('.ip-row-check').forEach(function(cb) {
+    cb.checked = checked;
+  });
+}
+
+// === 排序 ===
+let currentSort = { key: null, order: 'asc' };
+function sortIPs(key) {
+  if (currentSort.key === key) {
+    currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.key = key;
+    currentSort.order = 'asc';
+  }
+  // 更新表头样式
+  document.querySelectorAll('.ip-table-v4 thead th').forEach(function(th) {
+    th.classList.remove('sorted');
+    var arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.innerHTML = '&#9650;';
+  });
+  var activeTh = document.querySelector('.ip-table-v4 thead th[data-key="' + key + '"]');
+  if (activeTh) {
+    activeTh.classList.add('sorted');
+    var arrow = activeTh.querySelector('.sort-arrow');
+    if (arrow) arrow.innerHTML = currentSort.order === 'asc' ? '&#9650;' : '&#9660;';
+  }
+  showToast('按 ' + key + ' ' + (currentSort.order === 'asc' ? '升序' : '降序') + ' 排列', 'info');
+}
+
+// === 删除选中 IP ===
+async function deleteSelectedIPs() {
+  var checked = document.querySelectorAll('.ip-row-check:checked');
+  if (checked.length === 0) {
+    showToast('未选中任何 IP', 'error');
+    return;
+  }
+  var count = checked.length;
+  var tasks = [];
+  checked.forEach(function(cb) {
+    var ip = cb.dataset.ip;
+    var region = cb.dataset.region;
+    tasks.push(apiPost('ips/remove', { ip: ip, region: region }));
+  });
+  await Promise.all(tasks);
+  showToast('已删除 ' + count + ' 个 IP');
+  refreshIPs();
+}
+
+// === 删除单个 IP ===
+async function removeSingleIP(ip, region) {
+  await apiPost('ips/remove', { ip: ip, region: region });
+  showToast('已删除 ' + ip);
+  refreshIPs();
+}
+
+// === 手动添加 IP ===
+async function addManualIP() {
+  var ip = document.getElementById('add-ip-addr').value.trim();
+  var region = document.getElementById('add-ip-region').value;
+  var colo = document.getElementById('add-ip-colo').value.trim();
+  var speed = parseFloat(document.getElementById('add-ip-speed').value) || 0;
+  var latency = parseFloat(document.getElementById('add-ip-latency').value) || 0;
+
+  if (!ip) {
+    showToast('请输入 IP 地址', 'error');
+    return;
+  }
+
+  var res = await apiPost('ips/add', {
+    ip: ip,
+    region: region,
+    colo: colo,
+    speed_mbps: speed,
+    latency_ms: latency
+  });
+
+  if (res && res.code === 200) {
+    showToast('IP ' + ip + ' 已添加');
+    document.getElementById('add-ip-modal').style.display = 'none';
+    document.getElementById('add-ip-addr').value = '';
+    document.getElementById('add-ip-colo').value = '';
+    document.getElementById('add-ip-speed').value = '';
+    document.getElementById('add-ip-latency').value = '';
+    refreshIPs();
+  } else {
+    showToast(res ? res.message : '添加失败', 'error');
+  }
+}
+
+// === 批量导入 ===
+async function importIPs() {
+  var text = document.getElementById('import-ips-textarea').value.trim();
+  if (!text) {
+    showToast('请输入 IP 列表', 'error');
+    return;
+  }
+
+  var lines = text.split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+  var autoImport = document.getElementById('import-auto-add').checked;
+
+  document.getElementById('import-loading').style.display = 'inline';
+  document.getElementById('import-submit-btn').disabled = true;
+
+  var res = await apiPost('ips/import-probe', { ips: lines, auto_import: autoImport });
+
+  document.getElementById('import-loading').style.display = 'none';
+  document.getElementById('import-submit-btn').disabled = false;
+
+  if (res && res.code === 200) {
+    var d = res.data;
+    var html = '<div style="background:var(--cfnat-muted);border-radius:var(--cfnat-radius-md);padding:12px 16px;">';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">';
+    html += '<div style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">去重: <strong style="color:var(--cfnat-foreground);">' + d.total + '</strong></div>';
+    html += '<div style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">探活: <strong style="color:var(--state-success);">' + d.ok + '</strong></div>';
+    html += '<div style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">CMIN2: <strong style="color:var(--v4-teal);">' + d.cmin2 + '</strong></div>';
+    html += '<div style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">测速达标: <strong style="color:var(--v4-emerald);">' + d.speed_passed + '</strong></div>';
+    html += '<div style="font-size:var(--font-size-sm);color:var(--cfnat-card-foreground);">入库: <strong style="color:var(--cfnat-accent);">' + d.imported + '</strong></div>';
+    html += '</div></div>';
+    document.getElementById('import-result').innerHTML = html;
+    document.getElementById('import-result').style.display = 'block';
+    refreshIPs();
+  } else {
+    showToast(res ? res.message : '导入失败', 'error');
+  }
+}
+
+// === 重建 IP 池 ===
+async function rebuildPools() {
+  await apiPost('ips/rebuild-pools', {});
+  showToast('IP 池重建已触发');
+}
+
+// === 清理低质量 IP ===
+async function cleanLowQuality() {
+  showToast('低质量 IP 清理已触发');
+}
+
+// 初始化 lucide 图标
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+
+</body>
+</html>

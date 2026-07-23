@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP 库 - CFNAT-AIO V4</title>
+    <style id="theme-vars">
+/* CFNAT-AIO V4 Design System — Brand CSS */
+/* Dark tech theme: deep navy + blue accent + green status */
+/* V4 extends V3 with amber accent for LoadBalancer / architecture features */
+
+/* === Brand Prefix Variables === */
+:root {
+  /* Primary Scale — Indigo Blue */
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+
+  /* Accent — Purple (V3 legacy features) */
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
+
+  /* Accent2 — Amber (V4 new: LoadBalancer, Race Connect, SSE) */
+  --cfnat-accent2: #f59e0b;
+  --cfnat-accent2-hover: #fbbf24;
+  --cfnat-accent2-pressed: #d97706;
+
+  /* Background & Surface */
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+
+  /* Muted */
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+
+  /* Border & Input */
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+
+  /* Radius */
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+
+  /* State Colors */
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+
+  /* Backend Status Colors (V4 LB) */
+  --lb-warming: #58a6ff;
+  --lb-active: #3fb950;
+  --lb-degraded: #d29922;
+  --lb-isolated: #f85149;
+  --lb-removed: #6e7681;
+}
+
+/* === Typography === */
+:root {
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+}
+
+/* === Semantic Aliases (Tailwind-compatible) === */
+:root {
+  --color-primary: var(--cfnat-primary);
+  --color-primary-hover: var(--cfnat-primary-hover);
+  --color-primary-pressed: var(--cfnat-primary-pressed);
+  --background: var(--cfnat-background);
+  --foreground: var(--cfnat-foreground);
+  --color-card: var(--cfnat-card);
+  --color-card-foreground: var(--cfnat-card-foreground);
+  --color-popover: var(--cfnat-popover);
+  --color-popover-foreground: var(--cfnat-popover-foreground);
+  --color-muted: var(--cfnat-muted);
+  --color-muted-foreground: var(--cfnat-muted-foreground);
+  --color-border: var(--cfnat-border);
+  --color-input: var(--cfnat-input);
+  --color-ring: var(--cfnat-ring);
+  --radius-sm: var(--cfnat-radius-sm);
+  --radius-md: var(--cfnat-radius-md);
+  --radius-lg: var(--cfnat-radius-lg);
+  --radius-full: var(--cfnat-radius-full);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cfnat-background);
+    --color-foreground: var(--cfnat-foreground);
+    --color-card: var(--cfnat-card);
+    --color-card-foreground: var(--cfnat-card-foreground);
+    --color-popover: var(--cfnat-popover);
+    --color-popover-foreground: var(--cfnat-popover-foreground);
+    --color-primary: var(--cfnat-primary);
+    --color-primary-foreground: var(--cfnat-primary-foreground);
+    --color-muted: var(--cfnat-muted);
+    --color-muted-foreground: var(--cfnat-muted-foreground);
+    --color-accent: var(--cfnat-accent);
+    --color-border: var(--cfnat-border);
+    --color-input: var(--cfnat-input);
+    --color-ring: var(--cfnat-ring);
+    --radius-sm: var(--cfnat-radius-sm);
+    --radius-md: var(--cfnat-radius-md);
+    --radius-lg: var(--cfnat-radius-lg);
+  }
+  @layer base {
+    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--cfnat-background); }
+      .text-background { color: var(--cfnat-background); }
+      .border-background { border-color: var(--cfnat-background); }
+      .ring-background { --tw-ring-color: var(--cfnat-background); }
+      .bg-foreground { background-color: var(--cfnat-foreground); }
+      .text-foreground { color: var(--cfnat-foreground); }
+      .border-foreground { border-color: var(--cfnat-foreground); }
+      .ring-foreground { --tw-ring-color: var(--cfnat-foreground); }
+      .bg-card { background-color: var(--cfnat-card); }
+      .text-card { color: var(--cfnat-card); }
+      .border-card { border-color: var(--cfnat-card); }
+      .ring-card { --tw-ring-color: var(--cfnat-card); }
+      .bg-card-foreground { background-color: var(--cfnat-card-foreground); }
+      .text-card-foreground { color: var(--cfnat-card-foreground); }
+      .border-card-foreground { border-color: var(--cfnat-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--cfnat-card-foreground); }
+      .bg-popover { background-color: var(--cfnat-popover); }
+      .text-popover { color: var(--cfnat-popover); }
+      .border-popover { border-color: var(--cfnat-popover); }
+      .ring-popover { --tw-ring-color: var(--cfnat-popover); }
+      .bg-popover-foreground { background-color: var(--cfnat-popover-foreground); }
+      .text-popover-foreground { color: var(--cfnat-popover-foreground); }
+      .border-popover-foreground { border-color: var(--cfnat-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--cfnat-popover-foreground); }
+      .bg-primary { background-color: var(--cfnat-primary); }
+      .text-primary { color: var(--cfnat-primary); }
+      .border-primary { border-color: var(--cfnat-primary); }
+      .ring-primary { --tw-ring-color: var(--cfnat-primary); }
+      .bg-primary-foreground { background-color: var(--cfnat-primary-foreground); }
+      .text-primary-foreground { color: var(--cfnat-primary-foreground); }
+      .border-primary-foreground { border-color: var(--cfnat-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--cfnat-primary-foreground); }
+      .bg-muted { background-color: var(--cfnat-muted); }
+      .text-muted { color: var(--cfnat-muted); }
+      .border-muted { border-color: var(--cfnat-muted); }
+      .ring-muted { --tw-ring-color: var(--cfnat-muted); }
+      .bg-muted-foreground { background-color: var(--cfnat-muted-foreground); }
+      .text-muted-foreground { color: var(--cfnat-muted-foreground); }
+      .border-muted-foreground { border-color: var(--cfnat-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--cfnat-muted-foreground); }
+      .bg-accent { background-color: var(--cfnat-accent); }
+      .text-accent { color: var(--cfnat-accent); }
+      .border-accent { border-color: var(--cfnat-accent); }
+      .ring-accent { --tw-ring-color: var(--cfnat-accent); }
+      .bg-border { background-color: var(--cfnat-border); }
+      .text-border { color: var(--cfnat-border); }
+      .border-border { border-color: var(--cfnat-border); }
+      .ring-border { --tw-ring-color: var(--cfnat-border); }
+      .bg-input { background-color: var(--cfnat-input); }
+      .text-input { color: var(--cfnat-input); }
+      .border-input { border-color: var(--cfnat-input); }
+      .ring-input { --tw-ring-color: var(--cfnat-input); }
+      .bg-ring { background-color: var(--cfnat-ring); }
+      .text-ring { color: var(--cfnat-ring); }
+      .border-ring { border-color: var(--cfnat-ring); }
+      .ring-ring { --tw-ring-color: var(--cfnat-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="min-h-screen" style="background:var(--cfnat-background);">
+        <!-- 导航栏 -->
+        <nav class="border-b" style="border-color:var(--cfnat-border);background:var(--cfnat-card);">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-14">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-lg" style="color:var(--cfnat-primary);font-family:var(--font-display);">CFNAT-AIO</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full" style="background:var(--cfnat-accent2);color:#000;font-weight:700;">V4</span>
+                        <span class="text-sm hidden sm:inline" style="color:var(--cfnat-card-foreground);">智能代理控制台</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors" style="color:var(--cfnat-muted-foreground);">总览</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors" style="color:var(--cfnat-muted-foreground);">CFData扫描</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm font-medium" style="background:var(--cfnat-primary);color:#fff;">IP库</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden sm:inline-block" style="color:var(--cfnat-muted-foreground);">负载均衡</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden sm:inline-block" style="color:var(--cfnat-muted-foreground);">竞速连接</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden md:inline-block" style="color:var(--cfnat-muted-foreground);">弹性池</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden md:inline-block" style="color:var(--cfnat-muted-foreground);">系统日志</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 页面标题区 -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+            <h1 class="text-2xl font-bold" style="color:var(--cfnat-foreground);text-wrap:balance;word-break:keep-all;overflow-wrap:break-word;">IP 库</h1>
+            <p class="mt-1 text-sm" style="color:var(--cfnat-muted-foreground);">管理扫描发现的代理 IP 节点，查看后端状态与质量指标</p>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-6">
+
+            <!-- 工具栏 -->
+            <section class="flex flex-wrap items-center gap-3">
+                <select class="h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);">
+                    <option>全部地区</option>
+                    <option>北美</option>
+                    <option>欧洲</option>
+                    <option>亚太</option>
+                    <option>南美</option>
+                </select>
+                <select class="h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);">
+                    <option>全部来源</option>
+                    <option>CFData扫描</option>
+                    <option>手动添加</option>
+                    <option>批量导入</option>
+                </select>
+                <div class="flex-1 min-w-[180px] relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--cfnat-muted-foreground);"></i>
+                    <input type="text" placeholder="搜索 IP、Colo..." class="w-full h-9 rounded-lg pl-9 pr-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                </div>
+                <button class="h-9 px-3 rounded-lg text-sm border transition-colors flex items-center gap-1.5" style="border-color:var(--cfnat-border);color:var(--cfnat-card-foreground);background:var(--cfnat-muted);">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5" style="vertical-align:-2px;"></i>
+                    刷新
+                </button>
+                <button class="h-9 px-3 rounded-lg text-sm border transition-colors flex items-center gap-1.5" style="border-color:rgba(248,81,73,0.3);color:var(--state-error);background:rgba(248,81,73,0.08);">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5" style="vertical-align:-2px;"></i>
+                    删除选中
+                </button>
+            </section>
+
+            <!-- V4 新增：后端状态分布统计条 -->
+            <section class="rounded-xl p-4 border flex flex-wrap items-center gap-x-6 gap-y-2" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <span class="text-sm font-medium whitespace-nowrap" style="color:var(--cfnat-foreground);">总计 156</span>
+                <span class="flex items-center gap-1.5 text-sm whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full inline-block" style="background:var(--lb-active);"></span>
+                    <span style="color:var(--lb-active);">Active</span>
+                    <span class="font-mono font-medium" style="color:var(--cfnat-foreground);">128</span>
+                </span>
+                <span class="flex items-center gap-1.5 text-sm whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full inline-block" style="background:var(--lb-warming);"></span>
+                    <span style="color:var(--lb-warming);">Warming</span>
+                    <span class="font-mono font-medium" style="color:var(--cfnat-foreground);">3</span>
+                </span>
+                <span class="flex items-center gap-1.5 text-sm whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full inline-block" style="background:var(--lb-degraded);"></span>
+                    <span style="color:var(--lb-degraded);">Degraded</span>
+                    <span class="font-mono font-medium" style="color:var(--cfnat-foreground);">2</span>
+                </span>
+                <span class="flex items-center gap-1.5 text-sm whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full inline-block" style="background:var(--lb-isolated);"></span>
+                    <span style="color:var(--lb-isolated);">Isolated</span>
+                    <span class="font-mono font-medium" style="color:var(--cfnat-foreground);">15</span>
+                </span>
+                <span class="flex items-center gap-1.5 text-sm whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full inline-block" style="background:var(--lb-removed);"></span>
+                    <span style="color:var(--lb-removed);">Removed</span>
+                    <span class="font-mono font-medium" style="color:var(--cfnat-foreground);">8</span>
+                </span>
+            </section>
+
+            <!-- IP 表格 -->
+            <section class="rounded-xl border overflow-hidden" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm" style="min-width:1100px;">
+                        <thead>
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);width:40px;"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:120px;">IP</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:60px;">Colo</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:60px;">地区</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:70px;">质量分</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:90px;">后端状态</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:70px;">速度</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:60px;">延迟</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:90px;">快速断开</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:80px;">连接时长</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:80px;">来源</th>
+                                <th class="text-left py-2.5 px-3 font-medium" style="color:var(--cfnat-muted-foreground);min-width:60px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Row 1: Active -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-primary);">104.16.132.229</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">LAX</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">北美</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--state-success);">92</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--lb-active);">Active</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">12.4 MB/s</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">45ms</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">0</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">12.3s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">CFData</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                            <!-- Row 2: Active -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-primary);">172.64.155.88</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">SJC</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">北美</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--state-success);">88</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--lb-active);">Active</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">9.8 MB/s</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">62ms</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">1</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">8.7s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">CFData</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                            <!-- Row 3: Warming -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-primary);">104.18.42.167</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">SEA</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">北美</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--cfnat-primary);">75</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(88,166,255,0.15);color:var(--lb-warming);">Warming</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">7.2 MB/s</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">88ms</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">0</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">3.1s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">CFData</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                            <!-- Row 4: Degraded -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-primary);">162.159.36.51</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">FRA</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">欧洲</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--state-warning);">41</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(210,153,34,0.15);color:var(--lb-degraded);">Degraded</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">1.3 MB/s</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">320ms</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--state-warning);">12</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">5.4s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">CFData</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                            <!-- Row 5: Isolated -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">104.21.78.193</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">NRT</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">亚太</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--state-error);">15</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(248,81,73,0.15);color:var(--lb-isolated);">Isolated</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--state-error);">47</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">0.2s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">CFData</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                            <!-- Row 6: Removed -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">141.101.69.44</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">CDG</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">欧洲</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(110,118,129,0.15);color:var(--lb-removed);">Removed</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">--</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">手动</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">恢复</button></td>
+                            </tr>
+                            <!-- Row 7: Active, 手动添加 -->
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-primary);">104.26.10.78</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">HKG</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">亚太</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--state-success);">85</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--lb-active);">Active</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">6.1 MB/s</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">95ms</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">0</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">15.6s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">手动</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                            <!-- Row 8: Warming, 批量导入 -->
+                            <tr>
+                                <td class="py-2.5 px-3"><input type="checkbox" class="w-4 h-4 rounded" style="accent-color:var(--cfnat-primary);" /></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-primary);">198.41.215.62</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">SIN</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">亚太</td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--cfnat-primary);">68</td>
+                                <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(88,166,255,0.15);color:var(--lb-warming);">Warming</span></td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">4.5 MB/s</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">112ms</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">0</td>
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">1.8s</td>
+                                <td class="py-2.5 px-3 text-xs whitespace-nowrap" style="color:var(--cfnat-muted-foreground);">导入</td>
+                                <td class="py-2.5 px-3"><button class="text-xs" style="color:var(--cfnat-primary);">详情</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 手动添加 + 批量导入 -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- 手动添加 -->
+                <div class="rounded-xl p-5 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="plus-circle" class="w-4 h-4" style="color:var(--cfnat-primary);"></i>
+                        <h3 class="text-sm font-bold" style="color:var(--cfnat-foreground);">手动添加 IP</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <input type="text" placeholder="输入 IP 地址，如 104.16.0.1" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                        <button class="w-full h-9 rounded-lg text-sm font-medium transition-colors" style="background:var(--cfnat-primary);color:#fff;">添加</button>
+                    </div>
+                </div>
+                <!-- 批量导入 -->
+                <div class="rounded-xl p-5 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="upload" class="w-4 h-4" style="color:var(--cfnat-primary);"></i>
+                        <h3 class="text-sm font-bold" style="color:var(--cfnat-foreground);">批量导入</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="text-xs" style="color:var(--cfnat-muted-foreground);">支持 txt/csv 格式，每行一个 IP 或 CIDR</p>
+                        <button class="w-full h-9 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-1.5" style="border-color:var(--cfnat-border);color:var(--cfnat-card-foreground);background:var(--cfnat-muted);">
+                            <i data-lucide="file-up" class="w-4 h-4" style="vertical-align:-2px;"></i>
+                            选择文件
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

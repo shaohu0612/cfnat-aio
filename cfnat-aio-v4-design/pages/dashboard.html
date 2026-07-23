@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - CFNAT-AIO V4</title>
+    <style id="theme-vars">
+/* CFNAT-AIO V4 Design System — Brand CSS */
+/* Dark tech theme: deep navy + blue accent + green status */
+/* V4 extends V3 with amber accent for LoadBalancer / architecture features */
+
+/* === Brand Prefix Variables === */
+:root {
+  /* Primary Scale — Indigo Blue */
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+
+  /* Accent — Purple (V3 legacy features) */
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
+
+  /* Accent2 — Amber (V4 new: LoadBalancer, Race Connect, SSE) */
+  --cfnat-accent2: #f59e0b;
+  --cfnat-accent2-hover: #fbbf24;
+  --cfnat-accent2-pressed: #d97706;
+
+  /* Background & Surface */
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+
+  /* Muted */
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+
+  /* Border & Input */
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+
+  /* Radius */
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+
+  /* State Colors */
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+
+  /* Backend Status Colors (V4 LB) */
+  --lb-warming: #58a6ff;
+  --lb-active: #3fb950;
+  --lb-degraded: #d29922;
+  --lb-isolated: #f85149;
+  --lb-removed: #6e7681;
+}
+
+/* === Typography === */
+:root {
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+}
+
+/* === Semantic Aliases (Tailwind-compatible) === */
+:root {
+  --color-primary: var(--cfnat-primary);
+  --color-primary-hover: var(--cfnat-primary-hover);
+  --color-primary-pressed: var(--cfnat-primary-pressed);
+  --background: var(--cfnat-background);
+  --foreground: var(--cfnat-foreground);
+  --color-card: var(--cfnat-card);
+  --color-card-foreground: var(--cfnat-card-foreground);
+  --color-popover: var(--cfnat-popover);
+  --color-popover-foreground: var(--cfnat-popover-foreground);
+  --color-muted: var(--cfnat-muted);
+  --color-muted-foreground: var(--cfnat-muted-foreground);
+  --color-border: var(--cfnat-border);
+  --color-input: var(--cfnat-input);
+  --color-ring: var(--cfnat-ring);
+  --radius-sm: var(--cfnat-radius-sm);
+  --radius-md: var(--cfnat-radius-md);
+  --radius-lg: var(--cfnat-radius-lg);
+  --radius-full: var(--cfnat-radius-full);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cfnat-background);
+    --color-foreground: var(--cfnat-foreground);
+    --color-card: var(--cfnat-card);
+    --color-card-foreground: var(--cfnat-card-foreground);
+    --color-popover: var(--cfnat-popover);
+    --color-popover-foreground: var(--cfnat-popover-foreground);
+    --color-primary: var(--cfnat-primary);
+    --color-primary-foreground: var(--cfnat-primary-foreground);
+    --color-muted: var(--cfnat-muted);
+    --color-muted-foreground: var(--cfnat-muted-foreground);
+    --color-accent: var(--cfnat-accent);
+    --color-border: var(--cfnat-border);
+    --color-input: var(--cfnat-input);
+    --color-ring: var(--cfnat-ring);
+    --radius-sm: var(--cfnat-radius-sm);
+    --radius-md: var(--cfnat-radius-md);
+    --radius-lg: var(--cfnat-radius-lg);
+  }
+  @layer base {
+    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--cfnat-background); }
+      .text-background { color: var(--cfnat-background); }
+      .border-background { border-color: var(--cfnat-background); }
+      .ring-background { --tw-ring-color: var(--cfnat-background); }
+      .bg-foreground { background-color: var(--cfnat-foreground); }
+      .text-foreground { color: var(--cfnat-foreground); }
+      .border-foreground { border-color: var(--cfnat-foreground); }
+      .ring-foreground { --tw-ring-color: var(--cfnat-foreground); }
+      .bg-card { background-color: var(--cfnat-card); }
+      .text-card { color: var(--cfnat-card); }
+      .border-card { border-color: var(--cfnat-card); }
+      .ring-card { --tw-ring-color: var(--cfnat-card); }
+      .bg-card-foreground { background-color: var(--cfnat-card-foreground); }
+      .text-card-foreground { color: var(--cfnat-card-foreground); }
+      .border-card-foreground { border-color: var(--cfnat-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--cfnat-card-foreground); }
+      .bg-popover { background-color: var(--cfnat-popover); }
+      .text-popover { color: var(--cfnat-popover); }
+      .border-popover { border-color: var(--cfnat-popover); }
+      .ring-popover { --tw-ring-color: var(--cfnat-popover); }
+      .bg-popover-foreground { background-color: var(--cfnat-popover-foreground); }
+      .text-popover-foreground { color: var(--cfnat-popover-foreground); }
+      .border-popover-foreground { border-color: var(--cfnat-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--cfnat-popover-foreground); }
+      .bg-primary { background-color: var(--cfnat-primary); }
+      .text-primary { color: var(--cfnat-primary); }
+      .border-primary { border-color: var(--cfnat-primary); }
+      .ring-primary { --tw-ring-color: var(--cfnat-primary); }
+      .bg-primary-foreground { background-color: var(--cfnat-primary-foreground); }
+      .text-primary-foreground { color: var(--cfnat-primary-foreground); }
+      .border-primary-foreground { border-color: var(--cfnat-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--cfnat-primary-foreground); }
+      .bg-muted { background-color: var(--cfnat-muted); }
+      .text-muted { color: var(--cfnat-muted); }
+      .border-muted { border-color: var(--cfnat-muted); }
+      .ring-muted { --tw-ring-color: var(--cfnat-muted); }
+      .bg-muted-foreground { background-color: var(--cfnat-muted-foreground); }
+      .text-muted-foreground { color: var(--cfnat-muted-foreground); }
+      .border-muted-foreground { border-color: var(--cfnat-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--cfnat-muted-foreground); }
+      .bg-accent { background-color: var(--cfnat-accent); }
+      .text-accent { color: var(--cfnat-accent); }
+      .border-accent { border-color: var(--cfnat-accent); }
+      .ring-accent { --tw-ring-color: var(--cfnat-accent); }
+      .bg-border { background-color: var(--cfnat-border); }
+      .text-border { color: var(--cfnat-border); }
+      .border-border { border-color: var(--cfnat-border); }
+      .ring-border { --tw-ring-color: var(--cfnat-border); }
+      .bg-input { background-color: var(--cfnat-input); }
+      .text-input { color: var(--cfnat-input); }
+      .border-input { border-color: var(--cfnat-input); }
+      .ring-input { --tw-ring-color: var(--cfnat-input); }
+      .bg-ring { background-color: var(--cfnat-ring); }
+      .text-ring { color: var(--cfnat-ring); }
+      .border-ring { border-color: var(--cfnat-ring); }
+      .ring-ring { --tw-ring-color: var(--cfnat-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="min-h-screen">
+      <!-- 导航栏 -->
+      <nav class="flex items-center justify-between px-6 py-3 border-b" style="border-color:var(--cfnat-border);background:var(--cfnat-card)">
+        <div class="flex items-center gap-3">
+          <span class="text-lg font-bold" style="color:var(--cfnat-primary);font-family:var(--font-display)">CFNAT-AIO</span>
+          <span class="text-xs px-2 py-0.5 rounded" style="background:var(--cfnat-accent2);color:var(--cfnat-background);font-weight:var(--font-weight-bold)">V4</span>
+          <span class="text-sm" style="color:var(--cfnat-foreground)">智能代理控制台</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <a href="dashboard.html" class="px-3 py-1.5 rounded text-sm whitespace-nowrap" style="background:var(--cfnat-primary);color:var(--cfnat-primary-foreground);font-weight:var(--font-weight-medium)">仪表盘</a>
+          <a href="#" class="px-3 py-1.5 rounded text-sm whitespace-nowrap hover:opacity-80" style="color:var(--cfnat-muted-foreground)">地区管理</a>
+          <a href="#" class="px-3 py-1.5 rounded text-sm whitespace-nowrap hover:opacity-80" style="color:var(--cfnat-muted-foreground)">CFNAT配置</a>
+          <a href="#" class="px-3 py-1.5 rounded text-sm whitespace-nowrap hover:opacity-80" style="color:var(--cfnat-muted-foreground)">CFData扫描</a>
+          <a href="#" class="px-3 py-1.5 rounded text-sm whitespace-nowrap hover:opacity-80" style="color:var(--cfnat-muted-foreground)">IP库</a>
+          <a href="logs.html" class="px-3 py-1.5 rounded text-sm whitespace-nowrap hover:opacity-80" style="color:var(--cfnat-muted-foreground)">日志</a>
+          <a href="#" class="px-3 py-1.5 rounded text-sm whitespace-nowrap hover:opacity-80" style="color:var(--cfnat-muted-foreground)">通用设置</a>
+        </div>
+        <!-- SSE 连接状态指示器 -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full" style="background:var(--state-success)"></div>
+            <span class="text-xs" style="color:var(--state-success)">实时已连接</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs" style="color:var(--cfnat-muted-foreground)">
+            <span class="flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3" style="color:var(--cfnat-primary)"></i>事件</span>
+            <span class="flex items-center gap-1"><i data-lucide="heart-pulse" class="w-3 h-3" style="color:var(--state-success)"></i>健康</span>
+            <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3" style="color:var(--cfnat-accent2)"></i>竞速</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 主内容区 -->
+      <div class="p-6 space-y-6">
+
+        <!-- 统计卡片行（4列） -->
+        <div class="grid grid-cols-4 gap-4">
+          <!-- 运行时间 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="clock" class="w-4 h-4" style="color:var(--cfnat-primary)"></i>
+              <span class="text-xs" style="color:var(--cfnat-muted-foreground)">运行时间</span>
+            </div>
+            <div class="text-2xl font-bold whitespace-nowrap" style="font-family:var(--font-display);color:var(--cfnat-foreground)">3天 12时 45分</div>
+          </div>
+          <!-- 总 IP 数 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-2 h-2 rounded-full" style="background:var(--state-success)"></div>
+              <span class="text-xs" style="color:var(--cfnat-muted-foreground)">总 IP 数</span>
+            </div>
+            <div class="text-2xl font-bold whitespace-nowrap" style="font-family:var(--font-display);color:var(--cfnat-foreground)">156</div>
+          </div>
+          <!-- 代理监听 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-2 h-2 rounded-full animate-pulse" style="background:var(--cfnat-primary)"></div>
+              <span class="text-xs" style="color:var(--cfnat-muted-foreground)">代理监听</span>
+            </div>
+            <div class="text-2xl font-bold whitespace-nowrap" style="font-family:var(--font-display);color:var(--cfnat-foreground)">4<span class="text-base" style="color:var(--cfnat-muted-foreground)">/5</span></div>
+          </div>
+          <!-- cfdata 状态 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="database" class="w-4 h-4" style="color:var(--cfnat-muted-foreground)"></i>
+              <span class="text-xs" style="color:var(--cfnat-muted-foreground)">cfdata 状态</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl font-bold whitespace-nowrap" style="font-family:var(--font-display);color:var(--cfnat-foreground)">空闲</span>
+              <span class="text-xs px-2 py-0.5 rounded" style="background:var(--cfnat-accent2);color:var(--cfnat-background);font-weight:var(--font-weight-medium)">竞速连接就绪</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- V4 核心：LoadBalancer 状态总览面板 -->
+        <div class="rounded-lg p-5 border-2" style="background:var(--cfnat-card);border-color:var(--cfnat-accent2)">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="layers" class="w-5 h-5" style="color:var(--cfnat-accent2)"></i>
+              <span class="text-lg font-bold" style="color:var(--cfnat-foreground)">负载均衡层状态</span>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded" style="background:var(--cfnat-accent2);color:var(--cfnat-background);font-weight:var(--font-weight-bold)">V3.0</span>
+          </div>
+          <!-- 状态指标横排 -->
+          <div class="grid grid-cols-4 gap-4 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full" style="background:var(--lb-warming)"></div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">Warming</div>
+                <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--lb-warming)">3 IP</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full" style="background:var(--lb-active)"></div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">Active</div>
+                <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--lb-active)">128 IP</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full" style="background:var(--lb-degraded)"></div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">Degraded</div>
+                <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--lb-degraded)">2 IP</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full" style="background:var(--lb-isolated)"></div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">Isolated</div>
+                <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--lb-isolated)">15 IP</div>
+              </div>
+            </div>
+          </div>
+          <!-- 下方指标行 -->
+          <div class="grid grid-cols-4 gap-4 pt-4 border-t" style="border-color:var(--cfnat-border)">
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">动态弹性池</div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">主池 20/20</span>
+                <span class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">备池 10/10</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">今日竞速</div>
+              <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">2,341 次</div>
+            </div>
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">竞速成功率</div>
+              <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-success)">94.7%</div>
+            </div>
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">最小活跃数约束</div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">10</span>
+                <span class="text-xs" style="color:var(--state-success)">当前满足</span>
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5" style="color:var(--state-success)"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 地区代理状态卡片（2列网格，5个地区） -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 日本 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" style="background:var(--state-success)"></div>
+                <span class="font-bold text-sm" style="color:var(--cfnat-foreground)">日本 Tokyo</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">:8443</span>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded" style="background:rgba(63,185,80,0.15);color:var(--state-success)">健康</span>
+            </div>
+            <!-- 后端状态分布条形图 -->
+            <div class="flex h-2 rounded-full overflow-hidden mb-3" style="background:var(--cfnat-muted)">
+              <div style="width:5%;background:var(--lb-warming)" title="Warming: 1"></div>
+              <div style="width:80%;background:var(--lb-active)" title="Active: 42"></div>
+              <div style="width:2%;background:var(--lb-degraded)" title="Degraded: 1"></div>
+              <div style="width:13%;background:var(--lb-isolated)" title="Isolated: 7"></div>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3 text-xs" style="color:var(--cfnat-muted-foreground)">
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-warming)"></span>1</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-active)"></span>42</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-degraded)"></span>1</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-isolated)"></span>7</span>
+              </div>
+              <span class="text-xs" style="color:var(--cfnat-accent2)">竞速成功率 96.2%</span>
+            </div>
+            <div class="grid grid-cols-5 gap-2 text-center">
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">可用IP</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">43</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">活跃连接</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">186</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">今日重试</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">12</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">平均延迟</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">32ms</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">丢包率</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-success)">0.1%</div>
+              </div>
+            </div>
+          </div>
+          <!-- 美国 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" style="background:var(--state-warning)"></div>
+                <span class="font-bold text-sm" style="color:var(--cfnat-foreground)">美国 LAX</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">:8444</span>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded" style="background:rgba(210,153,34,0.15);color:var(--state-warning)">降级</span>
+            </div>
+            <div class="flex h-2 rounded-full overflow-hidden mb-3" style="background:var(--cfnat-muted)">
+              <div style="width:11%;background:var(--lb-warming)" title="Warming: 2"></div>
+              <div style="width:72%;background:var(--lb-active)" title="Active: 38"></div>
+              <div style="width:6%;background:var(--lb-degraded)" title="Degraded: 3"></div>
+              <div style="width:11%;background:var(--lb-isolated)" title="Isolated: 6"></div>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3 text-xs" style="color:var(--cfnat-muted-foreground)">
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-warming)"></span>2</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-active)"></span>38</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-degraded)"></span>3</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-isolated)"></span>6</span>
+              </div>
+              <span class="text-xs" style="color:var(--cfnat-accent2)">竞速成功率 91.8%</span>
+            </div>
+            <div class="grid grid-cols-5 gap-2 text-center">
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">可用IP</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">41</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">活跃连接</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">245</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">今日重试</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-warning)">47</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">平均延迟</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-warning)">58ms</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">丢包率</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-warning)">1.2%</div>
+              </div>
+            </div>
+          </div>
+          <!-- 香港 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" style="background:var(--state-success)"></div>
+                <span class="font-bold text-sm" style="color:var(--cfnat-foreground)">香港 HKG</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">:8445</span>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded" style="background:rgba(63,185,80,0.15);color:var(--state-success)">健康</span>
+            </div>
+            <div class="flex h-2 rounded-full overflow-hidden mb-3" style="background:var(--cfnat-muted)">
+              <div style="width:0%;background:var(--lb-warming)"></div>
+              <div style="width:85%;background:var(--lb-active)" title="Active: 28"></div>
+              <div style="width:3%;background:var(--lb-degraded)" title="Degraded: 1"></div>
+              <div style="width:12%;background:var(--lb-isolated)" title="Isolated: 4"></div>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3 text-xs" style="color:var(--cfnat-muted-foreground)">
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-warming)"></span>0</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-active)"></span>28</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-degraded)"></span>1</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-isolated)"></span>4</span>
+              </div>
+              <span class="text-xs" style="color:var(--cfnat-accent2)">竞速成功率 97.5%</span>
+            </div>
+            <div class="grid grid-cols-5 gap-2 text-center">
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">可用IP</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">29</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">活跃连接</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">132</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">今日重试</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">5</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">平均延迟</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">18ms</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">丢包率</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-success)">0.05%</div>
+              </div>
+            </div>
+          </div>
+          <!-- 新加坡 -->
+          <div class="rounded-lg p-4 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" style="background:var(--state-success)"></div>
+                <span class="font-bold text-sm" style="color:var(--cfnat-foreground)">新加坡 SIN</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">:8446</span>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded" style="background:rgba(63,185,80,0.15);color:var(--state-success)">健康</span>
+            </div>
+            <div class="flex h-2 rounded-full overflow-hidden mb-3" style="background:var(--cfnat-muted)">
+              <div style="width:3%;background:var(--lb-warming)" title="Warming: 1"></div>
+              <div style="width:77%;background:var(--lb-active)" title="Active: 18"></div>
+              <div style="width:3%;background:var(--lb-degraded)" title="Degraded: 1"></div>
+              <div style="width:17%;background:var(--lb-isolated)" title="Isolated: 4"></div>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3 text-xs" style="color:var(--cfnat-muted-foreground)">
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-warming)"></span>1</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-active)"></span>18</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-degraded)"></span>1</span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--lb-isolated)"></span>4</span>
+              </div>
+              <span class="text-xs" style="color:var(--cfnat-accent2)">竞速成功率 95.1%</span>
+            </div>
+            <div class="grid grid-cols-5 gap-2 text-center">
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">可用IP</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">20</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">活跃连接</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">87</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">今日重试</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">8</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">平均延迟</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">42ms</div>
+              </div>
+              <div>
+                <div class="text-xs" style="color:var(--cfnat-muted-foreground)">丢包率</div>
+                <div class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-success)">0.3%</div>
+              </div>
+            </div>
+          </div>
+          <!-- 台湾 -->
+          <div class="rounded-lg p-4 border col-span-2" style="background:var(--cfnat-card);border-color:var(--cfnat-border);opacity:0.5">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" style="background:var(--cfnat-muted-foreground)"></div>
+                <span class="font-bold text-sm" style="color:var(--cfnat-muted-foreground)">台湾 TPE</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">:8447</span>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded" style="background:var(--cfnat-muted);color:var(--cfnat-muted-foreground)">停止</span>
+            </div>
+            <div class="flex items-center justify-center py-4">
+              <span class="text-sm" style="color:var(--cfnat-muted-foreground)">代理服务已停止 — 点击启动</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- V4 新增：协议转发统计面板 -->
+        <div class="rounded-lg p-5 border-2" style="background:var(--cfnat-card);border-color:var(--cfnat-accent2)">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="arrow-right-left" class="w-5 h-5" style="color:var(--cfnat-accent2)"></i>
+              <span class="text-lg font-bold" style="color:var(--cfnat-foreground)">协议转发统计</span>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded" style="background:var(--cfnat-accent2);color:var(--cfnat-background);font-weight:var(--font-weight-bold)">V3.0</span>
+          </div>
+          <div class="grid grid-cols-4 gap-4">
+            <div class="rounded-lg p-4 text-center" style="background:var(--cfnat-muted)">
+              <div class="text-2xl font-bold mb-1" style="font-family:var(--font-display);color:var(--cfnat-primary)">62%</div>
+              <div class="text-xs" style="color:var(--cfnat-muted-foreground)">SOCKS5</div>
+              <div class="w-full h-1.5 rounded-full mt-2" style="background:var(--cfnat-border)">
+                <div class="h-full rounded-full" style="width:62%;background:var(--cfnat-primary)"></div>
+              </div>
+            </div>
+            <div class="rounded-lg p-4 text-center" style="background:var(--cfnat-muted)">
+              <div class="text-2xl font-bold mb-1" style="font-family:var(--font-display);color:var(--cfnat-accent)">28%</div>
+              <div class="text-xs" style="color:var(--cfnat-muted-foreground)">HTTP CONNECT</div>
+              <div class="w-full h-1.5 rounded-full mt-2" style="background:var(--cfnat-border)">
+                <div class="h-full rounded-full" style="width:28%;background:var(--cfnat-accent)"></div>
+              </div>
+            </div>
+            <div class="rounded-lg p-4 text-center" style="background:var(--cfnat-muted)">
+              <div class="text-2xl font-bold mb-1" style="font-family:var(--font-display);color:var(--cfnat-accent2)">8%</div>
+              <div class="text-xs" style="color:var(--cfnat-muted-foreground)">HTTP普通</div>
+              <div class="w-full h-1.5 rounded-full mt-2" style="background:var(--cfnat-border)">
+                <div class="h-full rounded-full" style="width:8%;background:var(--cfnat-accent2)"></div>
+              </div>
+            </div>
+            <div class="rounded-lg p-4 text-center" style="background:var(--cfnat-muted)">
+              <div class="text-2xl font-bold mb-1" style="font-family:var(--font-display);color:var(--cfnat-muted-foreground)">2%</div>
+              <div class="text-xs" style="color:var(--cfnat-muted-foreground)">TLS透传</div>
+              <div class="w-full h-1.5 rounded-full mt-2" style="background:var(--cfnat-border)">
+                <div class="h-full rounded-full" style="width:2%;background:var(--cfnat-muted-foreground)"></div>
+              </div>
+            </div>
+          </div>
+          <!-- 快速断开检测 -->
+          <div class="flex items-center gap-6 mt-4 pt-4 border-t" style="border-color:var(--cfnat-border)">
+            <div class="flex items-center gap-2">
+              <i data-lucide="zap-off" class="w-4 h-4" style="color:var(--state-warning)"></i>
+              <span class="text-xs" style="color:var(--cfnat-muted-foreground)">快速断开检测</span>
+              <span class="text-sm font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">今日检测到 12 次</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs" style="color:var(--cfnat-muted-foreground)">触发移除</span>
+              <span class="text-sm font-bold" style="font-family:var(--font-display);color:var(--state-error)">3 个后端</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 自适应阈值面板 -->
+        <div class="rounded-lg p-5 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="sliders-horizontal" class="w-5 h-5" style="color:var(--cfnat-primary)"></i>
+              <span class="text-lg font-bold" style="color:var(--cfnat-foreground)">自适应阈值</span>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded" style="background:rgba(88,166,255,0.15);color:var(--cfnat-primary)">运行中</span>
+          </div>
+          <div class="grid grid-cols-4 gap-4">
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">延迟阈值</div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">200</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">ms</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">丢包阈值</div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">3.0</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">%</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">连续失败阈值</div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">5</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">次</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">健康检查间隔</div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">120</span>
+                <span class="text-xs" style="color:var(--cfnat-muted-foreground)">秒</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 扫描诊断摘要 -->
+        <div class="rounded-lg p-5 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border)">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="scan-search" class="w-5 h-5" style="color:var(--cfnat-accent)"></i>
+              <span class="text-lg font-bold" style="color:var(--cfnat-foreground)">扫描诊断摘要</span>
+            </div>
+            <span class="text-xs" style="color:var(--cfnat-muted-foreground)">最近扫描: 25 分钟前</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="rounded-lg p-3" style="background:var(--cfnat-muted)">
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">扫描 IP 总数</div>
+              <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">1,024</div>
+            </div>
+            <div class="rounded-lg p-3" style="background:var(--cfnat-muted)">
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">可用 IP</div>
+              <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--state-success)">156</div>
+            </div>
+            <div class="rounded-lg p-3" style="background:var(--cfnat-muted)">
+              <div class="text-xs mb-1" style="color:var(--cfnat-muted-foreground)">扫描耗时</div>
+              <div class="text-xl font-bold" style="font-family:var(--font-display);color:var(--cfnat-foreground)">4m 32s</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <style>
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      </style>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

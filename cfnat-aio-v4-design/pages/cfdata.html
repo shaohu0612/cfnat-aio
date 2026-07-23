@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFData 扫描 - CFNAT-AIO V4</title>
+    <style id="theme-vars">
+/* CFNAT-AIO V4 Design System — Brand CSS */
+/* Dark tech theme: deep navy + blue accent + green status */
+/* V4 extends V3 with amber accent for LoadBalancer / architecture features */
+
+/* === Brand Prefix Variables === */
+:root {
+  /* Primary Scale — Indigo Blue */
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+
+  /* Accent — Purple (V3 legacy features) */
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
+
+  /* Accent2 — Amber (V4 new: LoadBalancer, Race Connect, SSE) */
+  --cfnat-accent2: #f59e0b;
+  --cfnat-accent2-hover: #fbbf24;
+  --cfnat-accent2-pressed: #d97706;
+
+  /* Background & Surface */
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+
+  /* Muted */
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+
+  /* Border & Input */
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+
+  /* Radius */
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+
+  /* State Colors */
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+
+  /* Backend Status Colors (V4 LB) */
+  --lb-warming: #58a6ff;
+  --lb-active: #3fb950;
+  --lb-degraded: #d29922;
+  --lb-isolated: #f85149;
+  --lb-removed: #6e7681;
+}
+
+/* === Typography === */
+:root {
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+}
+
+/* === Semantic Aliases (Tailwind-compatible) === */
+:root {
+  --color-primary: var(--cfnat-primary);
+  --color-primary-hover: var(--cfnat-primary-hover);
+  --color-primary-pressed: var(--cfnat-primary-pressed);
+  --background: var(--cfnat-background);
+  --foreground: var(--cfnat-foreground);
+  --color-card: var(--cfnat-card);
+  --color-card-foreground: var(--cfnat-card-foreground);
+  --color-popover: var(--cfnat-popover);
+  --color-popover-foreground: var(--cfnat-popover-foreground);
+  --color-muted: var(--cfnat-muted);
+  --color-muted-foreground: var(--cfnat-muted-foreground);
+  --color-border: var(--cfnat-border);
+  --color-input: var(--cfnat-input);
+  --color-ring: var(--cfnat-ring);
+  --radius-sm: var(--cfnat-radius-sm);
+  --radius-md: var(--cfnat-radius-md);
+  --radius-lg: var(--cfnat-radius-lg);
+  --radius-full: var(--cfnat-radius-full);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cfnat-background);
+    --color-foreground: var(--cfnat-foreground);
+    --color-card: var(--cfnat-card);
+    --color-card-foreground: var(--cfnat-card-foreground);
+    --color-popover: var(--cfnat-popover);
+    --color-popover-foreground: var(--cfnat-popover-foreground);
+    --color-primary: var(--cfnat-primary);
+    --color-primary-foreground: var(--cfnat-primary-foreground);
+    --color-muted: var(--cfnat-muted);
+    --color-muted-foreground: var(--cfnat-muted-foreground);
+    --color-accent: var(--cfnat-accent);
+    --color-border: var(--cfnat-border);
+    --color-input: var(--cfnat-input);
+    --color-ring: var(--cfnat-ring);
+    --radius-sm: var(--cfnat-radius-sm);
+    --radius-md: var(--cfnat-radius-md);
+    --radius-lg: var(--cfnat-radius-lg);
+  }
+  @layer base {
+    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--cfnat-background); }
+      .text-background { color: var(--cfnat-background); }
+      .border-background { border-color: var(--cfnat-background); }
+      .ring-background { --tw-ring-color: var(--cfnat-background); }
+      .bg-foreground { background-color: var(--cfnat-foreground); }
+      .text-foreground { color: var(--cfnat-foreground); }
+      .border-foreground { border-color: var(--cfnat-foreground); }
+      .ring-foreground { --tw-ring-color: var(--cfnat-foreground); }
+      .bg-card { background-color: var(--cfnat-card); }
+      .text-card { color: var(--cfnat-card); }
+      .border-card { border-color: var(--cfnat-card); }
+      .ring-card { --tw-ring-color: var(--cfnat-card); }
+      .bg-card-foreground { background-color: var(--cfnat-card-foreground); }
+      .text-card-foreground { color: var(--cfnat-card-foreground); }
+      .border-card-foreground { border-color: var(--cfnat-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--cfnat-card-foreground); }
+      .bg-popover { background-color: var(--cfnat-popover); }
+      .text-popover { color: var(--cfnat-popover); }
+      .border-popover { border-color: var(--cfnat-popover); }
+      .ring-popover { --tw-ring-color: var(--cfnat-popover); }
+      .bg-popover-foreground { background-color: var(--cfnat-popover-foreground); }
+      .text-popover-foreground { color: var(--cfnat-popover-foreground); }
+      .border-popover-foreground { border-color: var(--cfnat-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--cfnat-popover-foreground); }
+      .bg-primary { background-color: var(--cfnat-primary); }
+      .text-primary { color: var(--cfnat-primary); }
+      .border-primary { border-color: var(--cfnat-primary); }
+      .ring-primary { --tw-ring-color: var(--cfnat-primary); }
+      .bg-primary-foreground { background-color: var(--cfnat-primary-foreground); }
+      .text-primary-foreground { color: var(--cfnat-primary-foreground); }
+      .border-primary-foreground { border-color: var(--cfnat-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--cfnat-primary-foreground); }
+      .bg-muted { background-color: var(--cfnat-muted); }
+      .text-muted { color: var(--cfnat-muted); }
+      .border-muted { border-color: var(--cfnat-muted); }
+      .ring-muted { --tw-ring-color: var(--cfnat-muted); }
+      .bg-muted-foreground { background-color: var(--cfnat-muted-foreground); }
+      .text-muted-foreground { color: var(--cfnat-muted-foreground); }
+      .border-muted-foreground { border-color: var(--cfnat-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--cfnat-muted-foreground); }
+      .bg-accent { background-color: var(--cfnat-accent); }
+      .text-accent { color: var(--cfnat-accent); }
+      .border-accent { border-color: var(--cfnat-accent); }
+      .ring-accent { --tw-ring-color: var(--cfnat-accent); }
+      .bg-border { background-color: var(--cfnat-border); }
+      .text-border { color: var(--cfnat-border); }
+      .border-border { border-color: var(--cfnat-border); }
+      .ring-border { --tw-ring-color: var(--cfnat-border); }
+      .bg-input { background-color: var(--cfnat-input); }
+      .text-input { color: var(--cfnat-input); }
+      .border-input { border-color: var(--cfnat-input); }
+      .ring-input { --tw-ring-color: var(--cfnat-input); }
+      .bg-ring { background-color: var(--cfnat-ring); }
+      .text-ring { color: var(--cfnat-ring); }
+      .border-ring { border-color: var(--cfnat-ring); }
+      .ring-ring { --tw-ring-color: var(--cfnat-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="min-h-screen" style="background:var(--cfnat-background);">
+        <!-- 导航栏 -->
+        <nav class="border-b" style="border-color:var(--cfnat-border);background:var(--cfnat-card);">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-14">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-lg" style="color:var(--cfnat-primary);font-family:var(--font-display);">CFNAT-AIO</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full" style="background:var(--cfnat-accent2);color:#000;font-weight:700;">V4</span>
+                        <span class="text-sm hidden sm:inline" style="color:var(--cfnat-card-foreground);">智能代理控制台</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors" style="color:var(--cfnat-muted-foreground);">总览</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm font-medium" style="background:var(--cfnat-primary);color:#fff;">CFData扫描</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors" style="color:var(--cfnat-muted-foreground);">IP库</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden sm:inline-block" style="color:var(--cfnat-muted-foreground);">负载均衡</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden sm:inline-block" style="color:var(--cfnat-muted-foreground);">竞速连接</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden md:inline-block" style="color:var(--cfnat-muted-foreground);">弹性池</a>
+                        <a href="#" class="px-3 py-1.5 rounded-lg text-sm transition-colors hidden md:inline-block" style="color:var(--cfnat-muted-foreground);">系统日志</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 页面标题区 -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+            <h1 class="text-2xl font-bold" style="color:var(--cfnat-foreground);text-wrap:balance;word-break:keep-all;overflow-wrap:break-word;">CFData 扫描</h1>
+            <p class="mt-1 text-sm" style="color:var(--cfnat-muted-foreground);">扫描 Cloudflare IP 段，识别可用代理节点</p>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-6">
+
+            <!-- 扫描进度面板 -->
+            <section class="rounded-xl p-5 sm:p-6 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="radar" class="w-5 h-5" style="color:var(--cfnat-primary);"></i>
+                        <h2 class="text-lg font-bold" style="color:var(--cfnat-foreground);">扫描进度</h2>
+                        <span class="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--state-success);">
+                            <span class="w-1.5 h-1.5 rounded-full inline-block" style="background:var(--state-success);"></span>
+                            运行中
+                        </span>
+                    </div>
+                    <span class="text-sm font-mono" style="color:var(--cfnat-card-foreground);">3/6</span>
+                </div>
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">当前阶段：Colo定向扫描</span>
+                        <span class="text-xs font-mono" style="color:var(--cfnat-muted-foreground);">当前 IP：1.2.3.45</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--cfnat-muted);">
+                        <div class="h-full rounded-full transition-all" style="width:68%;background:var(--cfnat-primary);"></div>
+                    </div>
+                    <div class="text-right mt-1">
+                        <span class="text-xs font-mono" style="color:var(--cfnat-muted-foreground);">68%</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <div class="text-xs" style="color:var(--cfnat-muted-foreground);">
+                        <span style="color:var(--cfnat-card-foreground);">已扫描</span> 4,443 / 6,534 段
+                    </div>
+                    <div class="text-xs" style="color:var(--cfnat-muted-foreground);">
+                        <span style="color:var(--cfnat-card-foreground);">已发现</span> 847 个节点
+                    </div>
+                    <div class="text-xs" style="color:var(--cfnat-muted-foreground);">
+                        <span style="color:var(--cfnat-card-foreground);">预计剩余</span> 23 分钟
+                    </div>
+                </div>
+            </section>
+
+            <!-- 扫描引擎状态面板 -->
+            <section class="rounded-xl p-5 sm:p-6 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-5">
+                    <i data-lucide="cpu" class="w-5 h-5" style="color:var(--cfnat-accent);"></i>
+                    <h2 class="text-lg font-bold" style="color:var(--cfnat-foreground);">扫描引擎状态</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                    <!-- CIDR 来源 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">CIDR 来源</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm" style="color:var(--cfnat-foreground);">本地 ip.txt</span>
+                            <span class="text-xs px-2 py-0.5 rounded whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--state-success);">6534 段</span>
+                        </div>
+                    </div>
+                    <!-- /24 拆分统计 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">/24 拆分统计</span>
+                        <span class="text-sm font-mono" style="color:var(--cfnat-foreground);">6534 段</span>
+                    </div>
+                    <!-- 测速模式 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">测速模式</span>
+                        <span class="text-sm" style="color:var(--cfnat-primary);">speed</span>
+                    </div>
+                    <!-- 429 速率限制器 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">429 速率限制器</span>
+                        <span class="text-xs px-2 py-0.5 rounded whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--state-success);">正常</span>
+                    </div>
+                    <!-- Colo-Aware Scanning -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">Colo-Aware Scanning</span>
+                        <div class="flex items-center gap-2">
+                            <button class="w-8 h-4 rounded-full relative transition-colors" style="background:var(--cfnat-accent);">
+                                <span class="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-white shadow"></span>
+                            </button>
+                            <span class="text-xs" style="color:var(--cfnat-accent);">开启</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- V4 新增：协议嗅探增强面板 -->
+            <section class="rounded-xl p-5 sm:p-6 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-5">
+                    <i data-lucide="shield-search" class="w-5 h-5" style="color:var(--cfnat-accent2);"></i>
+                    <h2 class="text-lg font-bold" style="color:var(--cfnat-foreground);">协议嗅探</h2>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-bold" style="background:var(--cfnat-accent2);color:#000;">V3.0</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                    <!-- Peek 动态识别 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">Peek 动态识别</span>
+                        <div class="flex items-center gap-2">
+                            <button class="w-8 h-4 rounded-full relative transition-colors" style="background:var(--cfnat-accent2);">
+                                <span class="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-white shadow"></span>
+                            </button>
+                            <span class="text-xs" style="color:var(--cfnat-accent2);">开启</span>
+                        </div>
+                    </div>
+                    <!-- 支持协议列表 -->
+                    <div class="sm:col-span-2 lg:col-span-2">
+                        <span class="text-sm block mb-2" style="color:var(--cfnat-card-foreground);">支持协议</span>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap" style="background:var(--cfnat-muted);color:var(--cfnat-foreground);">SOCKS5 CONNECT (0x05)</span>
+                            <span class="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap" style="background:var(--cfnat-muted);color:var(--cfnat-foreground);">TLS (0x16)</span>
+                            <span class="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap" style="background:var(--cfnat-muted);color:var(--cfnat-foreground);">HTTP CONNECT</span>
+                            <span class="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap" style="background:rgba(245,158,11,0.15);color:var(--cfnat-accent2);">HTTP 普通代理</span>
+                            <span class="text-xs px-2.5 py-1 rounded-lg whitespace-nowrap" style="background:var(--cfnat-muted);color:var(--cfnat-foreground);">WebSocket</span>
+                        </div>
+                    </div>
+                    <!-- V4 新增：HTTP 普通代理支持 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">
+                            HTTP 普通代理支持
+                            <span class="ml-1 text-xs px-1.5 py-0.5 rounded" style="background:rgba(167,139,250,0.15);color:var(--cfnat-accent);">V4</span>
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <button class="w-8 h-4 rounded-full relative transition-colors" style="background:var(--cfnat-accent2);">
+                                <span class="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-white shadow"></span>
+                            </button>
+                            <span class="text-xs" style="color:var(--cfnat-accent2);">开启</span>
+                        </div>
+                    </div>
+                    <!-- V4 新增：监听地址 -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm" style="color:var(--cfnat-card-foreground);">
+                            监听地址
+                            <span class="ml-1 text-xs px-1.5 py-0.5 rounded" style="background:rgba(167,139,250,0.15);color:var(--cfnat-accent);">V4</span>
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-mono" style="color:var(--cfnat-accent2);">0.0.0.0</span>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-2">
+                        <p class="text-xs" style="color:var(--cfnat-muted-foreground);">Docker 环境必须为 0.0.0.0 才能被宿主机访问</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 扫描配置面板 -->
+            <section class="rounded-xl p-5 sm:p-6 border" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-5">
+                    <i data-lucide="settings" class="w-5 h-5" style="color:var(--cfnat-primary);"></i>
+                    <h2 class="text-lg font-bold" style="color:var(--cfnat-foreground);">扫描配置</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                    <!-- 并发数 -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium" style="color:var(--cfnat-card-foreground);">并发数</label>
+                        <input type="number" value="50" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                    </div>
+                    <!-- 超时时间 -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium" style="color:var(--cfnat-card-foreground);">超时时间 (秒)</label>
+                        <input type="number" value="5" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                    </div>
+                    <!-- 目标 Colo -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium" style="color:var(--cfnat-card-foreground);">目标 Colo</label>
+                        <input type="text" value="SJC,LAX,SEA" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                    </div>
+                    <!-- 测速目标 URL -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium" style="color:var(--cfnat-card-foreground);">测速目标 URL</label>
+                        <input type="text" value="https://speed.cloudflare.com/__down?bytes=10000000" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                    </div>
+                    <!-- 最小下载速度 -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium" style="color:var(--cfnat-card-foreground);">最小下载速度 (KB/s)</label>
+                        <input type="number" value="500" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                    </div>
+                    <!-- 延迟阈值 -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium" style="color:var(--cfnat-card-foreground);">延迟阈值 (ms)</label>
+                        <input type="number" value="200" class="w-full h-9 rounded-lg px-3 text-sm outline-none border focus:ring-1" style="background:var(--cfnat-input);border-color:var(--cfnat-border);color:var(--cfnat-foreground);--tw-ring-color:var(--cfnat-primary);" />
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-5">
+                    <button class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors" style="border-color:var(--cfnat-border);color:var(--cfnat-card-foreground);background:var(--cfnat-muted);">
+                        重置默认
+                    </button>
+                    <button class="px-5 py-2 rounded-lg text-sm font-medium transition-colors" style="background:var(--cfnat-primary);color:#fff;">
+                        <i data-lucide="save" class="w-4 h-4 inline-block mr-1" style="vertical-align:-2px;"></i>
+                        保存并启动扫描
+                    </button>
+                </div>
+            </section>
+
+            <!-- 扫描历史表格 -->
+            <section class="rounded-xl border overflow-hidden" style="background:var(--cfnat-card);border-color:var(--cfnat-border);">
+                <div class="flex items-center justify-between p-5 sm:p-6 pb-0">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5" style="color:var(--cfnat-primary);"></i>
+                        <h2 class="text-lg font-bold" style="color:var(--cfnat-foreground);">扫描历史</h2>
+                    </div>
+                    <button class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors" style="border-color:var(--cfnat-border);color:var(--cfnat-card-foreground);background:var(--cfnat-muted);">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5 inline-block mr-1" style="vertical-align:-2px;"></i>
+                        清空历史
+                    </button>
+                </div>
+                <div class="p-5 sm:p-6 pt-4 overflow-x-auto">
+                    <table class="w-full text-sm" style="min-width:700px;">
+                        <thead>
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <th class="text-left py-2.5 pr-4 font-medium" style="color:var(--cfnat-muted-foreground);">时间</th>
+                                <th class="text-left py-2.5 pr-4 font-medium" style="color:var(--cfnat-muted-foreground);">阶段</th>
+                                <th class="text-left py-2.5 pr-4 font-medium" style="color:var(--cfnat-muted-foreground);">扫描段数</th>
+                                <th class="text-left py-2.5 pr-4 font-medium" style="color:var(--cfnat-muted-foreground);">发现节点</th>
+                                <th class="text-left py-2.5 pr-4 font-medium" style="color:var(--cfnat-muted-foreground);">耗时</th>
+                                <th class="text-left py-2.5 pr-4 font-medium" style="color:var(--cfnat-muted-foreground);">协议</th>
+                                <th class="text-left py-2.5 font-medium" style="color:var(--cfnat-muted-foreground);">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 pr-4 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">2026-07-23 14:32</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-foreground);">Colo定向扫描</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">6534</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">847</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-card-foreground);">进行中...</td>
+                                <td class="py-2.5 pr-4">
+                                    <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap" style="background:rgba(245,158,11,0.15);color:var(--cfnat-accent2);">Peek</span>
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(88,166,255,0.15);color:var(--cfnat-primary);">运行中</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 pr-4 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">2026-07-22 09:15</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-foreground);">全量扫描</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">6534</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">1,203</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-card-foreground);">1h 42m</td>
+                                <td class="py-2.5 pr-4">
+                                    <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap" style="background:rgba(167,139,250,0.15);color:var(--cfnat-accent);">SOCKS5</span>
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--state-success);">完成</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 pr-4 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">2026-07-21 16:08</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-foreground);">Colo定向扫描</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">3210</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">512</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-card-foreground);">48m 22s</td>
+                                <td class="py-2.5 pr-4">
+                                    <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap" style="background:rgba(167,139,250,0.15);color:var(--cfnat-accent);">TLS</span>
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--state-success);">完成</span>
+                                </td>
+                            </tr>
+                            <tr class="border-b" style="border-color:var(--cfnat-border);">
+                                <td class="py-2.5 pr-4 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">2026-07-20 11:45</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-foreground);">全量扫描</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">6534</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">987</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-card-foreground);">1h 55m</td>
+                                <td class="py-2.5 pr-4">
+                                    <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap" style="background:rgba(167,139,250,0.15);color:var(--cfnat-accent);">SOCKS5</span>
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(248,81,73,0.15);color:var(--state-error);">中断</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 pr-4 font-mono text-xs whitespace-nowrap" style="color:var(--cfnat-card-foreground);">2026-07-19 08:30</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-foreground);">增量扫描</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">856</td>
+                                <td class="py-2.5 pr-4 font-mono" style="color:var(--cfnat-card-foreground);">134</td>
+                                <td class="py-2.5 pr-4 whitespace-nowrap" style="color:var(--cfnat-card-foreground);">12m 05s</td>
+                                <td class="py-2.5 pr-4">
+                                    <span class="text-xs px-1.5 py-0.5 rounded whitespace-nowrap" style="background:rgba(245,158,11,0.15);color:var(--cfnat-accent2);">Peek</span>
+                                </td>
+                                <td class="py-2.5">
+                                    <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background:rgba(63,185,80,0.15);color:var(--state-success);">完成</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

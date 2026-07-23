@@ -1,0 +1,338 @@
+{
+  "data": [
+    {
+      "id": "page-dashboard",
+      "title": "仪表盘",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/dashboard.html",
+        "interactions": [
+          {
+            "domId": "nav-regions",
+            "targetPageId": "page-regions",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfnat",
+            "targetPageId": "page-cfnat",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfdata",
+            "targetPageId": "page-cfdata",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-ips",
+            "targetPageId": "page-ips",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-logs",
+            "targetPageId": "page-logs",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-regions",
+      "title": "地区管理",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 620,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/regions.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfnat",
+            "targetPageId": "page-cfnat",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfdata",
+            "targetPageId": "page-cfdata",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-ips",
+            "targetPageId": "page-ips",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-logs",
+            "targetPageId": "page-logs",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-cfnat",
+      "title": "cfnat 配置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 620,
+        "y": 524,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/cfnat.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-regions",
+            "targetPageId": "page-regions",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfdata",
+            "targetPageId": "page-cfdata",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-ips",
+            "targetPageId": "page-ips",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-logs",
+            "targetPageId": "page-logs",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-cfdata",
+      "title": "cfdata 扫描",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 620,
+        "y": 1025,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/cfdata.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-regions",
+            "targetPageId": "page-regions",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfnat",
+            "targetPageId": "page-cfnat",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-ips",
+            "targetPageId": "page-ips",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-logs",
+            "targetPageId": "page-logs",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-ips",
+      "title": "IP 库",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 620,
+        "y": 1505,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/ips.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-regions",
+            "targetPageId": "page-regions",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfnat",
+            "targetPageId": "page-cfnat",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfdata",
+            "targetPageId": "page-cfdata",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-logs",
+            "targetPageId": "page-logs",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-logs",
+      "title": "日志",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 620,
+        "y": 1885,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/logs.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-regions",
+            "targetPageId": "page-regions",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfnat",
+            "targetPageId": "page-cfnat",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfdata",
+            "targetPageId": "page-cfdata",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-ips",
+            "targetPageId": "page-ips",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-settings",
+      "title": "通用设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753063200000,
+      "canvasData": {
+        "x": 620,
+        "y": 2262,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-regions",
+            "targetPageId": "page-regions",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfnat",
+            "targetPageId": "page-cfnat",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-cfdata",
+            "targetPageId": "page-cfdata",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-ips",
+            "targetPageId": "page-ips",
+            "hideEdge": false
+          },
+          {
+            "domId": "nav-logs",
+            "targetPageId": "page-logs",
+            "hideEdge": false
+          }
+        ]
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "desktop",
+    "projectName": "CFNAT-AIO V3 智能代理控制系统"
+  }
+}

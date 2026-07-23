@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用设置 - CFNAT-AIO V4</title>
+    <style id="theme-vars">
+/* CFNAT-AIO V4 Design System — Brand CSS */
+/* Dark tech theme: deep navy + blue accent + green status */
+/* V4 extends V3 with amber accent for LoadBalancer / architecture features */
+
+/* === Brand Prefix Variables === */
+:root {
+  /* Primary Scale — Indigo Blue */
+  --cfnat-primary: #58a6ff;
+  --cfnat-primary-hover: #79b8ff;
+  --cfnat-primary-pressed: #1f6feb;
+  --cfnat-primary-foreground: #ffffff;
+
+  /* Accent — Purple (V3 legacy features) */
+  --cfnat-accent: #a78bfa;
+  --cfnat-accent-hover: #c4b5fd;
+  --cfnat-accent-pressed: #7c3aed;
+
+  /* Accent2 — Amber (V4 new: LoadBalancer, Race Connect, SSE) */
+  --cfnat-accent2: #f59e0b;
+  --cfnat-accent2-hover: #fbbf24;
+  --cfnat-accent2-pressed: #d97706;
+
+  /* Background & Surface */
+  --cfnat-background: #0a0e14;
+  --cfnat-foreground: #e6edf3;
+  --cfnat-card: #12161e;
+  --cfnat-card-foreground: #c9d1d9;
+  --cfnat-popover: #1a1f2e;
+  --cfnat-popover-foreground: #c9d1d9;
+
+  /* Muted */
+  --cfnat-muted: #161b22;
+  --cfnat-muted-foreground: #6e7681;
+
+  /* Border & Input */
+  --cfnat-border: #1e2430;
+  --cfnat-input: #0d1117;
+  --cfnat-ring: #58a6ff;
+
+  /* Radius */
+  --cfnat-radius-sm: 4px;
+  --cfnat-radius-md: 8px;
+  --cfnat-radius-lg: 12px;
+  --cfnat-radius-full: 9999px;
+
+  /* State Colors */
+  --state-success: #3fb950;
+  --state-warning: #d29922;
+  --state-error: #f85149;
+  --state-info: #58a6ff;
+
+  /* Backend Status Colors (V4 LB) */
+  --lb-warming: #58a6ff;
+  --lb-active: #3fb950;
+  --lb-degraded: #d29922;
+  --lb-isolated: #f85149;
+  --lb-removed: #6e7681;
+}
+
+/* === Typography === */
+:root {
+  --font-display: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+}
+
+/* === Semantic Aliases (Tailwind-compatible) === */
+:root {
+  --color-primary: var(--cfnat-primary);
+  --color-primary-hover: var(--cfnat-primary-hover);
+  --color-primary-pressed: var(--cfnat-primary-pressed);
+  --background: var(--cfnat-background);
+  --foreground: var(--cfnat-foreground);
+  --color-card: var(--cfnat-card);
+  --color-card-foreground: var(--cfnat-card-foreground);
+  --color-popover: var(--cfnat-popover);
+  --color-popover-foreground: var(--cfnat-popover-foreground);
+  --color-muted: var(--cfnat-muted);
+  --color-muted-foreground: var(--cfnat-muted-foreground);
+  --color-border: var(--cfnat-border);
+  --color-input: var(--cfnat-input);
+  --color-ring: var(--cfnat-ring);
+  --radius-sm: var(--cfnat-radius-sm);
+  --radius-md: var(--cfnat-radius-md);
+  --radius-lg: var(--cfnat-radius-lg);
+  --radius-full: var(--cfnat-radius-full);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--cfnat-background);
+    --color-foreground: var(--cfnat-foreground);
+    --color-card: var(--cfnat-card);
+    --color-card-foreground: var(--cfnat-card-foreground);
+    --color-popover: var(--cfnat-popover);
+    --color-popover-foreground: var(--cfnat-popover-foreground);
+    --color-primary: var(--cfnat-primary);
+    --color-primary-foreground: var(--cfnat-primary-foreground);
+    --color-muted: var(--cfnat-muted);
+    --color-muted-foreground: var(--cfnat-muted-foreground);
+    --color-accent: var(--cfnat-accent);
+    --color-border: var(--cfnat-border);
+    --color-input: var(--cfnat-input);
+    --color-ring: var(--cfnat-ring);
+    --radius-sm: var(--cfnat-radius-sm);
+    --radius-md: var(--cfnat-radius-md);
+    --radius-lg: var(--cfnat-radius-lg);
+  }
+  @layer base {
+    body { background: var(--cfnat-background); color: var(--cfnat-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--cfnat-background); }
+      .text-background { color: var(--cfnat-background); }
+      .border-background { border-color: var(--cfnat-background); }
+      .ring-background { --tw-ring-color: var(--cfnat-background); }
+      .bg-foreground { background-color: var(--cfnat-foreground); }
+      .text-foreground { color: var(--cfnat-foreground); }
+      .border-foreground { border-color: var(--cfnat-foreground); }
+      .ring-foreground { --tw-ring-color: var(--cfnat-foreground); }
+      .bg-card { background-color: var(--cfnat-card); }
+      .text-card { color: var(--cfnat-card); }
+      .border-card { border-color: var(--cfnat-card); }
+      .ring-card { --tw-ring-color: var(--cfnat-card); }
+      .bg-card-foreground { background-color: var(--cfnat-card-foreground); }
+      .text-card-foreground { color: var(--cfnat-card-foreground); }
+      .border-card-foreground { border-color: var(--cfnat-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--cfnat-card-foreground); }
+      .bg-popover { background-color: var(--cfnat-popover); }
+      .text-popover { color: var(--cfnat-popover); }
+      .border-popover { border-color: var(--cfnat-popover); }
+      .ring-popover { --tw-ring-color: var(--cfnat-popover); }
+      .bg-popover-foreground { background-color: var(--cfnat-popover-foreground); }
+      .text-popover-foreground { color: var(--cfnat-popover-foreground); }
+      .border-popover-foreground { border-color: var(--cfnat-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--cfnat-popover-foreground); }
+      .bg-primary { background-color: var(--cfnat-primary); }
+      .text-primary { color: var(--cfnat-primary); }
+      .border-primary { border-color: var(--cfnat-primary); }
+      .ring-primary { --tw-ring-color: var(--cfnat-primary); }
+      .bg-primary-foreground { background-color: var(--cfnat-primary-foreground); }
+      .text-primary-foreground { color: var(--cfnat-primary-foreground); }
+      .border-primary-foreground { border-color: var(--cfnat-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--cfnat-primary-foreground); }
+      .bg-muted { background-color: var(--cfnat-muted); }
+      .text-muted { color: var(--cfnat-muted); }
+      .border-muted { border-color: var(--cfnat-muted); }
+      .ring-muted { --tw-ring-color: var(--cfnat-muted); }
+      .bg-muted-foreground { background-color: var(--cfnat-muted-foreground); }
+      .text-muted-foreground { color: var(--cfnat-muted-foreground); }
+      .border-muted-foreground { border-color: var(--cfnat-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--cfnat-muted-foreground); }
+      .bg-accent { background-color: var(--cfnat-accent); }
+      .text-accent { color: var(--cfnat-accent); }
+      .border-accent { border-color: var(--cfnat-accent); }
+      .ring-accent { --tw-ring-color: var(--cfnat-accent); }
+      .bg-border { background-color: var(--cfnat-border); }
+      .text-border { color: var(--cfnat-border); }
+      .border-border { border-color: var(--cfnat-border); }
+      .ring-border { --tw-ring-color: var(--cfnat-border); }
+      .bg-input { background-color: var(--cfnat-input); }
+      .text-input { color: var(--cfnat-input); }
+      .border-input { border-color: var(--cfnat-input); }
+      .ring-input { --tw-ring-color: var(--cfnat-input); }
+      .bg-ring { background-color: var(--cfnat-ring); }
+      .text-ring { color: var(--cfnat-ring); }
+      .border-ring { border-color: var(--cfnat-ring); }
+      .ring-ring { --tw-ring-color: var(--cfnat-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="flex flex-col min-h-screen">
+        <!-- 导航栏 -->
+        <nav class="flex items-center justify-between px-6 py-3 border-b" style="border-color: var(--cfnat-border); background: var(--cfnat-card);">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="shield" class="w-6 h-6" style="color: var(--cfnat-primary);"></i>
+                    <span class="text-lg font-bold" style="color: var(--cfnat-primary); font-family: var(--font-display);">CFNAT-AIO</span>
+                </div>
+                <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: var(--cfnat-accent2); color: #000; font-family: var(--font-display);">V4</span>
+                <span class="text-sm" style="color: var(--cfnat-muted-foreground);">智能代理控制台</span>
+            </div>
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                <a href="dashboard.html" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors" style="color: var(--cfnat-muted-foreground);" onmouseover="this.style.color='var(--cfnat-foreground)';this.style.background='var(--cfnat-muted)'" onmouseout="this.style.color='var(--cfnat-muted-foreground)';this.style.background='transparent'">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block align-middle mr-1"></i>仪表盘
+                </a>
+                <a href="cfnat.html" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors" style="color: var(--cfnat-muted-foreground);" onmouseover="this.style.color='var(--cfnat-foreground)';this.style.background='var(--cfnat-muted)'" onmouseout="this.style.color='var(--cfnat-muted-foreground)';this.style.background='transparent'">
+                    <i data-lucide="globe" class="w-4 h-4 inline-block align-middle mr-1"></i>CFNAT 管理
+                </a>
+                <a href="logs.html" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors" style="color: var(--cfnat-muted-foreground);" onmouseover="this.style.color='var(--cfnat-foreground)';this.style.background='var(--cfnat-muted)'" onmouseout="this.style.color='var(--cfnat-muted-foreground)';this.style.background='transparent'">
+                    <i data-lucide="scroll-text" class="w-4 h-4 inline-block align-middle mr-1"></i>日志
+                </a>
+                <a href="#" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors" style="color: var(--cfnat-muted-foreground);" onmouseover="this.style.color='var(--cfnat-foreground)';this.style.background='var(--cfnat-muted)'" onmouseout="this.style.color='var(--cfnat-muted-foreground)';this.style.background='transparent'">
+                    <i data-lucide="network" class="w-4 h-4 inline-block align-middle mr-1"></i>负载均衡
+                </a>
+                <span class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap font-medium" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                    <i data-lucide="settings" class="w-4 h-4 inline-block align-middle mr-1"></i>通用设置
+                </span>
+                <a href="#" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors" style="color: var(--cfnat-muted-foreground);" onmouseover="this.style.color='var(--cfnat-foreground)';this.style.background='var(--cfnat-muted)'" onmouseout="this.style.color='var(--cfnat-muted-foreground)';this.style.background='transparent'">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 inline-block align-middle mr-1"></i>监控
+                </a>
+                <a href="#" class="px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors" style="color: var(--cfnat-muted-foreground);" onmouseover="this.style.color='var(--cfnat-foreground)';this.style.background='var(--cfnat-muted)'" onmouseout="this.style.color='var(--cfnat-muted-foreground)';this.style.background='transparent'">
+                    <i data-lucide="info" class="w-4 h-4 inline-block align-middle mr-1"></i>关于
+                </a>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 p-6 space-y-6 overflow-y-auto" style="max-width: 1200px; margin: 0 auto; width: 100%;">
+
+            <!-- ======== 基础设置面板 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="server" class="w-5 h-5" style="color: var(--cfnat-primary);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">基础设置</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">WebUI 端口</label>
+                        <input type="number" value="1234" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary);" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">监听地址 <span class="px-1 py-0.5 rounded text-xs ml-1" style="background: var(--cfnat-accent2); color: #000;">V4</span></label>
+                        <input type="text" value="0.0.0.0" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">日志级别</label>
+                        <select class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary);">
+                            <option value="debug">debug</option>
+                            <option value="info" selected>info</option>
+                            <option value="warn">warn</option>
+                            <option value="error">error</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">数据目录</label>
+                        <input type="text" value="/data" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">API Token</label>
+                        <div class="flex gap-2">
+                            <input type="password" value="sk-cfnat-xxxxxxxxxxxxxxxxxxxx" class="flex-1 px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                            <button class="px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-muted-foreground); border: 1px solid var(--cfnat-border);">
+                                <i data-lucide="eye" class="w-4 h-4 inline-block align-middle"></i>
+                            </button>
+                            <button class="px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-muted-foreground); border: 1px solid var(--cfnat-border);">
+                                <i data-lucide="copy" class="w-4 h-4 inline-block align-middle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="px-4 py-2 rounded-md text-sm font-medium transition-colors" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                        <i data-lucide="save" class="w-4 h-4 inline-block align-middle mr-1"></i>保存设置
+                    </button>
+                </div>
+            </section>
+
+            <!-- ======== IP 数据源管理面板 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="database" class="w-5 h-5" style="color: var(--cfnat-accent2);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">IP 数据源管理</h2>
+                    <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: var(--cfnat-accent2); color: #000; font-family: var(--font-display);">V3.1</span>
+                </div>
+
+                <!-- 黄色提示条 -->
+                <div class="flex items-start gap-2 px-4 py-3 rounded-md mb-4" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0" style="color: var(--cfnat-accent2);"></i>
+                    <p class="text-sm" style="color: var(--cfnat-accent2);">默认使用 Cloudflare 官方数据源。nyaflare 数据源来自社区，准确性请自行验证。</p>
+                </div>
+
+                <!-- IPv4 数据源 -->
+                <div class="mb-5">
+                    <h3 class="text-sm font-medium mb-3" style="color: var(--cfnat-foreground);">
+                        <i data-lucide="globe" class="w-4 h-4 inline-block align-middle mr-1" style="color: var(--cfnat-primary);"></i>IPv4 数据源
+                    </h3>
+                    <div class="overflow-x-auto rounded-md" style="border: 1px solid var(--cfnat-border);">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr style="background: var(--cfnat-muted);">
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">启用</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">数据源名称</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">类型</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">条目数</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">/24段数</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">上次刷新</th>
+                                    <th class="px-3 py-2 text-center text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">自动刷新</th>
+                                    <th class="px-3 py-2 text-center text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" checked class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">Cloudflare 官方</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-primary);">official</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">15</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">8,192</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-card-foreground);">2026-07-23 08:00</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--state-success);"><i data-lucide="check-circle" class="w-3 h-3 inline-block align-middle mr-0.5"></i>24h</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">nyaflare 官方</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-primary);">official</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">15</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">8,192</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-card-foreground);">2026-07-22 10:00</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--state-success);"><i data-lucide="check-circle" class="w-3 h-3 inline-block align-middle mr-0.5"></i>24h</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">nyaflare 社区</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-accent);">community</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">6,534</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">6,534</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">nyaflare 高可用</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: rgba(245, 158, 11, 0.15); color: var(--cfnat-accent2);">highly_available</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">128</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">128</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" checked class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">本地 ip.txt</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-card-foreground);">local</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">6,534</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-card-foreground);">6,534</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">浏览</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 全局设置行 -->
+                <div class="flex flex-wrap items-center gap-4 px-4 py-3 rounded-md mb-5" style="background: var(--cfnat-muted); border: 1px solid var(--cfnat-border);">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium" style="color: var(--cfnat-muted-foreground);">自动刷新</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" checked class="sr-only peer" id="auto-refresh-toggle" />
+                            <label for="auto-refresh-toggle" class="w-9 h-5 rounded-full cursor-pointer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-border); peer-checked:background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium" style="color: var(--cfnat-muted-foreground);">刷新间隔</span>
+                        <select class="px-2 py-1 rounded text-xs outline-none" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground);">
+                            <option>1h</option>
+                            <option>6h</option>
+                            <option>12h</option>
+                            <option selected>24h</option>
+                            <option>48h</option>
+                        </select>
+                    </div>
+                    <button class="ml-auto px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style="background: var(--cfnat-accent2); color: #000;">
+                        <i data-lucide="refresh-cw" class="w-3 h-3 inline-block align-middle mr-1"></i>全部刷新
+                    </button>
+                </div>
+
+                <!-- IPv6 数据源 -->
+                <div>
+                    <h3 class="text-sm font-medium mb-3" style="color: var(--cfnat-foreground);">
+                        <i data-lucide="globe" class="w-4 h-4 inline-block align-middle mr-1" style="color: var(--cfnat-accent);"></i>IPv6 数据源
+                    </h3>
+                    <div class="overflow-x-auto rounded-md" style="border: 1px solid var(--cfnat-border);">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr style="background: var(--cfnat-muted);">
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">启用</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">数据源名称</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">类型</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">条目数</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">/64段数</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">上次刷新</th>
+                                    <th class="px-3 py-2 text-center text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">自动刷新</th>
+                                    <th class="px-3 py-2 text-center text-xs font-medium whitespace-nowrap" style="color: var(--cfnat-muted-foreground);">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">Cloudflare 官方</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-primary);">official</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">15</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">15</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">nyaflare 官方</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-primary);">official</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">15</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">15</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">nyaflare 社区</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-accent);">community</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">nyaflare 高可用</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: rgba(245, 158, 11, 0.15); color: var(--cfnat-accent2);">highly_available</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">刷新</button></td>
+                                </tr>
+                                <tr style="border-top: 1px solid var(--cfnat-border);">
+                                    <td class="px-3 py-2.5"><input type="checkbox" class="w-4 h-4 accent-blue-500" /></td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap" style="color: var(--cfnat-foreground);">本地 ip6.txt</td>
+                                    <td class="px-3 py-2.5"><span class="px-1.5 py-0.5 rounded text-xs" style="background: var(--cfnat-muted); color: var(--cfnat-card-foreground);">local</span></td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-right whitespace-nowrap font-mono text-xs" style="font-family: var(--font-display); color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-xs" style="color: var(--cfnat-muted-foreground);">-</td>
+                                    <td class="px-3 py-2.5 text-center whitespace-nowrap"><span class="text-xs" style="color: var(--cfnat-muted-foreground);">-</span></td>
+                                    <td class="px-3 py-2.5 text-center"><button class="px-2 py-1 rounded text-xs transition-colors" style="background: var(--cfnat-muted); color: var(--cfnat-primary); border: 1px solid var(--cfnat-border);">浏览</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ======== 扫描引擎高级配置 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="radar" class="w-5 h-5" style="color: var(--cfnat-accent);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">扫描引擎高级配置</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">Colo-Aware Scanning</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="colo-aware" />
+                                <label for="colo-aware" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">已启用 — 按数据中心机房分布优化扫描</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">映射表重建</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="mapping-rebuild" />
+                                <label for="mapping-rebuild" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">自动重建 IP-Colo 映射表</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">每 Colo 目标 IP 数</label>
+                        <input type="number" value="32" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">随机探索比例</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" min="0" max="100" value="15" class="flex-1 accent-blue-500" />
+                            <span class="text-sm font-mono w-10 text-right" style="font-family: var(--font-display); color: var(--cfnat-foreground);">15%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="px-4 py-2 rounded-md text-sm font-medium transition-colors" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                        <i data-lucide="save" class="w-4 h-4 inline-block align-middle mr-1"></i>保存设置
+                    </button>
+                </div>
+            </section>
+
+            <!-- ======== IP 池管理配置 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="layers" class="w-5 h-5" style="color: var(--cfnat-primary);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">IP 池管理配置</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">主池容量</label>
+                        <input type="number" value="5000" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">备选池比例</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" min="0" max="100" value="30" class="flex-1 accent-blue-500" />
+                            <span class="text-sm font-mono w-10 text-right" style="font-family: var(--font-display); color: var(--cfnat-foreground);">30%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">质量淘汰阈值</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" min="0" max="100" value="20" class="flex-1 accent-blue-500" />
+                            <span class="text-sm font-mono w-10 text-right" style="font-family: var(--font-display); color: var(--cfnat-foreground);">20%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">自动重建开关</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="auto-rebuild" />
+                                <label for="auto-rebuild" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">池低于阈值时自动触发重建</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="px-4 py-2 rounded-md text-sm font-medium transition-colors" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                        <i data-lucide="save" class="w-4 h-4 inline-block align-middle mr-1"></i>保存设置
+                    </button>
+                </div>
+            </section>
+
+            <!-- ======== 可观测性配置 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="activity" class="w-5 h-5" style="color: var(--cfnat-accent);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">可观测性配置</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">IP 质量趋势</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="quality-trend" />
+                                <label for="quality-trend" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">启用趋势记录</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">全链路追踪</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="tracing" />
+                                <label for="tracing" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">启用 Tracing</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">保留天数</label>
+                        <input type="number" value="30" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="px-4 py-2 rounded-md text-sm font-medium transition-colors" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                        <i data-lucide="save" class="w-4 h-4 inline-block align-middle mr-1"></i>保存设置
+                    </button>
+                </div>
+            </section>
+
+            <!-- ======== 时间跳跃检测面板 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="timer" class="w-5 h-5" style="color: var(--cfnat-accent2);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">时间跳跃保护</h2>
+                    <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: var(--cfnat-accent2); color: #000; font-family: var(--font-display);">V3.0</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">时间跳跃检测</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="time-jump-detect" />
+                                <label for="time-jump-detect" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">开启</span>
+                        </div>
+                        <p class="mt-1 text-xs" style="color: var(--cfnat-muted-foreground);">系统休眠或NTP同步后自动重置所有EWMA指标</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">重置阈值</label>
+                        <input type="number" value="60" class="w-full px-3 py-2 rounded-md text-sm outline-none focus:ring-1" style="background: var(--cfnat-input); border: 1px solid var(--cfnat-border); color: var(--cfnat-foreground); --tw-ring-color: var(--cfnat-primary); font-family: var(--font-display);" />
+                        <p class="mt-1 text-xs" style="color: var(--cfnat-muted-foreground);">两次检查间隔 &gt; 60秒触发重置</p>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="px-4 py-2 rounded-md text-sm font-medium transition-colors" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                        <i data-lucide="save" class="w-4 h-4 inline-block align-middle mr-1"></i>保存设置
+                    </button>
+                </div>
+            </section>
+
+            <!-- ======== 降级保护配置面板 ======== -->
+            <section class="rounded-lg p-5" style="background: var(--cfnat-card); border: 1px solid var(--cfnat-border);">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="shield-alert" class="w-5 h-5" style="color: var(--cfnat-accent2);"></i>
+                    <h2 class="text-base font-bold" style="color: var(--cfnat-foreground);">降级保护</h2>
+                    <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: var(--cfnat-accent2); color: #000; font-family: var(--font-display);">V3.0</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">最小活跃数约束</label>
+                        <div class="flex items-center gap-2">
+                            <input type="text" value="10" readonly class="w-24 px-3 py-2 rounded-md text-sm outline-none" style="background: var(--cfnat-muted); border: 1px solid var(--cfnat-border); color: var(--cfnat-muted-foreground); font-family: var(--font-display); cursor: not-allowed;" />
+                            <span class="text-xs" style="color: var(--cfnat-muted-foreground);">自动计算（只读）</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">降级运行开关</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="degraded-mode" />
+                                <label for="degraded-mode" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">开启</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">降级质量折算</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" min="0" max="100" value="50" class="flex-1 accent-blue-500" />
+                            <span class="text-sm font-mono w-10 text-right" style="font-family: var(--font-display); color: var(--cfnat-foreground);">50%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1.5" style="color: var(--cfnat-muted-foreground);">紧急扫描触发</label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" checked class="sr-only peer" id="emergency-scan" />
+                                <label for="emergency-scan" class="w-9 h-5 rounded-full cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" style="background: var(--cfnat-primary);" onclick="let s=this.previousElementSibling;s.checked=!s.checked;this.style.background=s.checked?'var(--cfnat-primary)':'var(--cfnat-border)'"></label>
+                            </div>
+                            <span class="text-xs" style="color: var(--cfnat-card-foreground);">开启</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button class="px-4 py-2 rounded-md text-sm font-medium transition-colors" style="background: var(--cfnat-primary); color: var(--cfnat-primary-foreground);">
+                        <i data-lucide="save" class="w-4 h-4 inline-block align-middle mr-1"></i>保存设置
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <style>
+        /* Toggle switch base styles */
+        [type="checkbox"].sr-only + label {
+            transition: background 0.2s;
+        }
+        /* Custom scrollbar for main content */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--cfnat-background); }
+        ::-webkit-scrollbar-thumb { background: var(--cfnat-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cfnat-muted-foreground); }
+        /* Table hover */
+        table tbody tr { transition: background 0.15s; }
+        table tbody tr:hover { background: rgba(88, 166, 255, 0.04); }
+        /* Input focus ring */
+        input:focus, select:focus { border-color: var(--cfnat-primary) !important; }
+        /* Button hover */
+        button:hover { filter: brightness(1.1); }
+        /* Range slider thumb */
+        input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--cfnat-border); outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--cfnat-primary); cursor: pointer; border: 2px solid var(--cfnat-background); }
+    </style>
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>
